@@ -26,7 +26,8 @@
   /* Icon-Tab: eine Flex-Spalte über die volle Panelhöhe. Flache Abschnitte
      mit Trennern statt Kästen (§39.7), die Vorschau nimmt den Rest. */
   #panelIcon { overflow-y: auto; padding-right: 2px; gap: 0; }
-  #diff { flex: 1 1 auto; min-height: 320px; }
+  /* Nicht schrumpfen: sonst läuft der Inhalt (Bühne + Kennzahlen) über das Protokoll darunter. */
+  #diff { flex: 1 0 auto; min-height: 320px; }
   .panel[hidden] { display: none; }
   #panelCfg { overflow-y: auto; padding-right: 2px; gap: 12px; }
 
