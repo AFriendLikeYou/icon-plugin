@@ -11,6 +11,18 @@
   function bei(typ, fn) { (HANDLER[typ] = HANDLER[typ] || []).push(fn); }
 
   const T = __WOERTER__;
+  // Pflegbare Inhalte (src/ui/inhalte/*.mjs) — Texte und Grafiken für
+  // Onboarding, Welcome und Lizenz-Karte. Siehe docs/INHALTE.md.
+  const INHALTE = __INHALTE__;
+  // Zweisprachiges Feld aus den Inhalten: { de, en } → Text in der UI-Sprache.
+  function inh(feld, params) {
+    if (feld == null) return '';
+    const s = typeof feld === 'string' ? feld : (feld[SPR] != null ? feld[SPR] : (feld.en || feld.de || ''));
+    if (!params) return s;
+    let r = s;
+    Object.keys(params).forEach(k => { r = r.split('{' + k + '}').join(String(params[k])); });
+    return r;
+  }
   const KLASSEN = ['Square', 'Circular', 'Wide', 'Tall'];
   const RASTER_WERTE = [1, 0.5, 0.25];
 
@@ -55,7 +67,7 @@
 
   let beschaeftigt = false, hatAuswahl = false;
   let ziel = null;                 // letztes Ziel-Objekt aus 'auswahl'
-  let zoom = 6, letzterDiff = null, dunkel = false;
+  let letzterDiff = null, dunkel = false;
   let logListe = [];
   let KONFIG = null, cfgLokal = null, adapterAktiv = '', konfigFehler = [];
   let farben = null, farbenAngefragt = false, farbSuche = '';

@@ -23,23 +23,14 @@
 
   body > fig-tabs { flex: none; }
   .panel { display: flex; flex-direction: column; gap: 9px; flex: 1 1 auto; min-height: 0; }
-  /* Icon-Tab: eine Flex-Spalte über die volle Panelhöhe; der Kopf bleibt
-     kompakt (28-px-Zeilen), die Vorschau nimmt den Rest. */
-  #panelIcon { overflow-y: auto; padding-right: 2px; gap: 4px; }
-  .kopfblock { display: flex; flex-direction: column; gap: 6px; flex: none; }
-  .kopfblock[hidden] { display: none; }
-  #auswahl { min-height: 28px; height: 28px; }
-  .reihe fig-button { height: 28px; }
+  /* Icon-Tab: eine Flex-Spalte über die volle Panelhöhe. Flache Abschnitte
+     mit Trennern statt Kästen (§39.7), die Vorschau nimmt den Rest. */
+  #panelIcon { overflow-y: auto; padding-right: 2px; gap: 0; }
   #diff { flex: 1 1 auto; min-height: 320px; }
   .panel[hidden] { display: none; }
   #panelCfg { overflow-y: auto; padding-right: 2px; gap: 12px; }
 
   body > fig-tooltip { display: block; }
-  .auswahlzeile { display: flex; flex-direction: column; gap: 6px; }
-  #auswahl { width: 100%; min-height: 34px; justify-content: flex-start; gap: 9px; }
-  #auswahl.aktiv { border-color: var(--figma-color-border-brand, #0d99ff); }
-  #auswahl .name { font-weight: 600; }
-  #auswahl .hinweis { color: var(--figma-color-text-secondary, #6e6e76); }
   .chip { flex: none; display: none; font-size: 9.5px; font-weight: 700;
     padding: 2px 9px; border-radius: 10px; white-space: nowrap; }
   .chip.gruen { display: inline-block; background: #12a76a; color: #fff; }
@@ -49,9 +40,6 @@
   .chip.grau { display: inline-block; background: var(--figma-color-bg-secondary, #f0f0f3);
     color: var(--figma-color-text-secondary, #6e6e76); }
   .chip.geraten { display: inline-block; background: rgba(201,138,18,.16); color: #8a6208; }
-  #auswahl .fueller { margin-left: auto; }
-  .klassenzeile { display: flex; align-items: center; gap: 8px; }
-  .klassenzeile fig-dropdown { flex: 1; }
 
   .reihe { display: flex; gap: 8px; }
   .reihe fig-button { flex: 1; }
@@ -83,25 +71,13 @@
   .fazit.gruen { display: block; background: rgba(18,167,106,.1); color: #0e8a57; }
   .fazit.rot { display: block; background: rgba(194,64,42,.1); color: #c2402a; }
 
-  #diff { display: none; border: 1px solid var(--figma-color-border, #e3e3e6);
-    border-radius: 8px; padding: 12px; background: var(--figma-color-bg, #fff); flex: none; }
-  #diff.an { display: flex; flex-direction: column; }
-  .chips { display: flex; gap: 14px; align-items: center; flex: none; }
-  .chips fig-switch { font-size: 9.5px; white-space: nowrap; }
-  .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block;
-    margin-right: 5px; flex: none; vertical-align: 0; }
-  .dot.weg { background: #8a8a96; }
-  .dot.dazu { background: var(--figma-color-bg-brand, #0d99ff); }
+  /* Die Vorschau ist kein Kasten mehr, sondern eine Folge flacher Zeilen. */
+  #diff { display: none; padding: 8px 0 0; }
+  #diff.an { display: flex; flex-direction: column; gap: 0; }
   .ctlLabel { font-size: 9.5px; color: var(--figma-color-text-secondary, #6e6e76); }
-  .zoom { display: flex; align-items: center; gap: 4px; flex: none; }
-  .zoom fig-button { min-width: 22px; }
-  .zwert { font-size: 9px; width: 20px; text-align: right; cursor: pointer;
-    font-variant-numeric: tabular-nums; color: var(--figma-color-text-secondary, #6e6e76); }
 
-
-  /* dunkler Grund: Bühne, Zellen und Onionskin-Mischung umstellen */
+  /* dunkler Grund: die Bühne folgt dem Hintergrund-Umschalter */
   #diff.dunkel .buehne { background: #1e1e1e; }
-  #diff.dunkel .sektion { background: #1e1e1e; }
   #diff.dunkel .ctlLabel { color: #b9b9c2; }
 
   dialog[is="fig-dialog"] { max-width: 330px; border: none; border-radius: 10px; padding: 0; }
@@ -219,7 +195,8 @@
   .profilkarte .pbeschr { font-size: 9.5px; color: var(--figma-color-text-secondary, #6e6e76); }
 
   /* ---- Leerzustand ------------------------------------------------------- */
-  .leerzustand { gap: 9px; }
+  .leerzustand { display: flex; flex-direction: column; gap: 9px; flex: none;
+    padding: 8px 0; align-items: flex-start; }
   .leerzustand[hidden] { display: none; }
   .leerzustand ul { margin: 0; padding-left: 15px; display: flex;
     flex-direction: column; gap: 5px; }

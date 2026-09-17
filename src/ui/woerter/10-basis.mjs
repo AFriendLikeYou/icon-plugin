@@ -16,8 +16,10 @@ export default {
     'chk.snap': 'Pixel-Snapping',
     'tip.stroke': 'Ungeplättete Fassung neben der Vorlage, kantenidentisch zum Ergebnis. Wird nicht publiziert.',
     'chk.stroke': 'Stroke-Fassung ablegen',
-    'klasse.label': 'Klasse',
-    'klasse.geraten': 'geraten',
+    'klasse.erkl': 'Die Klasse bestimmt Keyline und Einpass-Achse. Kreise brauchen eine größere Keyline als Quadrate.',
+    'klasse.festTip': 'Die Klasse kommt aus dem Grid des Boards.',
+    'klasse.wechselnTip': 'Klicken, um die Klasse zu wechseln.',
+    'klasse.geratenTip': 'Aus dem Seitenverhältnis geraten — Kreis oder Quadrat? Klicken zum Festlegen.',
 
     'umf.icon': 'Dieses Icon',
     'umf.library': 'Ganze Library',
@@ -27,7 +29,6 @@ export default {
     'btn.undoN': 'Rückgängig ({n})',
     'tip.undo': 'Ein Schritt = ein Icon.',
     'btn.abbrechen': 'Abbrechen',
-    'btn.abbrechenLauf': 'Lauf abbrechen',
 
     'dlg.plan.titelAlle': 'Alle Icons neu bauen?',
     'dlg.plan.titelEins': 'Icon bauen?',
@@ -183,8 +184,10 @@ export default {
     'chk.snap': 'Pixel snapping',
     'tip.stroke': 'Unflattened version next to the source, edge-identical to the result. Not published.',
     'chk.stroke': 'Keep stroke version',
-    'klasse.label': 'Class',
-    'klasse.geraten': 'guessed',
+    'klasse.erkl': 'The class sets the keyline and the fitting axis. Circles need a larger keyline than squares.',
+    'klasse.festTip': 'The class comes from the grid of the board.',
+    'klasse.wechselnTip': 'Click to switch the class.',
+    'klasse.geratenTip': 'Guessed from the aspect ratio — circle or square? Click to decide.',
 
     'umf.icon': 'This icon',
     'umf.library': 'Whole library',
@@ -194,7 +197,6 @@ export default {
     'btn.undoN': 'Undo ({n})',
     'tip.undo': 'One step = one icon.',
     'btn.abbrechen': 'Cancel',
-    'btn.abbrechenLauf': 'Cancel run',
 
     'dlg.plan.titelAlle': 'Rebuild all icons?',
     'dlg.plan.titelEins': 'Build icon?',

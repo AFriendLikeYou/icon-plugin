@@ -48,7 +48,6 @@ export default {
     'liz.titel': 'Lizenz',
     'liz.voll': 'Vollversion',
     'liz.test': 'Testphase · {tage} Tage',
-    'liz.testAus': 'Testphase beendet',
     'liz.frei': 'Kostenlos',
     'liz.dev': 'Entwicklermodus',
     'liz.unbekannt': 'Lizenz wird geprüft …',
@@ -58,9 +57,6 @@ export default {
     'liz.status': 'Status aktualisieren',
     'liz.figma': 'Gekauft wird über dein Figma-Konto. Ein Lizenzschlüssel ist nicht nötig.',
     'toast.lizStatus': 'Status wird geprüft …',
-    'liz.spaeter': 'Später',
-    'liz.dlgTitel': 'Das gehört zur Vollversion',
-    'liz.dlgFunktion': 'Gesperrt: {funktion}',
     'liz.debugTitel': 'Status simulieren',
     'liz.debugHinweis': 'Entwicklermodus, nur lokal.',
     'liz.fn.alle': 'Alle Icons neu bauen',
@@ -69,6 +65,7 @@ export default {
     'liz.fn.konfigImport': 'Konfiguration importieren',
 
     // ---- Onboarding -------------------------------------------------------
+    // Slide-Texte stehen in src/ui/inhalte/ (siehe docs/INHALTE.md).
     'ob.rundgang': 'Rundgang',
     'ob.ueberspringen': 'Überspringen',
     'ob.zurueck': 'Zurück',
@@ -76,16 +73,7 @@ export default {
     'ob.los': 'Los geht’s',
     'ob.zaehler': '{i} von {n}',
     'ob.punkt': 'Schritt {i}',
-    'ob.1.titel': 'Aus einer Vorlage alle Größen',
-    'ob.1.text': 'Das Plugin baut jede Zielgröße als eigene Variante. Keyline, Strichstärke und Raster kommen aus deinen Einstellungen.',
-    'ob.2.titel': 'Dein File, dein Modus: {modus}',
-    'ob.2.textZds': 'Das ZDS-Board ist erkannt: Karten, Seiten und bestehendes Set. Ein anderes Profil kannst du hier übernehmen.',
-    'ob.2.textFrei': 'Freier Modus: jede quadratische Komponente im Master-Maß kann Vorlage sein. Wähle ein Profil als Startpunkt.',
     'ob.2.profil': 'Profil übernehmen',
-    'ob.3.titel': 'Auswählen, ansehen, bauen',
-    'ob.3.text': 'Vorlage wählen, Vorschau prüfen, Icon bauen — ein Trockenlauf zeigt vorher, was passiert. Jeder Bau lässt sich rückgängig machen.',
-    'ob.4.titel': 'Vollversion',
-    'ob.4.text': 'In der Testphase ist alles frei. Danach brauchen alle Icons bauen, Bericht und Export die Vollversion.',
 
     // ---- Lizenz-Screen (vollflächig) --------------------------------------
     'liz.pwTitelTrial': 'Noch {tage} Tage Testphase',
@@ -166,7 +154,6 @@ export default {
     'liz.titel': 'License',
     'liz.voll': 'Full version',
     'liz.test': 'Trial · {tage} days',
-    'liz.testAus': 'Trial ended',
     'liz.frei': 'Free',
     'liz.dev': 'Developer mode',
     'liz.unbekannt': 'Checking license …',
@@ -176,9 +163,6 @@ export default {
     'liz.status': 'Refresh status',
     'liz.figma': 'You buy through your Figma account. No license key needed.',
     'toast.lizStatus': 'Checking status …',
-    'liz.spaeter': 'Later',
-    'liz.dlgTitel': 'This is part of the full version',
-    'liz.dlgFunktion': 'Locked: {funktion}',
     'liz.debugTitel': 'Simulate status',
     'liz.debugHinweis': 'Developer mode, local only.',
     'liz.fn.alle': 'Rebuild all icons',
@@ -187,6 +171,7 @@ export default {
     'liz.fn.konfigImport': 'Import configuration',
 
     // ---- onboarding -------------------------------------------------------
+    // Slide texts live in src/ui/inhalte/ (see docs/INHALTE.md).
     'ob.rundgang': 'Tour',
     'ob.ueberspringen': 'Skip',
     'ob.zurueck': 'Back',
@@ -194,16 +179,7 @@ export default {
     'ob.los': 'Let’s go',
     'ob.zaehler': '{i} of {n}',
     'ob.punkt': 'Step {i}',
-    'ob.1.titel': 'One source, every size',
-    'ob.1.text': 'The plugin builds every target size as its own variant. Keyline, stroke width and grid come from your settings.',
-    'ob.2.titel': 'Your file, your mode: {modus}',
-    'ob.2.textZds': 'The ZDS board is detected: cards, pages and the existing set. You can adopt another profile here.',
-    'ob.2.textFrei': 'Free mode: any square component at master size can be a source. Pick a profile as a starting point.',
     'ob.2.profil': 'Adopt profile',
-    'ob.3.titel': 'Select, review, build',
-    'ob.3.text': 'Pick a source, check the preview, build the icon — a dry run shows what will happen. Every build can be undone.',
-    'ob.4.titel': 'Full version',
-    'ob.4.text': 'Everything is unlocked during the trial. After that, building all icons, the report and the export need the full version.',
 
     // ---- license screen (full bleed) --------------------------------------
     'liz.pwTitelTrial': '{tage} days of trial left',

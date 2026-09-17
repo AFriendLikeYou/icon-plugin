@@ -461,7 +461,7 @@ A2 darf `00-config.js`/`05-i18n.js` NICHT anfassen und verlässt sich auf die in
 | Farbe: Variable | Design-Token | Design token | Farbvariable aus diesem File oder einer Library. |
 | Source-Farbe angleichen | Vorlage an diese Farbe binden | Bind source to this color | nur bei Feste Farbe / Design-Token sichtbar |
 | Treue | Rasterfehler | Raster error | Abweichung der echten Pixel vom Ideal, 0 = perfekt, unter 0,02 sehr gut, über 0,05 auffällig. |
-| AA % | weiche Pixel | soft pixels | Anteil halbtransparenter Randpixel. Niedriger ist schärfer, hängt von der Form ab (Kreise haben mehr). |
+| AA % | Weiche Kanten (Anti-Aliasing) | Soft edges (anti-aliasing) | Anteil halbtransparenter Randpixel. Niedriger ist schärfer, hängt von der Form ab (Kreise haben mehr). |
 | Keyline ✓ | Maß stimmt | Size ok | Icon füllt das vorgesehene Keyline-Maß. |
 | verschlammt | „Zwischenraum {d} px füllt sich bei 1× zu“ | “gap of {d} px closes at 1×” | |
 | schiefe Kante | „Kante bei {ist}° statt {soll}° — in der Vorlage begradigen“ | “edge at {ist}° instead of {soll}° — straighten in the source” | |

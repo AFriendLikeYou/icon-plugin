@@ -145,3 +145,13 @@ The original single-file script (`code.v1.js`, kept as a reference).
 - Vorschau: Vektor als Standard, Retina-Schalter in der Pixel-Darstellung, farbiger Differenz-Layer (entfernt orange, hinzugekommen blau) in allen Modi, Legende mit drei Farbfeldern
 - Details-Gruppe entfernt (alles oben sichtbar); neue Gruppe „Hinting“ mit gerasteten Kanten, geschützten Knoten, Orakel-Entscheidung, Raster, Phase, Strichstärke, Radiusregel
 - Hauptthread liefert je Vorschau-Zelle geschuetzt, grob und gueteAlt
+
+## Runde 6 — 2026-09-17
+
+- Vorschau: Modi nur „Vorher/Nachher“ (Wischen) und „Überlagern“; Vergleichsbasis „ohne Snapping | Library-Stand“; Vektor je Zoomstufe scharf gerastert; „Punkte & Kanten“ zeigt verschobene Ankerpunkte (SVG-Pfadparser) statt Regionen-Rahmen; Flächen-Differenz als Schalter; Regler immer sichtbar
+- Live-Snapping: Schalter tauscht in der offenen Vorschau nur die Nachher-Quelle, Kamera bleibt; Pille „Snapping an/aus“
+- Vorschau spurlos: Klon der Vorlage, ephemere Knoten mit Aufräumen bei Fehler, Schließen und Start
+- Radiusregel „fester Wert“ rundet auch scharfe Ecken (Vektor-Ecken nach Grad, Linienenden bleiben)
+- Flache Hierarchie im Icon-Tab (Figma-Muster): Titelzeile mit Klassen-Chip (Frei-Modus klickbar), Aktionsreihe mit ↶ immer sichtbar, schwebende Overlays auf der Bühne, Trenner statt Kästen
+- Begriffe mit „?“-Erklärung; „Weiche Kanten (Anti-Aliasing)“
+- Onboarding: Welcome-Hero als Slide 1; Inhalte pflegbar in src/ui/inhalte (welcome, onboarding, lizenz) — Anleitung docs/INHALTE.md; Lizenz-Karte mit Grafik

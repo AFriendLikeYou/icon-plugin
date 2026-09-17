@@ -80,96 +80,60 @@
     halter.appendChild(karte);
   }
 
-  // ---- Skizzen (Inline-SVG) ------------------------------------------------
-  // Eine Akzentfarbe plus Grau, überall 2 px Strich wie in unseren Icons,
-  // das Gitter sehr dezent. Keine dritte Farbe.
-  const OB_AKZ = '#0d99ff', OB_GRAU = '#8a8a96';
-  function obGitter(w, h, s) {
-    let g = '';
-    for (let x = s; x < w; x += s) g += '<line x1="' + x + '" y1="0" x2="' + x + '" y2="' + h + '" stroke="#ffffff" stroke-opacity=".07"/>';
-    for (let y = s; y < h; y += s) g += '<line x1="0" y1="' + y + '" x2="' + w + '" y2="' + y + '" stroke="#ffffff" stroke-opacity=".07"/>';
-    return g;
-  }
-  function obSvg(w, h, inhalt) {
-    return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">'
-      + obGitter(w, h, 12) + inhalt + '</svg>';
-  }
-  function obKasten(x, y, s, farbe, gestrichelt) {
-    return '<rect x="' + x + '" y="' + y + '" width="' + s + '" height="' + s + '" rx="4" fill="none" stroke="'
-      + farbe + '" stroke-width="2"' + (gestrichelt ? ' stroke-dasharray="4 3"' : '') + '/>';
-  }
-  function obPfeil(x, y) {
-    return '<path d="M' + x + ' ' + y + ' h14 m-5 -5 l5 5 l-5 5" fill="none" stroke="' + OB_GRAU
-      + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
-  }
-  // Schritt 1: Vorlage (groß, mit Keyline) → drei Zielgrößen.
-  function obSkizzeGroessen() {
-    let i = obKasten(4, 12, 84, OB_GRAU) + obKasten(16, 24, 60, OB_AKZ, true);
-    i += obPfeil(96, 54);
-    [[120, 34, 40], [172, 42, 30], [212, 48, 24]].forEach(k => {
-      i += obKasten(k[0], k[1], k[2], OB_GRAU) + obKasten(k[0] + 4, k[1] + 4, k[2] - 8, OB_AKZ, true);
-    });
-    return '<div class="skizze">' + obSvg(248, 108, i) + '</div>';
-  }
-  // Schritt 2: erkannter Modus — ZDS-Board als Kartenraster, Frei als Einzelstück.
-  function obSkizzeModus() {
-    let i = '';
-    if (adapterAktiv === 'zds') {
-      for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++)
-        i += obKasten(6 + c * 44, 10 + r * 44, 34, (c === 1 && r === 0) ? OB_AKZ : OB_GRAU);
-    } else {
-      i = obKasten(40, 14, 64, OB_AKZ)
-        + '<circle cx="40" cy="14" r="3" fill="' + OB_GRAU + '"/><circle cx="104" cy="14" r="3" fill="' + OB_GRAU + '"/>'
-        + '<circle cx="40" cy="78" r="3" fill="' + OB_GRAU + '"/><circle cx="104" cy="78" r="3" fill="' + OB_GRAU + '"/>';
-    }
-    return '<div class="skizze">' + obSvg(146, 100, i) + '</div>';
-  }
-  // Schritt 3: auswählen → Vorschau → bauen, der letzte Schritt im Akzent.
-  function obSkizzeAblauf() {
-    const stufe = (x, f) => obKasten(x, 26, 44, f);
-    const i = stufe(6, OB_GRAU) + obPfeil(56, 48) + stufe(78, OB_GRAU) + obPfeil(128, 48) + stufe(150, OB_AKZ);
-    return '<div class="skizze">' + obSvg(204, 100, i) + '</div>';
-  }
-  // Schritt 4: Vollversion — Schloss offen, Häkchenliste.
-  function obSkizzeLizenz() {
-    let i = '<rect x="18" y="44" width="44" height="34" rx="6" fill="none" stroke="' + OB_AKZ + '" stroke-width="2"/>'
-      + '<path d="M28 44 v-8 a12 12 0 0 1 24 0" fill="none" stroke="' + OB_GRAU + '" stroke-width="2" stroke-linecap="round"/>'
-      + '<circle cx="40" cy="61" r="4" fill="' + OB_AKZ + '"/>';
-    [0, 1, 2].forEach(k => {
-      const y = 34 + k * 18;
-      i += '<path d="M78 ' + y + ' l5 5 l9 -10" fill="none" stroke="' + OB_AKZ
-        + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
-        + '<line x1="100" y1="' + y + '" x2="' + (100 + [54, 40, 48][k]) + '" y2="' + y
-        + '" stroke="' + OB_GRAU + '" stroke-width="2" stroke-linecap="round"/>';
-    });
-    return '<div class="skizze">' + obSvg(180, 100, i) + '</div>';
-  }
-
-  // ---- Slideshow ----------------------------------------------------------
-  const OB_ANZ = 4;
+  // ---- Slides aus den Inhalten (§39.9) ------------------------------------
+  // Texte und Grafiken stehen in src/ui/inhalte/welcome.mjs und
+  // src/ui/inhalte/onboarding.mjs — hier wird nur noch ausgewählt und gefüllt.
+  const OB_SLIDES = Array.isArray(INHALTE.onboarding) ? INHALTE.onboarding : [];
+  const OB_ANZ = OB_SLIDES.length + 1;      // Slide 1 ist der Welcome-Screen
   let obSchritt = 0, obOffen = false;
 
+  // Manche Slides haben eine eigene Fassung je erkanntem Modus.
+  function obModusFeld(s, basis) {
+    const zds = adapterAktiv === 'zds';
+    const spezial = zds ? s[basis + 'Zds'] : s[basis + 'Frei'];
+    return spezial || s[basis];
+  }
   function obInhalt(i) {
+    if (i === 0) {
+      const w = INHALTE.welcome || {};
+      return { welcome: true, bild: w.svg || '', titel: inh(w.titel), text: inh(w.text),
+        primaer: inh(w.primaer) || t('ob.weiter'), sekundaer: inh(w.sekundaer) || t('ob.ueberspringen') };
+    }
+    const s = OB_SLIDES[i - 1] || {};
     const modus = adapterAktiv === 'zds' ? t('adapter.zds') : t('adapter.frei');
-    if (i === 0) return { bild: obSkizzeGroessen(), titel: t('ob.1.titel'), text: t('ob.1.text') };
-    if (i === 1) return { bild: obSkizzeModus(), titel: t('ob.2.titel', { modus: modus }),
-      text: adapterAktiv === 'zds' ? t('ob.2.textZds') : t('ob.2.textFrei'), profile: true };
-    if (i === 2) return { bild: obSkizzeAblauf(), titel: t('ob.3.titel'), text: t('ob.3.text') };
-    return { bild: obSkizzeLizenz(), titel: t('ob.4.titel'), text: t('ob.4.text'), lizenz: true };
+    return {
+      bild: obModusFeld(s, 'svg') || '',
+      titel: inh(s.titel, { modus: modus }),
+      text: inh(obModusFeld(s, 'text'), { modus: modus }),
+      profile: s.extra === 'profile',
+      lizenz: s.extra === 'lizenz'
+    };
   }
 
   function obZeichnen() {
     const s = obInhalt(obSchritt);
+    const dlg = $('dlgOnboarding');
+    // Slide 1 ist ein opulenter Welcome-Screen: große Bühne, kein Zähler,
+    // keine Punkte, zwei gleichwertige Wege hinein (§39.8).
+    dlg.classList.toggle('welcome', !!s.welcome);
     $('obBild').innerHTML = s.bild;
+    $('obZaehler').hidden = !!s.welcome;
     $('obZaehler').textContent = t('ob.zaehler', { i: obSchritt + 1, n: OB_ANZ });
     $('obTitel').textContent = s.titel;
     $('obText').textContent = s.text;
     $('obSkip').textContent = t('ob.ueberspringen');
-    $('obZurueck').textContent = t('ob.zurueck');
-    aus($('obZurueck'), obSchritt === 0);
-    $('obWeiter').textContent = obSchritt === OB_ANZ - 1 ? t('ob.los') : t('ob.weiter');
+    $('obSkip').hidden = !!s.welcome;
+    if (s.welcome) {
+      $('obZurueck').textContent = s.sekundaer;
+      aus($('obZurueck'), false);
+      $('obWeiter').textContent = s.primaer;
+    } else {
+      $('obZurueck').textContent = t('ob.zurueck');
+      aus($('obZurueck'), false);
+      $('obWeiter').textContent = obSchritt === OB_ANZ - 1 ? t('ob.los') : t('ob.weiter');
+    }
 
-    // Profilwahl auf Schritt 2
+    // Profilwahl auf dem Modus-Slide
     const extra = $('obExtra');
     extra.textContent = '';
     if (s.lizenz) {
@@ -212,6 +176,7 @@
     // Punkt-Navigation
     const dots = $('obDots');
     dots.textContent = '';
+    dots.hidden = !!s.welcome;
     for (let i = 0; i < OB_ANZ; i++) {
       const b = document.createElement('button');
       b.type = 'button';
@@ -248,7 +213,10 @@
   }
 
   $('obSkip').addEventListener('click', obZu);
-  $('obZurueck').addEventListener('click', () => obGehe(obSchritt - 1));
+  // Auf dem Welcome-Screen ist der linke Knopf „Direkt loslegen“.
+  $('obZurueck').addEventListener('click', () => {
+    if (obSchritt === 0) obZu(); else obGehe(obSchritt - 1);
+  });
   $('obWeiter').addEventListener('click', () => {
     if (obSchritt === OB_ANZ - 1) obZu(); else obGehe(obSchritt + 1);
   });

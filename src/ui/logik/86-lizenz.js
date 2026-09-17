@@ -39,6 +39,11 @@
       karteChip.className = 'chip grau';
       karteChip.textContent = lizenzTitel();
     }
+    // Grafik und Kopftext der Karte kommen aus src/ui/inhalte/lizenz.mjs (§39.10).
+    const li = INHALTE.lizenz || {};
+    if ($('lizBild')) $('lizBild').innerHTML = li.svg || '';
+    if ($('lizInhTitel')) $('lizInhTitel').textContent = inh(li.titel);
+    if ($('lizInhText')) $('lizInhText').textContent = inh(li.text);
     if ($('lizModell')) $('lizModell').textContent = t('liz.modellEinmal');
     if ($('lizUmfang')) $('lizUmfang').textContent = lizenzUmfangText();
     if ($('lizHinweis')) $('lizHinweis').textContent = t('liz.pwHinweis');

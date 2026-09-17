@@ -7,21 +7,44 @@
   /* ---- Fortschritt ------------------------------------------------------ */
   .fortschritt .zahl.rest { color: var(--figma-color-text-tertiary, #9a9aa0); }
 
-  /* ---- Vorschau: eine Werkzeugzeile (28 px) ------------------------------ */
-  /* Genau drei Textgrößen: 11 px fett (Titel), 10,5 px (Steuerung), 9,5 px
-     sekundär. Die Bühne ist der Hauptteil, alles andere bleibt schmal. */
-  #diff { gap: 4px; }
-  .vwerkzeug { display: flex; align-items: center; gap: 6px; height: 28px; flex: none; }
-  .vwerkzeug .vtitel { font-size: 11px; font-weight: 700; min-width: 40px;
+  /* ---- Icon-Tab: flache Abschnitte mit 1-px-Trennern (§39.7) ------------ */
+  /* Keine Kästen in Kästen: die Abschnitte trennt eine Linie, nicht ein
+     Rahmen. Titel 11 px halbfett, Werte tabular, Abstände 8/12. */
+  .abschnitt { display: flex; flex-direction: column; gap: 8px; flex: none;
+    padding: 8px 0; border-bottom: 1px solid var(--figma-color-border, #e3e3e6); }
+  .abschnitt[hidden] { display: none; }
+  .kopfabschnitt { gap: 8px; }
+  .titelzeile { display: flex; align-items: center; gap: 8px; min-height: 22px; }
+  .titelzeile[hidden] { display: none; }
+  .titelzeile .tname { font-size: 12px; font-weight: 700; min-width: 0;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .vwerkzeug .vfueller { flex: 1; min-width: 4px; }
-  .vwerkzeug > fig-tooltip { display: inline-flex; flex: none; }
-  .vwerkzeug fig-segmented-control { flex: none; height: 24px; font-size: 10.5px; }
-  .vwerkzeug fig-segment { font-size: 10.5px; white-space: nowrap; }
-  .vwerkzeug .iknopf { flex: none; width: 24px; min-width: 24px; height: 24px;
-    padding: 0; font-size: 11px; }
-  #retinaHalter[hidden] { display: none; }
-  #retinaHalter fig-switch { font-size: 9.5px; white-space: nowrap; }
+  .titelzeile .tname.leer { font-weight: 400; color: var(--figma-color-text-secondary, #6e6e76); }
+  .titelzeile > fig-tooltip { margin-left: auto; display: inline-flex; flex: none; }
+  .titelzeile .chip { flex: none; }
+  .titelzeile #auswahl[hidden] { display: none; }
+  .chip.klassechip.klickbar { cursor: pointer; }
+  .chip.klassechip.klickbar:hover { background: var(--figma-color-bg-hover, #ebebef); }
+  dialog.klassemenu { display: flex; flex-direction: column; gap: 2px; padding: 8px;
+    border: 1px solid var(--figma-color-border, #e3e3e6); border-radius: 8px;
+    background: var(--figma-color-bg, #fff); box-shadow: 0 4px 14px rgba(0,0,0,.18);
+    max-width: 240px; }
+  dialog.klassemenu:not([open]) { display: none; }
+  dialog.klassemenu .kmkopf { font-size: 9.5px; line-height: 1.45; padding: 2px 4px 6px;
+    color: var(--figma-color-text-secondary, #6e6e76); }
+  dialog.klassemenu fig-button { justify-content: flex-start; height: 22px; font-size: 10.5px; }
+  .aktionsreihe { display: flex; align-items: center; gap: 8px; }
+  .aktionsreihe .agruppe { display: flex; gap: 8px; flex: 1; min-width: 0; }
+  .aktionsreihe .agruppe[hidden] { display: none; }
+  .aktionsreihe .agruppe fig-button { flex: 1; height: 28px; }
+  .aktionsreihe > fig-tooltip { display: inline-flex; flex: none; }
+  .aktionsreihe .iknopf { flex: none; width: 28px; min-width: 28px; height: 28px;
+    padding: 0; font-size: 12px; }
+  .iknopf { width: 24px; min-width: 24px; height: 24px; padding: 0; font-size: 11px; }
+  .iknopf.an { background: var(--figma-color-bg-brand-tertiary, rgba(13,153,255,.16));
+    color: var(--figma-color-text-brand, #0d99ff); }
+  .iknopf[hidden] { display: none; }
+  .abschnitt.optzeile { flex-direction: row; align-items: center; gap: 16px;
+    height: auto; overflow: visible; }
   dialog.mehrmenu { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px;
     border: 1px solid var(--figma-color-border, #e3e3e6); border-radius: 8px;
     background: var(--figma-color-bg, #fff); box-shadow: 0 4px 14px rgba(0,0,0,.18);
@@ -29,8 +52,9 @@
   dialog.mehrmenu:not([open]) { display: none; }
   dialog.mehrmenu fig-switch { font-size: 9.5px; white-space: nowrap; }
   dialog.mehrmenu fig-tooltip { display: block; }
+  dialog.mehrmenu fig-button { justify-content: flex-start; height: 22px; font-size: 10.5px; }
 
-  /* ---- Bühne: Canvas-Viewport, wächst mit dem Panel ---------------------- */
+  /* ---- Bühne: Canvas-Viewport mit schwebenden Werkzeugen ----------------- */
   .buehne { position: relative; flex: 1 1 auto; min-height: 280px;
     overflow: hidden; border-radius: 8px;
     border: 1px solid var(--figma-color-border, #e3e3e6);
@@ -39,18 +63,30 @@
   .buehne canvas { display: block; width: 100%; height: 100%; }
   .buehne.zieht { cursor: grabbing; }
   .buehne.raum { cursor: grab; }
-  .vptip { position: absolute; z-index: 4; pointer-events: none; max-width: 220px;
+  .vptip { position: absolute; z-index: 6; pointer-events: none; max-width: 220px;
     font-size: 9px; font-variant-numeric: tabular-nums; padding: 3px 7px; border-radius: 4px;
     background: var(--figma-color-bg-inverse, #1e1e1e);
     color: var(--figma-color-text-oninverse, #fff);
     box-shadow: 0 1px 4px rgba(0,0,0,.25); }
   .vptip[hidden] { display: none; }
-  .zoompille { position: absolute; right: 8px; bottom: 8px; z-index: 5; }
-  .zoompille > fig-button { font-size: 9.5px; height: 22px; border-radius: 11px;
-    font-variant-numeric: tabular-nums;
-    background: var(--figma-color-bg, #fff);
-    box-shadow: 0 1px 4px rgba(0,0,0,.18); }
-  .zoommenu { position: absolute; right: 0; bottom: 26px; display: flex; flex-direction: column;
+  /* Schwebende Overlays: in den vier Ecken der Bühne, wie in Figma. */
+  .ovl { position: absolute; z-index: 5; display: flex; align-items: center; gap: 4px;
+    padding: 3px; border-radius: 9px;
+    background: color-mix(in srgb, var(--figma-color-bg, #fff) 88%, transparent);
+    border: 1px solid var(--figma-color-border, #e3e3e6);
+    box-shadow: 0 1px 6px rgba(0,0,0,.14); }
+  .ovl[hidden] { display: none; }
+  .ovl-ol { left: 8px; top: 8px; }
+  .ovl-or { right: 8px; top: 8px; }
+  .ovl-ul { left: 8px; bottom: 8px; }
+  .ovl-ur { right: 8px; bottom: 8px; }
+  .ovl fig-segmented-control { height: 22px; font-size: 10px; }
+  .ovl fig-segment { font-size: 10px; white-space: nowrap; }
+  .ovl fig-button { font-size: 9.5px; height: 22px; }
+  .ovl-ul fig-button { border-radius: 9px; font-variant-numeric: tabular-nums; }
+  .zoompille > fig-button { font-size: 9.5px; height: 22px; border-radius: 9px;
+    font-variant-numeric: tabular-nums; min-width: 22px; }
+  .zoommenu { position: absolute; right: 0; bottom: 30px; display: flex; flex-direction: column;
     gap: 2px; padding: 4px; border-radius: 8px; min-width: 88px;
     border: 1px solid var(--figma-color-border, #e3e3e6);
     background: var(--figma-color-bg, #fff); box-shadow: 0 4px 14px rgba(0,0,0,.18); }
@@ -62,14 +98,17 @@
     width: 26px; height: 3px; margin-left: -13px; border-radius: 2px;
     background: var(--figma-color-border, #d9d9de); }
 
-  /* ---- Unter der Bühne: Regler, Urteil, Kennzahlen, Legende -------------- */
-  .scrubberzeile { display: flex; align-items: center; gap: 8px; flex: none; height: 22px; }
-  .scrubberzeile[hidden] { display: none; }
-  .scrubberzeile .slabel { font-size: 9.5px; white-space: nowrap;
+  /* ---- Unter der Bühne: flache Zeilen mit Trennern ----------------------- */
+  .vzeile { display: flex; align-items: center; gap: 8px; flex: none; min-height: 24px;
+    padding: 4px 0; border-bottom: 1px solid var(--figma-color-border, #e3e3e6); }
+  .vzeile[hidden] { display: none; }
+  .vzeile:last-of-type { border-bottom: none; }
+  .vzeile .vlabel { font-size: 9.5px; white-space: nowrap; flex: none;
     color: var(--figma-color-text-secondary, #6e6e76); }
-  .scrubberzeile fig-slider { flex: 1; }
+  #scrubberZeile fig-slider { flex: 1; }
+  #basisZeile fig-tooltip { display: inline-flex; }
+  #basisZeile fig-segmented-control { height: 22px; font-size: 10px; }
 
-  .urteilzeile { display: flex; align-items: center; gap: 8px; flex: none; height: 24px; }
   .urteilzeile .upunkt { width: 7px; height: 7px; border-radius: 50%; flex: none;
     background: var(--figma-color-text-tertiary, #9a9aa0); }
   .urteilzeile.gut .upunkt { background: #12a76a; }
@@ -86,7 +125,7 @@
   .upill.gut { background: rgba(18,167,106,.14); color: #0e8a57; }
   .upill.warn { background: rgba(201,138,18,.16); color: #8a6208; }
 
-  .kennzahlen { flex: none; overflow-x: auto; }
+  .kennzahlen { display: block; overflow-x: auto; }
   table.kztab { border-collapse: collapse; font-size: 10px;
     font-variant-numeric: tabular-nums; width: 100%; }
   table.kztab th { text-align: right; padding: 0 8px; height: 20px; font-size: 10px;
@@ -98,17 +137,26 @@
   table.kztab td.kzlabel { text-align: left; font-size: 9.5px;
     color: var(--figma-color-text-secondary, #6e6e76); }
   table.kztab td.kzlabel fig-tooltip { display: inline-flex; }
+  /* „?“ hinter dem Begriff — klein, sekundär, mit Tooltip (§39.6) */
+  .kzname { display: inline-flex; align-items: center; gap: 4px; }
+  .hilfezeichen { font-style: normal; font-size: 8px; font-weight: 700; line-height: 11px;
+    width: 11px; height: 11px; text-align: center; border-radius: 50%; cursor: help;
+    background: var(--figma-color-bg-secondary, #f0f0f3);
+    color: var(--figma-color-text-tertiary, #9a9aa0); }
 
-  .vlegende { flex: none; height: 16px; display: flex; align-items: center; gap: 12px;
+  .vlegende { min-height: 20px; gap: 12px;
     font-size: 9.5px; color: var(--figma-color-text-tertiary, #9a9aa0); }
   .vlegende .legstueck { display: inline-flex; align-items: center; gap: 5px; }
-  .vlegende .legfeld { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+  .vlegende .legfeld { width: 8px; height: 8px; border-radius: 2px; display: inline-block; flex: none; }
   .vlegende .legfeld.weg { background: #f5a623; }
   .vlegende .legfeld.dazu { background: var(--figma-color-bg-brand, #0d99ff); }
   .vlegende .legfeld.beide { background: #3a3a44; }
+  .vlegende .legfeld.vor { height: 0; border-top: 2px dashed #f5a623; border-radius: 0; width: 12px; }
+  .vlegende .legfeld.punktAlt { border-radius: 50%; background: none;
+    box-shadow: inset 0 0 0 1.5px #f5a623; }
+  .vlegende .legfeld.punktNeu { border-radius: 50%; background: var(--figma-color-bg-brand, #0d99ff); }
   #diff.dunkel .vlegende .legfeld.weg { background: #ffb84d; }
   #diff.dunkel .vlegende .legfeld.beide { background: #d9d9de; }
-
 
   /* ---- Hinting (aufklappbar, Standard zu) -------------------------------- */
   fig-group.hintgruppe { margin: 0; flex: none; }

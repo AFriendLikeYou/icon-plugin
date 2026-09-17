@@ -44,6 +44,12 @@ fig-group.kollektion .varzeile { padding-left: 8px; }
 .varladen fig-shimmer { font-size: 9.5px; }
 
 /* ---- Lizenz-Block ------------------------------------------------------- */
+/* Karte mit Skizze links, Text rechts — Grafik aus src/ui/inhalte/lizenz.mjs */
+.lizkopf { display: flex; align-items: flex-start; gap: 12px; }
+.lizbild { flex: none; width: 64px; height: 48px; }
+.lizbild svg { display: block; width: 64px; height: 48px; }
+.lizkopftext { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.lizinhtitel { font-size: 11px; font-weight: 700; }
 .lizkarte { display: flex; flex-direction: column; gap: 8px; padding: 12px;
   border: 1px solid var(--figma-color-border, #e3e3e6); border-radius: 8px; cursor: default; }
 .lizzeile { display: flex; align-items: center; gap: 8px; }
@@ -107,6 +113,9 @@ dialog[is="fig-dialog"].buehne-dlg:not([open]) { display: none; }
     radial-gradient(120% 120% at 18% 20%, #2f2a3d 0%, #1d1b25 70%);
   transition: opacity .18s ease;
 }
+/* Welcome-Screen: volle Bildbühne, die Grafik füllt sie randlos (§39.8). */
+dialog[is="fig-dialog"].buehne-dlg.welcome .bh-bild { height: 240px; padding: 0; display: block; }
+.bh-bild > svg { display: block; width: 100%; height: 100%; }
 .bh-bild .marke-gross { width: 96px; height: 96px; border-radius: 22px; flex: none;
   background: linear-gradient(160deg, #3a3350, #262233);
   box-shadow: 0 6px 18px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.08);
@@ -128,6 +137,10 @@ dialog[is="fig-dialog"].buehne-dlg:not([open]) { display: none; }
 .bh-extra { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
 .bh-extra .profilliste { padding: 0; max-height: 150px; }
 .bh-wechsel .bh-bild, .bh-wechsel .bh-text { opacity: 0; }
+.bh-zaehler[hidden] { display: none; }
+.bh-x[hidden] { display: none; }
+.bh-dots[hidden] { display: none; }
+.welcome .bh-titel { font-size: 28px; }
 .bh-dots { display: flex; gap: 7px; justify-content: center; padding: 16px 0 4px; }
 .bh-dots button { appearance: none; border: 0; padding: 0; cursor: pointer;
   width: 7px; height: 7px; border-radius: 50%;

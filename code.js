@@ -771,6 +771,7 @@ function listeUnd(werte) {
 // ===========================================================================
 
 Object.assign(SPRACHEN.de, {
+  'log.resteEntfernt': '{n} temporäre Vorschau-Knoten aus einem früheren Lauf entfernt.',
   'log.rueckgaengig': 'Letzter Schritt zurückgenommen.',
   'log.rueckgaengigFehlt': 'Rückgängig nicht möglich — bitte Cmd+Z in Figma nutzen.',
   // --- Trockenlauf ---
@@ -858,6 +859,7 @@ Object.assign(SPRACHEN.de, {
 });
 
 Object.assign(SPRACHEN.en, {
+  'log.resteEntfernt': 'Removed {n} temporary preview nodes left over from an earlier run.',
   'log.rueckgaengig': 'Last step undone.',
   'log.rueckgaengigFehlt': 'Undo not available — please use Cmd+Z in Figma.',
   // --- dry run ---
@@ -959,6 +961,33 @@ class PipelineFehler extends Error {
     this.hinweis = t('hinweis.' + code, params || {});
     this.nodeId = nodeId || null;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Ephemere Knoten: alles, was die Pipeline nur vorübergehend anlegt (Fit-Kästen,
+// Vorschau-Klone, Kandidaten). Wird bei Abbruch, Fehler und beim Schließen des
+// Plugins entfernt — damit nie „Icon-Leichen“ auf dem Board zurückbleiben.
+// ---------------------------------------------------------------------------
+const EPHEMER = new Set();
+const EPHEMER_NAMEN = ['__fit', '__vorschau', '__kandidat'];
+function ephemer(node) { if (node) EPHEMER.add(node); return node; }
+function ephemerWeg(node) {
+  if (!node) return;
+  EPHEMER.delete(node);
+  try { if (!node.removed) node.remove(); } catch (e) {}
+}
+function ephemerAufraeumen() {
+  for (const n of Array.from(EPHEMER)) ephemerWeg(n);
+}
+// Reste aus abgebrochenen Läufen (z. B. Plugin mitten in der Vorschau geschlossen).
+function ephemerResteEntfernen(seiten) {
+  let n = 0;
+  for (const seite of seiten || []) {
+    let reste = [];
+    try { reste = seite.findAll(x => EPHEMER_NAMEN.indexOf(x.name) >= 0); } catch (e) { reste = []; }
+    reste.forEach(x => { try { x.remove(); n++; } catch (e) {} });
+  }
+  return n;
 }
 
 // Ein einziger Kanal zur UI — auch 60-build und 40-adapter melden hierüber.
@@ -1098,32 +1127,44 @@ async function radienRegel(root, f, regel) {
     const v = modus === 'fest' ? wert : r * f;
     return v < min ? 0 : v;
   };
+  // „fester Wert“ rundet auch bisher SCHARFE Ecken (r = 0) — sonst bliebe die
+  // Einstellung bei eckigen Vorlagen wirkungslos. proportional/keine nur bei r > 0.
+  const fest = modus === 'fest';
+  const anfassen = r => fest || r > 0;
 
   const knoten = [root, ...root.findAll(x => true)];
   for (const x of knoten) {
+    const istWurzel = x === root;   // der Detach-Rahmen selbst bekommt keinen Radius
     let uniform = false;
     try {
-      if (typeof x.cornerRadius === 'number' && x.cornerRadius > 0) {
+      if (!istWurzel && typeof x.cornerRadius === 'number' && anfassen(x.cornerRadius)) {
         x.cornerRadius = neu(x.cornerRadius); uniform = true;
       }
     } catch (e) {}
-    if (!uniform) {
+    if (!uniform && !istWurzel) {
       ['topLeftRadius', 'topRightRadius', 'bottomLeftRadius', 'bottomRightRadius'].forEach(pp => {
-        try { if (typeof x[pp] === 'number' && x[pp] > 0) x[pp] = neu(x[pp]); } catch (e) {}
+        try { if (typeof x[pp] === 'number' && anfassen(x[pp])) x[pp] = neu(x[pp]); } catch (e) {}
       });
-      try {
-        if (x.type === 'VECTOR' && x.vectorNetwork &&
-            x.vectorNetwork.vertices.some(v => (v.cornerRadius || 0) > 0)) {
-          const netz = x.vectorNetwork;
-          const V = netz.vertices.map(v => {
-            const n = Object.assign({}, v);
-            if ((n.cornerRadius || 0) > 0) n.cornerRadius = neu(n.cornerRadius);
-            return n;
-          });
-          await x.setVectorNetworkAsync({ vertices: V, segments: netz.segments, regions: netz.regions });
-        }
-      } catch (e) {}
     }
+    try {
+      if (x.type === 'VECTOR' && x.vectorNetwork) {
+        const netz = x.vectorNetwork;
+        // Grad je Vertex: nur echte Ecken (≥ 2 Segmente) runden — Linienenden bleiben, wie sie sind.
+        const grad = new Array(netz.vertices.length).fill(0);
+        netz.segments.forEach(sg => { grad[sg.start]++; grad[sg.end]++; });
+        let dirty = false;
+        const V = netz.vertices.map((v, i) => {
+          const n = Object.assign({}, v);
+          const r = n.cornerRadius || 0;
+          if (anfassen(r) && (r > 0 || grad[i] >= 2)) {
+            const z = neu(r);
+            if (z !== r) { n.cornerRadius = z; dirty = true; }
+          }
+          return n;
+        });
+        if (dirty) await x.setVectorNetworkAsync({ vertices: V, segments: netz.segments, regions: netz.regions });
+      }
+    } catch (e) {}
   }
 }
 
@@ -2319,7 +2360,7 @@ async function baueGroesse(ziel, N, snap, strokeAuch) {
   const srcPaint = CFG.farbe.modus === 'source' ? farbeSourcePaint(src) : null;
 
   async function bauKandidat(mitSnap) {
-    const box = figma.createFrame(); flaeche.appendChild(box);
+    const box = ephemer(figma.createFrame()); flaeche.appendChild(box);
     box.name = '__fit'; box.x = -4000; box.y = -4000;
     box.resize(N, N); box.fills = []; box.clipsContent = false;
     const inst = src.createInstance(); box.appendChild(inst);
@@ -2345,7 +2386,7 @@ async function baueGroesse(ziel, N, snap, strokeAuch) {
     // Ungeplättete Fassung sichern, bevor union/flatten die Kontur frisst.
     let strokeComp = null;
     if (strokeAuch) {
-      strokeComp = figma.createComponent(); flaeche.appendChild(strokeComp);
+      strokeComp = ephemer(figma.createComponent()); flaeche.appendChild(strokeComp);
       strokeComp.name = variantenName(N); strokeComp.resize(N, N);
       strokeComp.fills = []; strokeComp.clipsContent = true;
       const klon = det.clone();
@@ -2392,8 +2433,8 @@ async function baueGroesse(ziel, N, snap, strokeAuch) {
     if (wb.fehler < wa.fehler - 1e-6 ||
         (Math.abs(wb.fehler - wa.fehler) <= 1e-6 && wb.aa < wa.aa)) { sieger = B; verlierer = A; }
   }
-  if (verlierer.strokeComp) { try { verlierer.strokeComp.remove(); } catch (e) {} }
-  verlierer.box.remove();
+  ephemerWeg(verlierer.strokeComp);
+  ephemerWeg(verlierer.box);
   if (werte && werte.length === 2) sieger.aaInfo = { snap: werte[0], plain: werte[1], mitSnap: sieger === A };
   return sieger;
 }
@@ -2499,7 +2540,7 @@ async function einIcon(ziel, snap, strokeAuch) {
       comp.appendChild(b.flat); b.flat.x = fx; b.flat.y = fy;
       frisch.push(comp);
     }
-    b.box.remove();
+    ephemerWeg(b.box);
   }
 
   if (neu) {
@@ -2581,19 +2622,24 @@ async function einIcon(ziel, snap, strokeAuch) {
 
 // ohneNormalisieren: bei der Vorschau mit ungespeicherter Konfig darf die Source
 // nicht mit einer fremden master.kontur überschrieben werden.
-async function vorschau(ziel, snap, ohneNormalisieren) {
+// Die Vorschau ändert NICHTS am Dokument: Sie arbeitet auf einem temporären Klon der
+// Vorlage, alle Kästen sind ephemer und werden in finally entfernt.
+async function vorschau(ziel, snap) {
   const set = await ADAPTER.zielSet(ziel);
   gesperrtPruefen(ziel, set);
   quellePruefen(ziel);
-  const src = ziel.src;
   await farbeVariableAufloesen(CFG.farbe);
-  if (!ohneNormalisieren) normalisieren(src);
   const kl = ziel.klasse;
   const zellen = [];
-
+  const flaeche = ADAPTER.arbeitsFlaeche(ziel);
+  const klon = ephemer(ziel.src.clone());
+  klon.name = '__vorschau'; flaeche.appendChild(klon); klon.x = -4000; klon.y = -4200;
+  normalisieren(klon);
+  const zielTmp = Object.assign({}, ziel, { src: klon });
+  try {
   for (const g of CFG.groessen) {
     const N = g.N;
-    const b = await baueGroesse(ziel, N, snap, false);
+    const b = await baueGroesse(zielTmp, N, snap, false);
     b.box.clipsContent = true;
     const neuSvg = await b.box.exportAsync({ format: 'SVG_STRING' });
     const pngNeu  = await b.box.exportAsync({ format: 'PNG', constraint: { type: 'SCALE', value: 1 } });
@@ -2614,17 +2660,17 @@ async function vorschau(ziel, snap, ohneNormalisieren) {
     let ohneSvg = null, pngOhne = null, pngOhne2 = null, pngOhne8 = null, gueteOhne = null;
     if (snap) {
       try {
-        const o = await baueGroesse(ziel, N, false, false);
+        const o = await baueGroesse(zielTmp, N, false, false);
         o.box.clipsContent = true;
         ohneSvg  = await o.box.exportAsync({ format: 'SVG_STRING' });
         pngOhne  = await o.box.exportAsync({ format: 'PNG', constraint: { type: 'SCALE', value: 1 } });
         pngOhne2 = await o.box.exportAsync({ format: 'PNG', constraint: { type: 'SCALE', value: 2 } });
         pngOhne8 = await o.box.exportAsync({ format: 'PNG', constraint: { type: 'SCALE', value: 8 } });
-        o.box.remove();
+        ephemerWeg(o.box);
         if (b.aaInfo && b.aaInfo.plain) gueteOhne = { fehler: b.aaInfo.plain.fehler, aa: b.aaInfo.plain.aa };
       } catch (e) {}
     }
-    b.box.remove();
+    ephemerWeg(b.box);
     // Rasterfehler/AA der bestehenden Variante — damit die Urteil-Zeile „vorher → nachher“ zeigen kann.
     let gueteAlt = null;
     if (pngAlt && pngAlt8) {
@@ -2642,6 +2688,10 @@ async function vorschau(ziel, snap, ohneNormalisieren) {
       ist: b.ist, soll: keylineVon(g, kl), gerastet: b.gerastet, geschuetzt: b.geschuetzt || 0,
       grob: g.rasterGrob, guete: b.aaInfo || null
     });
+  }
+  } finally {
+    ephemerWeg(klon);
+    ephemerAufraeumen();
   }
   return { name: ziel.name, klasse: kl, kl: kl, zellen: zellen };
 }
@@ -3532,6 +3582,13 @@ figma.ui.onmessage = async m => {
       ui({ type: 'einstellungen', snap: sch.snap, stroke: sch.stroke, trockenlaufEinzel: sch.trockenlaufEinzel });
       await auswahlMelden();
       figma.on('selectionchange', auswahlAnstossen);
+      figma.on('close', ephemerAufraeumen);   // Plugin wird geschlossen → keine Reste
+      try {
+        const seiten = [figma.currentPage];
+        if (CTX.zds && CTX.zds.IC && CTX.zds.IC !== figma.currentPage) seiten.push(CTX.zds.IC);
+        const n = ephemerResteEntfernen(seiten);
+        if (n) logZeile('info', t('log.resteEntfernt', { n: n }), null, { schwere: 'info' });
+      } catch (e) {}
       ui({ type: 'fertig' });
       return;
     }
@@ -3704,7 +3761,7 @@ figma.ui.onmessage = async m => {
         CTX.farbVariable = null; CTX.farbSchluessel = null;
         await farbeVariableAufloesen(CFG.farbe);
         const ziel = await zielStill();
-        const d = await vorschau(ziel, !!m.snap, true);   // Source nicht normalisieren (ungespeicherte Konfig)
+        const d = await vorschau(ziel, !!m.snap);
         ui(Object.assign({ type: 'diff', snap: !!m.snap, temporaer: true }, d));
       } finally {
         CFG = merkCfg;
@@ -3837,6 +3894,7 @@ figma.ui.onmessage = async m => {
       await auswahlMelden();
     }
   } catch (e) {
+    ephemerAufraeumen();   // abgebrochener Bau/Vorschau hinterlässt keine Kästen
     ui(fehlerLog(e));
     ui({ type: 'fazit', gut: false, text: t('fazit.abgebrochen', { grund: (e && e.message) || String(e) }) });
   }

@@ -1,42 +1,50 @@
   // =========================================================================
-  // Vorschau (§33) — Urteil, Canvas-Bühne, Kennzahlen, Details
+  // Vorschau (§33, Runde 6 §39.1–39.7)
   // -------------------------------------------------------------------------
   // Die Bühne ist ein echter Viewport wie Figmas Canvas: EIN <canvas> in
   // Bühnengröße × devicePixelRatio, eigene Kamera {x, y, z}, alles wird je
-  // Frame gezeichnet. Kein DOM-Reflow beim Zoomen, nie unscharf: die
-  // Pixelansicht zeichnet das 1×-PNG ohne Glättung (echte Rasterung), die
-  // Vektoransicht eine hochaufgelöste SVG-Bitmap mit Glättung.
-  // Weltkoordinaten = Icon-Pixel; z = Gerätepixel je Icon-Pixel (100 % = 1).
+  // Frame gezeichnet. Weltkoordinaten = Icon-Pixel; z = Gerätepixel je
+  // Icon-Pixel.
+  //
+  // Zwei Modi: „Vorher/Nachher“ (Wischtrenner) und „Überlagern“. Die
+  // Vergleichsbasis ist bei aktivem Snapping die ungesnappte Fassung
+  // (`zellen[].ohne`), sonst der Library-Stand (`zellen[].alt`).
+  //
+  // Die Vektordarstellung rastert das SVG je Zoomstufe (2^k, bis 64) neu und
+  // zeichnet 1:1 — so wird nichts unscharf. Verschobene Ankerpunkte kommen
+  // aus einem eigenen SVG-Pfadparser (siehe „Punkte & Kanten“).
   // =========================================================================
 
   const ZOOM_STUFEN = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64];
   const Z_MIN = 1, Z_MAX = 64;
-  const MODI = ['neben', 'wischen', 'ueberlagern'];
-  // Modi mit nur einer Kachel je Karte
-  function einKachelModus() { return vglModus === 'wischen' || vglModus === 'ueberlagern'; }
-  const W_LUECKE = 4;        // Weltabstand zwischen Vorher- und Nachher-Kachel
+  const MODI = ['vn', 'ueberlagern'];
   const W_KARTE = 12;        // Weltabstand zwischen den Größenkarten
-  const W_POLSTER = 3;       // Kartenrahmen um die Kacheln
-  const VEK_AUFL = 16;       // Auflösungsfaktor der Vektor-Bitmaps
+  const W_POLSTER = 3;       // Kartenrahmen um die Kachel
   const SICHT_MIN = 64;      // so viel Inhalt bleibt immer im Viewport (Gerätepixel)
+  const VEK_MAX = 2048;      // größte Kantenlänge einer Vektor-Bitmap
+  const PUNKT_TOLERANZ = 1.5;  // so weit darf ein Punkt gewandert sein, um noch derselbe zu sein
+  const PUNKT_MIN = 0.01;      // darunter gilt ein Punkt als unverändert
 
-  let vglModus = 'neben';
+  let vglModus = 'vn';
   let darstellung = 'vektor';          // pixel | vektor — Vektor ist Standard
   let retina = false;                  // Pixel-Darstellung: 1×-PNG (aus) oder 2×-PNG (an)
-  let wischPos = 0.5;
-  let markieren = true;
-  let verbesserung = false, blend = 100;
+  let vglBasis = 'ohne';               // ohne | alt — Vergleichsbasis (§39.2)
+  let snapAn = true;                   // Pixel-Snapping-Schalter, wirkt live auf die Bühne
+  let blendeStart = 0;                 // 120-ms-Überblendung nach dem Umschalten
+  let wischPos = 0.5;                  // Regler im Modus „Vorher/Nachher“
+  let blend = 50;                      // Regler („Gewichtung“) im Modus „Überlagern“
+  let punkteAn = true, flaechenAn = false;
   let aktiveKarte = 0;
   let raumTaste = false, zieht = false, wischZieht = false;
   let buehneHoehe = 320;
   // Kamera: KAM wird gezeichnet, ZIEL ist das Ziel (Lerp bei Buttons/Tasten).
   const KAM = { x: 0, y: 0, z: 6 };
   const ZIEL = { x: 0, y: 0, z: 6 };
-  let sanft = false, malGeplant = false, fitQuelle = null;
+  let sanft = false, malGeplant = false, fitQuelle = '';
   let LAYOUT = [], WELT = { x0: 0, y0: 0, x1: 0, y1: 0 };
   let HOVER = null, hoverTimer = null;
   // Cache-Marken: Modus-, Zoom- und Filterwechsel dürfen die PNGs NICHT neu
-  // analysieren — die Zellanalyse hängt nur an Diff und Hintergrund.
+  // analysieren — die Zellanalyse hängt nur an Diff, Basis und Hintergrund.
   let anaQuelle = null, anaSig = '', ANA = [];
 
   function dpr() { return Math.max(1, window.devicePixelRatio || 1); }
@@ -53,17 +61,15 @@
     return svg.replace(/fill="[^"]*"/g, 'fill="' + farbe + '"')
               .replace(/fill:[^;"]*/g, 'fill:' + farbe);
   }
-  // Vektor-Bitmap: einmal je Zelle in Bühnenauflösung rastern, danach nur noch
-  // skalieren (mit Glättung) — so bleibt die Geometrie bei jedem Zoom glatt.
-  function svgCanvas(svg, farbe, N) {
+  // Ein SVG in genau dieser Pixelgröße rastern. Hängt ein Bild, fällt die
+  // Kachel nach 2 s auf die Pixelfassung zurück.
+  function svgCanvas(svg, farbe, px) {
     return new Promise(fertig => {
       let erledigt = false;
-      // Ein hängendes Bild darf die Vorschau nie blockieren: nach 2 s ohne
-      // Antwort fällt die Kachel auf die Pixelfassung zurück.
       const schluss = w => { if (erledigt) return; erledigt = true; fertig(w); };
       setTimeout(() => schluss(null), 2000);
       const img = new Image();
-      const s = Math.max(64, N * VEK_AUFL);
+      const s = Math.max(16, Math.min(VEK_MAX, Math.round(px)));
       img.onload = () => {
         try {
           const c = document.createElement('canvas');
@@ -124,124 +130,264 @@
     return { c: c, aa: belegt ? Math.round(100 * teil / belegt) : 0 };
   }
 
-  // ---- Änderungsregionen ---------------------------------------------------
-  // |alpha_alt − alpha_neu| > 24 ergibt eine Maske auf dem 1×-Raster;
-  // zusammenhängende Bereiche (8er-Nachbarschaft) werden zu Regionen. Regionen
-  // unter 2 Pixeln fallen weg, höchstens 20 je Kachel — sonst wäre die Kachel
-  // ein Gitter; bei mehr bleiben die größten.
-  const MARK_SCHWELLE = 24, MARK_MIN = 2, MARK_MAX = 20;
-  function regionenFinden(A, B) {
+  // Wie viele Pixel haben ihre Deckung geändert — ohne Regionenbildung.
+  const DIFF_SCHWELLE = 24;
+  function diffZaehlen(A, B) {
     const w = Math.min(A.w, B.w), h = Math.min(A.h, B.h);
-    const maske = new Uint8Array(w * h);
-    let treffer = 0, weg = 0, dazu = 0;
+    let pixel = 0, weg = 0, dazu = 0;
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
       const a = A.data[((y * A.w) + x) * 4 + 3];
       const b = B.data[((y * B.w) + x) * 4 + 3];
-      if (Math.abs(a - b) > MARK_SCHWELLE) {
-        maske[y * w + x] = 1; treffer++;
-        if (a > b) weg++; else dazu++;
-      }
+      if (Math.abs(a - b) <= DIFF_SCHWELLE) continue;
+      pixel++;
+      if (a > b) weg++; else dazu++;
     }
-    if (!treffer) return { regionen: [], pixel: 0, weg: 0, dazu: 0 };
-    const regionen = [], stapel = [];
-    for (let s = 0; s < maske.length; s++) {
-      if (maske[s] !== 1) continue;
-      let x0 = s % w, x1 = x0, y0 = (s - x0) / w, y1 = y0, n = 0;
-      let sAlt = 0, sNeu = 0, mxAlt = 0, myAlt = 0, mxNeu = 0, myNeu = 0;
-      maske[s] = 2; stapel.push(s);
-      while (stapel.length) {
-        const p = stapel.pop();
-        const px = p % w, py = (p - px) / w;
-        n++;
-        if (px < x0) x0 = px; if (px > x1) x1 = px;
-        if (py < y0) y0 = py; if (py > y1) y1 = py;
-        const a = A.data[((py * A.w) + px) * 4 + 3];
-        const b = B.data[((py * B.w) + px) * 4 + 3];
-        sAlt += a; sNeu += b;
-        mxAlt += a * (px + 0.5); myAlt += a * (py + 0.5);
-        mxNeu += b * (px + 0.5); myNeu += b * (py + 0.5);
-        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-          const nx = px + dx, ny = py + dy;
-          if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
-          const q = ny * w + nx;
-          if (maske[q] === 1) { maske[q] = 2; stapel.push(q); }
-        }
-      }
-      if (n < MARK_MIN) continue;
-      regionen.push({
-        x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1, n: n,
-        flAlt: sAlt / 255, flNeu: sNeu / 255,
-        dx: (sAlt > 0 && sNeu > 0) ? (mxNeu / sNeu - mxAlt / sAlt) : 0,
-        dy: (sAlt > 0 && sNeu > 0) ? (myNeu / sNeu - myAlt / sAlt) : 0
-      });
-    }
-    regionen.sort((a, b) => (b.w * b.h) - (a.w * a.h));
-    return { regionen: regionen.slice(0, MARK_MAX), pixel: treffer, weg: weg, dazu: dazu };
-  }
-  // Heuristik für den Hover-Text: schmale, langgestreckte Regionen sind
-  // gerasterte Kanten; der Weg kommt aus dem Schwerpunkt alt → neu.
-  function regionText(r) {
-    const schmal = Math.min(r.w, r.h) <= 2 && Math.max(r.w, r.h) >= 3 * Math.min(r.w, r.h);
-    if (!schmal) {
-      const d = Math.round((r.flNeu - r.flAlt) * 100) / 100;
-      return t('reg.form', { d: zahl(Math.abs(d).toFixed(2)) });
-    }
-    const waag = Math.abs(r.dx) >= Math.abs(r.dy);
-    const weg = Math.round(Math.abs(waag ? r.dx : r.dy) * 4) / 4 || 0.5;
-    const richtung = waag ? t(r.dx >= 0 ? 'reg.rechts' : 'reg.links')
-                          : t(r.dy >= 0 ? 'reg.unten' : 'reg.oben');
-    return t('reg.kante', { d: zahl(weg.toFixed(2)), richtung: richtung });
+    return { pixel: pixel, weg: weg, dazu: dazu };
   }
 
-  // ---- Analyse je Zelle (einmal je Diff und Hintergrund) -------------------
+  // =========================================================================
+  // SVG-Pfadparser (§39.4)
+  // -------------------------------------------------------------------------
+  // Figma exportiert absolute Kommandos; relative und H/V fangen wir trotzdem
+  // ab. `transform="translate(x, y)"` auf <g> und <path> wird berücksichtigt,
+  // fill-rule ignoriert. Ankerpunkte sind die Endpunkte der Segmente —
+  // Kontrollpunkte gehören nicht dazu.
+  // =========================================================================
+  function translateVon(attr) {
+    const m = /translate\(\s*(-?[\d.eE+-]+)[,\s]+(-?[\d.eE+-]+)?\s*\)/.exec(attr || '');
+    if (!m) return { x: 0, y: 0 };
+    return { x: Number(m[1]) || 0, y: Number(m[2] || 0) || 0 };
+  }
+  function viewBoxBreite(svg) {
+    const vb = /viewBox\s*=\s*"([^"]+)"/.exec(svg);
+    if (vb) {
+      const t = vb[1].trim().split(/[\s,]+/).map(Number);
+      if (t.length === 4 && t[2] > 0) return t[2];
+    }
+    const w = /\bwidth\s*=\s*"([\d.]+)/.exec(svg);
+    return w ? Number(w[1]) || 1 : 1;
+  }
+  // Alle <path>-Elemente mit aufsummierter Verschiebung der umgebenden <g>.
+  function svgPfade(svg) {
+    const pfade = [];
+    const stapel = [{ x: 0, y: 0 }];
+    const re = /<(\/?)(g|path|svg)\b([^>]*)>/g;
+    let m;
+    while ((m = re.exec(svg))) {
+      const zu = m[1] === '/', tag = m[2], attr = m[3] || '';
+      if (tag === 'svg') continue;
+      if (tag === 'g') {
+        if (zu) { if (stapel.length > 1) stapel.pop(); }
+        else if (!/\/$/.test(attr)) {
+          const v = translateVon(attr), o = stapel[stapel.length - 1];
+          stapel.push({ x: o.x + v.x, y: o.y + v.y });
+        }
+        continue;
+      }
+      if (zu) continue;
+      const d = /\bd\s*=\s*"([^"]*)"/.exec(attr);
+      if (!d || !d[1].trim()) continue;
+      const v = translateVon(attr), o = stapel[stapel.length - 1];
+      pfade.push({ d: d[1], tx: o.x + v.x, ty: o.y + v.y });
+    }
+    return pfade;
+  }
+  // Zahlen und Kommandos eines d-Attributs.
+  function pfadTokens(d) {
+    return String(d).match(/[a-zA-Z]|-?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/g) || [];
+  }
+  // Anzahl Zahlen je Kommando.
+  const CMD_N = { M: 2, L: 2, H: 1, V: 1, C: 6, S: 4, Q: 4, T: 2, A: 7, Z: 0 };
+  function pfadAnker(d) {
+    const tk = pfadTokens(d);
+    const punkte = [];
+    let i = 0, cmd = '', x = 0, y = 0, sx = 0, sy = 0;
+    const lies = () => Number(tk[i++]);
+    while (i < tk.length) {
+      if (/[a-zA-Z]/.test(tk[i])) { cmd = tk[i++]; }
+      else if (!cmd) { i++; continue; }
+      const gross = cmd.toUpperCase();
+      const rel = cmd !== gross;
+      const n = CMD_N[gross];
+      if (n == null) { i++; continue; }
+      if (gross === 'Z') { x = sx; y = sy; continue; }
+      if (i + n > tk.length) break;
+      if (gross === 'H') { const v = lies(); x = rel ? x + v : v; }
+      else if (gross === 'V') { const v = lies(); y = rel ? y + v : v; }
+      else if (gross === 'A') {
+        lies(); lies(); lies(); lies(); lies();
+        const px = lies(), py = lies();
+        x = rel ? x + px : px; y = rel ? y + py : py;
+      } else {
+        // Kontrollpunkte überspringen, nur den Endpunkt behalten.
+        for (let k = 0; k < n - 2; k++) lies();
+        const px = lies(), py = lies();
+        x = rel ? x + px : px; y = rel ? y + py : py;
+      }
+      if (gross === 'M') { sx = x; sy = y; cmd = rel ? 'l' : 'L'; }
+      punkte.push({ x: x, y: y });
+    }
+    return punkte;
+  }
+  // Pfade + Ankerpunkte einer SVG-Quelle, Punkte in Icon-Pixeln.
+  function svgGeometrie(svg, N) {
+    const W = viewBoxBreite(svg) || N || 1;
+    const pfade = svgPfade(svg);
+    const punkte = [];
+    pfade.forEach(p => {
+      p.W = W;
+      pfadAnker(p.d).forEach(a =>
+        punkte.push({ x: (a.x + p.tx) * N / W, y: (a.y + p.ty) * N / W }));
+    });
+    return { W: W, pfade: pfade, punkte: punkte };
+  }
+  // Paare bilden: jeder neue Punkt nimmt den nächsten freien alten Punkt
+  // innerhalb der Toleranz. Zuerst die engsten Paare, damit nichts „verrutscht“.
+  function ankerPaare(vor, neu) {
+    const kandidaten = [];
+    for (let b = 0; b < neu.length; b++) for (let a = 0; a < vor.length; a++) {
+      const dx = neu[b].x - vor[a].x, dy = neu[b].y - vor[a].y;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d <= PUNKT_TOLERANZ) kandidaten.push({ a: a, b: b, d: d, dx: dx, dy: dy });
+    }
+    kandidaten.sort((p, q) => p.d - q.d);
+    const altBelegt = {}, neuBelegt = {}, paare = [];
+    kandidaten.forEach(k => {
+      if (altBelegt[k.a] || neuBelegt[k.b]) return;
+      altBelegt[k.a] = neuBelegt[k.b] = true;
+      if (k.d < PUNKT_MIN) return;
+      paare.push({ ax: vor[k.a].x, ay: vor[k.a].y, bx: neu[k.b].x, by: neu[k.b].y,
+        dx: k.dx, dy: k.dy, d: k.d });
+    });
+    return paare;
+  }
+  function punktText(p) {
+    const waag = Math.abs(p.dx) >= Math.abs(p.dy);
+    const weg = Math.abs(waag ? p.dx : p.dy);
+    const richtung = waag ? t(p.dx >= 0 ? 'reg.rechts' : 'reg.links')
+                          : t(p.dy >= 0 ? 'reg.unten' : 'reg.oben');
+    return t('pkt.hover', { d: zahl(weg.toFixed(2)), richtung: richtung });
+  }
+
+  // ---- Vergleichsbasis (§39.2) --------------------------------------------
+  function hatOhne(c) { return !!(c && (c.ohne || c.pngOhne)); }
+  function hatAlt(c) { return !!(c && (c.alt || c.pngAlt)); }
+  function diffHatOhne() {
+    return !!(letzterDiff && (letzterDiff.zellen || []).some(hatOhne));
+  }
+  // Welche Fassung zeigt „Nachher“? Bei aktivem Snapping die gesnappte
+  // (`neu`), sonst die ungesnappte (`ohne`) — beide liegen im selben Diff,
+  // deshalb schaltet der Schalter ohne neuen Export um.
+  function nachQuelle() { return (snapAn || !diffHatOhne()) ? 'neu' : 'ohne'; }
+  // Welche Basis gilt für diese Zelle — mit Rückfall, wenn eine fehlt.
+  // Zeigt „Nachher“ bereits die ungesnappte Fassung, taugt sie nicht als Basis.
+  function basisVon(c) {
+    const frei = nachQuelle() === 'neu';
+    if (vglBasis === 'ohne' && frei && hatOhne(c)) return 'ohne';
+    if (hatAlt(c)) return 'alt';
+    return (frei && hatOhne(c)) ? 'ohne' : null;
+  }
+  // Die Basis, die die Beschriftung trägt (die der ersten Zelle mit Daten).
+  function basisAktiv() {
+    const zellen = (letzterDiff && letzterDiff.zellen) || [];
+    for (const c of zellen) { const b = basisVon(c); if (b) return b; }
+    return null;
+  }
+  function basisName() {
+    const b = basisAktiv();
+    return b === 'ohne' ? t('v.basisOhne') : t('v.basisAlt');
+  }
+  function vorherPille() { return t('pill.vorher') + ' · ' + basisName(); }
+
+  // ---- Analyse je Zelle (einmal je Diff, Basis und Hintergrund) -----------
   function gueteNeu(c) {
     const g = c.guete;
     if (!g) return null;
     return g.mitSnap ? g.snap : g.plain;
   }
-  // „vorher“ = Werte der Alt-Variante. Der Rasterfehler der Alt-Variante wird
-  // nicht gemessen; wenn ihn der Hauptthread doch mitschickt, zeigen wir ihn.
-  function fehlerAltVon(c) {
-    const g = c.gueteAlt;
-    return g && isFinite(g.fehler) ? g.fehler : null;
-  }
   async function analyseHolen() {
-    const sig = (dunkel ? 'd' : 'h') + (retina ? '2' : '1');
+    const nq = nachQuelle();
+    const sig = (dunkel ? 'd' : 'h') + (retina ? '2' : '1') + '|' + vglBasis + '|' + nq;
     if (anaQuelle === letzterDiff && anaSig === sig) return ANA;
     anaQuelle = letzterDiff; anaSig = sig;
     ANA = [];
     for (const c of (letzterDiff ? letzterDiff.zellen : [])) {
-      const e = { N: c.N, zelle: c, bildAlt: null, bildNeu: null, vekAlt: null, vekNeu: null,
-        aaAlt: null, aaNeu: null, regionen: [], andersPixel: 0, weg: 0, dazu: 0,
-        misch: null, mischSig: '', dlay: null, dlaySig: '' };
+      const basis = basisVon(c);
+      const e = { N: c.N, zelle: c, basis: basis,
+        bildNeu: null, bildVor: null, aaNeu: null, aaVor: null,
+        fehlerNeu: null, fehlerVor: null,
+        svgNeu: (nq === 'ohne' ? c.ohne : c.neu) || null,
+        svgVor: basis === 'ohne' ? (c.ohne || null) : (c.alt || null),
+        vek: {}, vekLauf: {}, geoNeu: null, geoVor: null, paare: null,
+        diffZahl: null, misch: null, mischSig: '', dlay: null, dlaySig: '' };
       // Retina zeigt die 2×-Rasterung, sonst die echte 1×-Rasterung.
-      const qNeu = retina && c.pngNeu2 ? c.pngNeu2 : c.pngNeu;
-      const qAlt = retina && c.pngAlt2 ? c.pngAlt2 : c.pngAlt;
+      const qNeu = nq === 'ohne'
+        ? (retina && c.pngOhne2 ? c.pngOhne2 : c.pngOhne)
+        : (retina && c.pngNeu2 ? c.pngNeu2 : c.pngNeu);
+      const qVor = basis === 'ohne'
+        ? (retina && c.pngOhne2 ? c.pngOhne2 : c.pngOhne)
+        : (retina && c.pngAlt2 ? c.pngAlt2 : c.pngAlt);
       if (qNeu) { const r = await analysiere(qNeu, false, dunkel); e.bildNeu = r.c; e.aaNeu = r.aa; }
-      if (qAlt) { const r = await analysiere(qAlt, false, dunkel); e.bildAlt = r.c; e.aaAlt = r.aa; }
-      if (c.neu) e.vekNeu = await svgCanvas(c.neu, umrissFarbe(), c.N);
-      if (c.alt) e.vekAlt = await svgCanvas(c.alt, umrissFarbe(), c.N);
-      if (c.pngAlt && c.pngNeu) {
-        const A = await bitmapDaten(c.pngAlt);
-        const B = await bitmapDaten(c.pngNeu);
-        const d = regionenFinden(A, B);
-        e.regionen = d.regionen; e.andersPixel = d.pixel;
-        e.weg = d.weg; e.dazu = d.dazu;
+      if (qVor) { const r = await analysiere(qVor, false, dunkel); e.bildVor = r.c; e.aaVor = r.aa; }
+      // Rohe 1×-PNGs für die Pixelzählung (unabhängig von Retina).
+      const rNeu = nq === 'ohne' ? c.pngOhne : c.pngNeu;
+      const rVor = basis === 'ohne' ? c.pngOhne : c.pngAlt;
+      if (rNeu && rVor) {
+        try { e.diffZahl = diffZaehlen(await bitmapDaten(rVor), await bitmapDaten(rNeu)); } catch (err) {}
       }
-      const g = gueteNeu(c);
+      const g = nq === 'ohne' ? c.gueteOhne : gueteNeu(c);
       e.fehlerNeu = g && isFinite(g.fehler) ? g.fehler : null;
-      e.fehlerAlt = fehlerAltVon(c);
+      const gv = basis === 'ohne' ? c.gueteOhne : c.gueteAlt;
+      e.fehlerVor = gv && isFinite(gv.fehler) ? gv.fehler : null;
       if (e.aaNeu == null && g) e.aaNeu = g.aa;
+      if (e.aaVor == null && gv && isFinite(gv.aa)) e.aaVor = gv.aa;
+      // Geometrie für „Punkte & Kanten“ — einmal je Zelle.
+      if (e.svgNeu) e.geoNeu = svgGeometrie(e.svgNeu, e.N);
+      if (e.svgVor) e.geoVor = svgGeometrie(e.svgVor, e.N);
+      e.paare = (e.geoNeu && e.geoVor) ? ankerPaare(e.geoVor.punkte, e.geoNeu.punkte) : [];
       ANA.push(e);
     }
     return ANA;
   }
+
+  // ---- Vektor je Zoomstufe rastern (§39.3) --------------------------------
+  // Stufe = kleinste Zweierpotenz ≥ Zoom (Gerätepixel je Icon-Pixel), höchstens
+  // 64. Die Bitmap wird genau in dieser Auflösung erzeugt und 1:1 gezeichnet.
+  function vekStufe() {
+    let s = 1;
+    while (s < KAM.z && s < 64) s *= 2;
+    return s;
+  }
+  function vekSchluessel(welche, stufe) { return welche + '|' + stufe + '|' + (dunkel ? 'd' : 'h'); }
+  // Nächstbeste schon fertige Stufe — damit beim Zoomen nie ein Loch entsteht.
+  function vekErsatz(e, welche) {
+    let best = null, bestStufe = 0;
+    for (let s = 64; s >= 1; s /= 2) {
+      const c = e.vek[vekSchluessel(welche, s)];
+      if (c && s > bestStufe) { best = c; bestStufe = s; }
+    }
+    return best;
+  }
+  function vekBild(e, welche) {
+    const svg = welche === 'vor' ? e.svgVor : e.svgNeu;
+    if (!svg) return null;
+    const stufe = vekStufe();
+    const key = vekSchluessel(welche, stufe);
+    if (e.vek[key]) return e.vek[key];
+    if (!e.vekLauf[key]) {
+      e.vekLauf[key] = true;
+      svgCanvas(svg, umrissFarbe(), e.N * stufe).then(c => {
+        if (c) { e.vek[key] = c; anstossen(false); }
+      });
+    }
+    return vekErsatz(e, welche);
+  }
   function bildVon(e, welche) {
     if (darstellung === 'vektor') {
-      const v = welche === 'alt' ? e.vekAlt : e.vekNeu;
+      const v = vekBild(e, welche);
       if (v) return v;
     }
-    return welche === 'alt' ? e.bildAlt : e.bildNeu;
+    return welche === 'vor' ? e.bildVor : e.bildNeu;
   }
 
   // ---- Zahlen und Texte ----------------------------------------------------
@@ -273,13 +419,13 @@
     if (!isFinite(d) || d === 0) return null;
     return (d < 0 ? '−' : '+') + Math.abs(d) + ' %';
   }
-  function fehlerText(v) { return v == null ? null : fmt('fehler', v); }
   function deltaText(alt, neu) { return fmtDelta(alt, neu); }
   function radiusText(c) {
     if (c.radius == null) return null;
     if (typeof c.radius !== 'object') return zahl(c.radius);
     return t('radius.' + c.radius.modus) + (c.radius.modus === 'fest' ? ' ' + zahl(c.radius.wert) : '');
   }
+
   // ---- Urteil-Zeile --------------------------------------------------------
   function pille(text, art) {
     const s = document.createElement('span');
@@ -290,58 +436,75 @@
   function urteilZeichnen(A) {
     const zeile = $('urteil'), txt = $('urteilText'), pillen = $('urteilPills');
     pillen.textContent = '';
-    if (!A.length) { zeile.className = 'urteilzeile'; txt.textContent = ''; return; }
-    let aaAltS = 0, aaAltN = 0, aaNeuS = 0, aaNeuN = 0;
-    let feAltS = 0, feAltN = 0, feNeuS = 0, feNeuN = 0;
-    let massOk = 0, massGes = 0, gerastet = 0, mitAlt = 0;
+    if (!A.length) { zeile.className = 'vzeile urteilzeile'; txt.textContent = ''; return; }
+    let aaVorS = 0, aaVorN = 0, aaNeuS = 0, aaNeuN = 0;
+    let feVorS = 0, feVorN = 0, feNeuS = 0, feNeuN = 0;
+    let massOk = 0, massGes = 0, gerastet = 0, mitVor = 0, punkte = 0;
     A.forEach(e => {
-      if (e.aaAlt != null) { aaAltS += e.aaAlt; aaAltN++; }
+      if (e.aaVor != null) { aaVorS += e.aaVor; aaVorN++; }
       if (e.aaNeu != null) { aaNeuS += e.aaNeu; aaNeuN++; }
-      if (e.fehlerAlt != null) { feAltS += e.fehlerAlt; feAltN++; }
+      if (e.fehlerVor != null) { feVorS += e.fehlerVor; feVorN++; }
       if (e.fehlerNeu != null) { feNeuS += e.fehlerNeu; feNeuN++; }
       const ok = massStimmt(e.zelle);
       if (ok != null) { massGes++; if (ok) massOk++; }
       gerastet += Number(e.zelle.gerastet) || 0;
-      if (e.bildAlt) mitAlt++;
+      punkte += (e.paare || []).length;
+      if (e.bildVor) mitVor++;
     });
-    const aaAlt = aaAltN ? Math.round(aaAltS / aaAltN) : null;
+    const aaVor = aaVorN ? Math.round(aaVorS / aaVorN) : null;
     const aaNeu = aaNeuN ? Math.round(aaNeuS / aaNeuN) : null;
-    const feAlt = feAltN ? feAltS / feAltN : null;
+    const feVor = feVorN ? feVorS / feVorN : null;
     const feNeu = feNeuN ? feNeuS / feNeuN : null;
     const massAlle = massGes > 0 && massOk === massGes;
 
     // Ein Satz in Klartext; bei Gleichstand keine zwei gleichen Zahlen.
     let art = 'neutral';
-    if (!mitAlt) {
+    if (!mitVor) {
       txt.textContent = t('urt.neu');
-    } else if (aaAlt != null && aaNeu != null && aaNeu < aaAlt - 0.5) {
-      txt.textContent = t('urt.besser', { alt: fmt('prozent', aaAlt), neu: fmt('prozent', aaNeu) });
+    } else if (aaVor != null && aaNeu != null && aaNeu < aaVor - 0.5) {
+      txt.textContent = t('urt.besser', { alt: fmt('prozent', aaVor), neu: fmt('prozent', aaNeu) });
       art = 'gut';
-    } else if (aaAlt != null && aaNeu != null && aaNeu > aaAlt + 0.5) {
-      txt.textContent = t('urt.schlechter', { alt: fmt('prozent', aaAlt), neu: fmt('prozent', aaNeu) });
+    } else if (aaVor != null && aaNeu != null && aaNeu > aaVor + 0.5) {
+      txt.textContent = t('urt.schlechter', { alt: fmt('prozent', aaVor), neu: fmt('prozent', aaNeu) });
       art = 'warn';
     } else {
       txt.textContent = t('urt.gleich', { neu: aaNeu == null ? fmt('fehler', feNeu) : fmt('prozent', aaNeu) });
     }
     if (massGes && !massAlle) art = 'warn';
-    zeile.className = 'urteilzeile ' + art;
+    zeile.className = 'vzeile urteilzeile ' + art;
 
-    // Höchstens zwei kurze Pills: erst das Delta, dann Maß bzw. gerastete Kanten.
-    const d = mitAlt ? fmtDelta(aaAlt, aaNeu) : null;
+    // Höchstens zwei kurze Pills, danach der Hinweis auf die Vergleichsbasis.
+    const d = mitVor ? fmtDelta(aaVor, aaNeu) : null;
     const kandidaten = [];
     if (d) kandidaten.push([d, d.charAt(0) === '−' ? 'gut' : 'warn']);
     if (massGes) kandidaten.push([
       t('urt.mass', { n: massOk, m: massGes }) + (massAlle ? ' ✓' : ' △'), massAlle ? 'gut' : 'warn']);
-    if (gerastet) kandidaten.push([t('urt.gerastet', { n: gerastet }), '']);
+    if (punkte) kandidaten.push([t('urt.punkte', { n: punkte }), '']);
+    else if (gerastet) kandidaten.push([t('urt.gerastet', { n: gerastet }), '']);
     if (!kandidaten.length && feNeu != null) kandidaten.push([t('urt.fehler', { v: fmt('fehler', feNeu) }), '']);
     kandidaten.slice(0, 2).forEach(k => pillen.appendChild(pille(k[0], k[1])));
+    // Ohne Snapping gibt es keine zweite Basis — dann sagt die Zeile das auch.
+    if (mitVor && !diffHatOhne()) pillen.appendChild(pille(t('urt.basisLib'), ''));
+    // Unbenutzt, aber erklärend: der gemittelte Rasterfehler steht im Fuß.
+    void feVor;
   }
 
-  // Legende: drei Farbfelder — in jedem Modus dieselbe Zuordnung.
+  // Legende: nur das, was gerade gezeichnet wird.
   function legendeZeichnen() {
     const box = $('vLegende');
     box.textContent = '';
-    [['weg', t('leg.weg')], ['dazu', t('leg.dazu')], ['beide', t('leg.beide')]].forEach(x => {
+    const stuecke = [];
+    if (punkteAn) {
+      stuecke.push(['vor', t('leg.vorKontur')]);
+      stuecke.push(['punktAlt', t('leg.punktAlt')]);
+      stuecke.push(['punktNeu', t('leg.punktNeu')]);
+    }
+    if (flaechenAn) {
+      stuecke.push(['weg', t('leg.weg')]);
+      stuecke.push(['dazu', t('leg.dazu')]);
+    }
+    if (!stuecke.length) stuecke.push(['beide', t('leg.aus')]);
+    stuecke.forEach(x => {
       const s = document.createElement('span');
       s.className = 'legstueck';
       const i = document.createElement('i');
@@ -355,6 +518,21 @@
   }
 
   // ---- Kennzahlen-Fuß (DOM, eine Spalte je Größe) -------------------------
+  // Jedes Label trägt ein kleines „?“ mit dem Erklärsatz (§39.6).
+  function labelMitHilfe(label, tip) {
+    const tt = document.createElement('fig-tooltip');
+    tt.setAttribute('text', tip);
+    tt.setAttribute('delay', '300');
+    const s = document.createElement('span');
+    s.className = 'kzname';
+    s.textContent = label;
+    const f = document.createElement('i');
+    f.className = 'hilfezeichen';
+    f.textContent = '?';
+    s.appendChild(f);
+    tt.appendChild(s);
+    return tt;
+  }
   function kennzahlenZeichnen(A) {
     const box = $('kennzahlen');
     box.textContent = '';
@@ -373,31 +551,27 @@
     tab.appendChild(kopf);
     const zeilen = [
       { label: t('fuss.fehler'), tip: t('ber.tipTreue'),
-        wert: e => fmtVgl('fehler', e.fehlerAlt, e.fehlerNeu) },
+        wert: e => fmtVgl('fehler', e.fehlerVor, e.fehlerNeu) },
       { label: t('fuss.aa'), tip: t('ber.tipAa'),
-        wert: e => fmtVgl('prozent', e.aaAlt, e.aaNeu) },
+        wert: e => fmtVgl('prozent', e.aaVor, e.aaNeu) },
       { label: t('fuss.keyline'), tip: t('ber.tipMass'), wert: e => {
         const c = e.zelle, ok = massStimmt(c);
         return c.soll == null ? t('ber.keineDaten')
           : fmt('mass', c.ist) + ' / ' + zahl(c.soll) + (ok == null ? '' : ok ? ' ✓' : ' △');
-      } }
+      } },
+      { label: t('fuss.punkte'), tip: t('tip.punkte'),
+        wert: e => (e.paare && e.paare.length) ? String(e.paare.length) : t('ber.keineDaten') }
     ];
     // Im Überlagern-Modus zählt zusätzlich, wie viele Pixel sich geändert haben.
     if (vglModus === 'ueberlagern') zeilen.push({
       label: t('fuss.veraendert'), tip: t('tip.veraendert'),
-      wert: e => e.andersPixel ? t('fuss.veraendertWert',
-        { n: e.andersPixel, weg: e.weg || 0, dazu: e.dazu || 0 }) : t('ber.keineDaten') });
+      wert: e => e.diffZahl && e.diffZahl.pixel ? t('fuss.veraendertWert',
+        { n: e.diffZahl.pixel, weg: e.diffZahl.weg, dazu: e.diffZahl.dazu }) : t('ber.keineDaten') });
     zeilen.forEach(z => {
       const tr = document.createElement('tr');
       const td = document.createElement('td');
       td.className = 'kzlabel';
-      const tt = document.createElement('fig-tooltip');
-      tt.setAttribute('text', z.tip);
-      tt.setAttribute('delay', '400');
-      const s = document.createElement('span');
-      s.textContent = z.label;
-      tt.appendChild(s);
-      td.appendChild(tt);
+      td.appendChild(labelMitHilfe(z.label, z.tip));
       tr.appendChild(td);
       A.forEach(e => {
         const c = document.createElement('td');
@@ -477,23 +651,18 @@
   }
 
   // ---- Layout in Weltkoordinaten -----------------------------------------
+  // Eine Kachel je Größe — beide Modi zeigen genau eine Fläche.
   function layoutRechnen(A) {
     LAYOUT = [];
     let x = 0, maxN = 1;
     A.forEach((e, i) => {
       const N = e.N || 1;
       if (N > maxN) maxN = N;
-      const breite = einKachelModus() ? N : 2 * N + W_LUECKE;
-      LAYOUT.push({ e: e, i: i, N: N, x: x, y: -N / 2, breite: breite });
-      x += breite + W_KARTE;
+      LAYOUT.push({ e: e, i: i, N: N, x: x, y: -N / 2, breite: N });
+      x += N + W_KARTE;
     });
     const rand = W_POLSTER + 1;
     WELT = { x0: -rand, y0: -maxN / 2 - rand, x1: Math.max(0, x - W_KARTE) + rand, y1: maxN / 2 + rand };
-  }
-  function kacheln(k) {
-    if (vglModus === 'ueberlagern') return [{ x: k.x, y: k.y, welche: 'misch' }];
-    if (vglModus === 'wischen') return [{ x: k.x, y: k.y, welche: 'wisch' }];
-    return [{ x: k.x, y: k.y, welche: 'alt' }, { x: k.x + k.N + W_LUECKE, y: k.y, welche: 'neu' }];
   }
 
   // ---- Kamera --------------------------------------------------------------
@@ -534,7 +703,6 @@
         || Math.abs(ZIEL.z - KAM.z) > 0.005) weiter = true;
       else { KAM.x = ZIEL.x; KAM.y = ZIEL.y; KAM.z = ZIEL.z; sanft = false; }
     } else { KAM.x = ZIEL.x; KAM.y = ZIEL.y; KAM.z = ZIEL.z; }
-    zoom = KAM.z;
     zeichnen();
     if (weiter) { malGeplant = true; requestAnimationFrame(schleife); }
   }
@@ -563,7 +731,7 @@
   }
   function fitRechnen() {
     if (!LAYOUT.length) return;
-    const rand = 14 * dpr(), obenRaum = 18 * dpr();
+    const rand = 14 * dpr(), obenRaum = 30 * dpr();
     const bw = Math.max(40, vpBreite() - 2 * rand);
     const bh = Math.max(40, vpHoehe() - 2 * rand - obenRaum);
     const ww = Math.max(1, WELT.x1 - WELT.x0), wh = Math.max(1, WELT.y1 - WELT.y0);
@@ -586,7 +754,7 @@
     const k = LAYOUT[Math.max(0, Math.min(LAYOUT.length - 1, i))];
     if (!k) return;
     aktiveKarte = k.i;
-    const rand = 16 * dpr(), obenRaum = 18 * dpr();
+    const rand = 16 * dpr(), obenRaum = 30 * dpr();
     const z = Math.max(Z_MIN, Math.min(Z_MAX, Math.min(
       (vpBreite() - 2 * rand) / (k.breite + 2 * W_POLSTER),
       (vpHoehe() - 2 * rand - obenRaum) / (k.N + 2 * W_POLSTER))));
@@ -623,13 +791,14 @@
     g.fillStyle = textFarbe2();
     g.textBaseline = 'middle';
     g.fillText(text, x + 4 * p, y + h / 2 + 0.5 * p);
+    g.textBaseline = 'alphabetic';
     return b;
   }
+
   // ---- Überlagern: farbige Onionskin ---------------------------------------
   // Deckung neutral, Unterschiede farbig. Je Pixel aus den Alphawerten:
-  // gemeinsam = min(alt, neu) → Grau, nur alt → Orange, nur neu → Akzentblau,
-  // Teildeckung mischt proportional. Der Überblend-Regler gewichtet die beiden
-  // Differenzanteile (0 % = nur Vorher, 100 % = nur Nachher).
+  // gemeinsam = min(vor, neu) → Grau, nur vor → Orange, nur neu → Akzentblau.
+  // Der Regler gewichtet die beiden Differenzanteile.
   const MISCH_GRAU = { hell: [58, 58, 68], dunkel: [217, 217, 222] };
   const MISCH_WEG  = { hell: [245, 166, 35], dunkel: [255, 184, 77] };
   function wegRgb() { return dunkel ? MISCH_WEG.dunkel : MISCH_WEG.hell; }
@@ -650,18 +819,23 @@
     for (let i = 0; i < a.length; i++) a[i] = d[i * 4 + 3];
     return a;
   }
+  // Rechenquelle: im Vektormodus die feinste fertige Bitmap, sonst das PNG.
+  function rechenBild(e, welche) {
+    if (darstellung === 'vektor') {
+      const v = vekErsatz(e, welche) || vekBild(e, welche);
+      if (v) return v;
+    }
+    return welche === 'vor' ? e.bildVor : e.bildNeu;
+  }
   function mischCanvas(e) {
-    // Auflösung: Pixelansicht zeigt die echte Rasterung (N), die Vektoransicht
-    // rastert feiner (N × 8). Der Regler wirkt in 5-%-Stufen, damit das Ziehen
-    // nicht jedes Bild neu rechnet.
     const R = bildAufl(e.N);
     const stufe = Math.round(blend / 5) * 5;
-    const sig = darstellung + '|' + R + '|' + stufe + '|' + (dunkel ? 'd' : 'h');
+    const qVor = rechenBild(e, 'vor'), qNeu = rechenBild(e, 'neu');
+    const sig = darstellung + '|' + R + '|' + stufe + '|' + (dunkel ? 'd' : 'h')
+      + '|' + (qVor ? qVor.width : 0) + '|' + (qNeu ? qNeu.width : 0);
     if (e.mischSig === sig && e.misch) return e.misch;
-    const qAlt = darstellung === 'vektor' ? (e.vekAlt || e.bildAlt) : e.bildAlt;
-    const qNeu = darstellung === 'vektor' ? (e.vekNeu || e.bildNeu) : e.bildNeu;
-    if (!qNeu && !qAlt) return null;
-    const A = qAlt ? alphaFeld(qAlt, R) : null;
+    if (!qNeu && !qVor) return null;
+    const A = qVor ? alphaFeld(qVor, R) : null;
     const B = qNeu ? alphaFeld(qNeu, R) : null;
     const c = document.createElement('canvas');
     c.width = R; c.height = R;
@@ -671,8 +845,7 @@
     const grau = dunkel ? MISCH_GRAU.dunkel : MISCH_GRAU.hell;
     const weg = dunkel ? MISCH_WEG.dunkel : MISCH_WEG.hell;
     const dazu = akzentRgb();
-    const gNeu = stufe / 100, gAlt = 1 - gNeu;
-    // Ohne Alt-Variante gibt es nichts zu vergleichen: alles neutral.
+    const gNeu = stufe / 100, gVor = 1 - gNeu;
     const vergleich = !!(A && B);
     for (let i = 0; i < R * R; i++) {
       const a = A ? A[i] / 255 : 0, b = B ? B[i] / 255 : 0;
@@ -685,7 +858,7 @@
         continue;
       }
       const gem = Math.min(a, b);
-      const nurA = Math.max(0, a - b) * gAlt;
+      const nurA = Math.max(0, a - b) * gVor;
       const nurB = Math.max(0, b - a) * gNeu;
       const summe = gem + nurA + nurB;
       if (summe <= 0.004) continue;
@@ -700,35 +873,42 @@
     return c;
   }
 
+  // Nach dem Umschalten blendet die Nachher-Kachel in 120 ms ein.
+  function nachAlpha() {
+    if (!blendeStart) return 1;
+    const f = (Date.now() - blendeStart) / 120;
+    if (f >= 1) { blendeStart = 0; return 1; }
+    return Math.max(0.05, f);
+  }
   function bildZeichnen(g, bild, x, y, s, alpha) {
     if (!bild) return;
     g.save();
     g.globalAlpha = alpha == null ? 1 : alpha;
-    g.imageSmoothingEnabled = darstellung === 'vektor';
+    // Vektor-Bitmaps sind in Zoomauflösung gerastert: 1:1, nur beim Nachziehen
+    // einer gröberen Stufe wird geglättet. Pixelansicht bleibt hart.
+    g.imageSmoothingEnabled = darstellung === 'vektor' && Math.abs(bild.width - s) > 0.5;
     g.drawImage(bild, x, y, s, s);
     g.restore();
   }
-  function markenAn() { return markieren && vglModus !== 'ueberlagern'; }
-  // Differenz-Layer über der Nachher-Kachel: entfernte Bereiche orange,
-  // hinzugekommene blau, je 70 % Deckung. In der Vektor-Darstellung aus den
-  // hochauflösenden SVG-Bitmaps gerechnet (glatte Konturen), sonst aus den
-  // PNGs. Gecacht je Zelle über eine Signatur.
+
+  // ---- Flächen-Differenz (Schalter „Flächen“) -----------------------------
+  // Entfernte Bereiche orange, hinzugekommene blau, je 70 % Deckung.
   function diffLayer(e) {
     const R = bildAufl(e.N);
-    const sig = darstellung + '|' + R + '|' + (dunkel ? 'd' : 'h');
+    const qVor = rechenBild(e, 'vor'), qNeu = rechenBild(e, 'neu');
+    const sig = darstellung + '|' + R + '|' + (dunkel ? 'd' : 'h')
+      + '|' + (qVor ? qVor.width : 0) + '|' + (qNeu ? qNeu.width : 0);
     if (e.dlaySig === sig && e.dlay !== undefined) return e.dlay;
     e.dlaySig = sig; e.dlay = null;
-    const qAlt = darstellung === 'vektor' ? (e.vekAlt || e.bildAlt) : e.bildAlt;
-    const qNeu = darstellung === 'vektor' ? (e.vekNeu || e.bildNeu) : e.bildNeu;
-    if (!qAlt || !qNeu) return null;
-    const A = alphaFeld(qAlt, R), B = alphaFeld(qNeu, R);
+    if (!qVor || !qNeu) return null;
+    const A = alphaFeld(qVor, R), B = alphaFeld(qNeu, R);
     const c = document.createElement('canvas');
     c.width = R; c.height = R;
     const g = c.getContext('2d');
     const bild = g.createImageData(R, R);
     const d = bild.data;
     const weg = wegRgb(), dazu = akzentRgb();
-    const schwelle = MARK_SCHWELLE / 255;
+    const schwelle = DIFF_SCHWELLE / 255;
     for (let i = 0; i < R * R; i++) {
       const diff = (A[i] - B[i]) / 255;
       if (Math.abs(diff) <= schwelle) continue;
@@ -741,69 +921,122 @@
     e.dlay = c;
     return c;
   }
-  // Ein 1-px-Rahmen je veränderter Region, in der Farbe ihrer Richtung.
-  function markenZeichnen(g, ana, x, y, N, s, p) {
-    if (!markenAn() || !ana) return;
-    const lay = diffLayer(ana);
-    if (lay) {
-      g.save();
-      g.imageSmoothingEnabled = darstellung === 'vektor';
-      g.drawImage(lay, x, y, s, s);
-      g.restore();
-    }
-    const regionen = ana.regionen || [];
-    if (!regionen.length) return;
-    const e = s / N;
+  function flaechenZeichnen(g, e, x, y, s) {
+    if (!flaechenAn) return;
+    const lay = diffLayer(e);
+    if (!lay) return;
     g.save();
-    g.lineWidth = p;
-    regionen.forEach(r => {
-      const rot = r.flAlt >= r.flNeu;
-      g.strokeStyle = rgbText(rot ? wegRgb() : akzentRgb());
-      const rx = x + r.x * e, ry = y + r.y * e, rw = r.w * e, rh = r.h * e;
-      g.strokeRect(rx + p / 2, ry + p / 2, Math.max(0, rw - p), Math.max(0, rh - p));
-      if (HOVER && HOVER.region === r) {
-        g.save();
-        g.lineWidth = 2 * p;
-        g.strokeRect(rx - p, ry - p, rw + 2 * p, rh + 2 * p);
-        g.restore();
+    g.imageSmoothingEnabled = true;
+    g.drawImage(lay, x, y, s, s);
+    g.restore();
+  }
+
+  // ---- Punkte & Kanten (§39.4) --------------------------------------------
+  // Vorher-Kontur dünn gestrichelt orange, Nachher-Kontur 1 px dunkel/hell,
+  // verschobene Punkte als hohler Ring (alt) → gefüllter Punkt (neu).
+  function pfadeStreichen(g, geo, x, y, s, N, farbe, p, gestrichelt) {
+    if (!geo || typeof Path2D !== 'function') return;
+    const f = s / (geo.W || N);
+    geo.pfade.forEach(pf => {
+      let pd;
+      try { pd = new Path2D(pf.d); } catch (e) { return; }
+      g.save();
+      g.translate(x, y);
+      g.scale(f, f);
+      g.translate(pf.tx, pf.ty);
+      g.strokeStyle = farbe;
+      g.lineWidth = p / f;
+      if (gestrichelt) g.setLineDash([3 * p / f, 2.5 * p / f]);
+      g.stroke(pd);
+      g.restore();
+    });
+  }
+  function punkteZeichnen(g, e, x, y, s, N, p) {
+    if (!punkteAn) return;
+    const skal = s / N;
+    if (e.geoVor) pfadeStreichen(g, e.geoVor, x, y, s, N, rgbText(wegRgb(), 0.85), p, true);
+    if (e.geoNeu) pfadeStreichen(g, e.geoNeu, x, y, s, N, umrissFarbe(), p, false);
+    const paare = e.paare || [];
+    if (!paare.length) return;
+    const r = Math.max(2.5 * p, Math.min(4.5 * p, skal * 0.22));
+    g.save();
+    paare.forEach(pa => {
+      const ax = x + pa.ax * skal, ay = y + pa.ay * skal;
+      const bx = x + pa.bx * skal, by = y + pa.by * skal;
+      const hov = HOVER && HOVER.paar === pa;
+      g.strokeStyle = rgbText(wegRgb(), 0.8);
+      g.lineWidth = p;
+      g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.stroke();
+      g.beginPath(); g.arc(ax, ay, r, 0, Math.PI * 2); g.stroke();
+      g.fillStyle = akzent();
+      g.beginPath(); g.arc(bx, by, hov ? r * 1.25 : r * 0.9, 0, Math.PI * 2); g.fill();
+      if (hov) {
+        g.strokeStyle = umrissFarbe();
+        g.lineWidth = p;
+        g.beginPath(); g.arc(bx, by, r * 1.9, 0, Math.PI * 2); g.stroke();
       }
     });
     g.restore();
   }
+  // Sagt an der Nachher-Kachel, welche Fassung gerade zu sehen ist.
+  function snapPille(g, x, y, p, rechteKante) {
+    const txt = t(nachQuelle() === 'ohne' ? 'pill.snapAus' : 'pill.snapAn');
+    g.font = '700 ' + Math.round(9 * p) + 'px Inter, system-ui, sans-serif';
+    const b = g.measureText(txt).width + 8 * p;
+    pillZeichnen(g, txt, rechteKante == null ? x : rechteKante - b, y, p);
+  }
   // Kleine Zahl-Pille oben rechts: wie viele Kanten gerastet wurden.
   function kantenPille(g, k, x, y, s, p) {
     const n = Number(k.e.zelle.gerastet) || 0;
-    if (!markenAn() || !n) return;
+    if (!punkteAn || !n) return;
     const txt = t('urt.gerastet', { n: n });
     g.font = '700 ' + Math.round(9 * p) + 'px Inter, system-ui, sans-serif';
     const b = g.measureText(txt).width + 8 * p;
     pillZeichnen(g, txt, x + s - b - 4 * p, y + 20 * p, p);
   }
-  function kachelZeichnen(g, k, kx, ky, welche, p) {
+
+  function kachelZeichnen(g, k, p) {
     const s = k.N * KAM.z;
-    const x = dx(kx), y = dy(ky);
+    const x = dx(k.x), y = dy(k.y);
     if (x > vpBreite() || y > vpHoehe() || x + s < 0 || y + s < 0) return;
+    const e = k.e;
     g.fillStyle = kachelGrund();
     g.fillRect(x, y, s, s);
-    const e = k.e;
-    if (welche === 'misch') {
+
+    const na = nachAlpha();
+    if (vglModus === 'ueberlagern') {
       const m = mischCanvas(e);
       if (m) {
         g.save();
-        g.imageSmoothingEnabled = darstellung === 'vektor';
+        g.globalAlpha = na;
+        g.imageSmoothingEnabled = true;
         g.drawImage(m, x, y, s, s);
         g.restore();
       }
-      pillZeichnen(g, t('pill.beide'), x + 4 * p, y + 4 * p, p);
-    } else if (welche === 'wisch') {
-      bildZeichnen(g, bildVon(e, 'alt'), x, y, s);
+      flaechenZeichnen(g, e, x, y, s);
+      punkteZeichnen(g, e, x, y, s, k.N, p);
+      const bb0 = pillZeichnen(g, t('pill.beide'), x + 4 * p, y + 4 * p, p);
+      snapPille(g, x + 8 * p + bb0, y + 4 * p, p);
+    } else {
+      // Vorher/Nachher: links die Basis, rechts das Ergebnis, Griff dazwischen.
+      const vor = bildVon(e, 'vor');
+      bildZeichnen(g, vor, x, y, s);
+      if (!vor) {
+        g.fillStyle = textFarbe2();
+        g.font = Math.round(9 * p) + 'px Inter, system-ui, sans-serif';
+        g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.fillText(t('diff.nuralt'), x + s / 2, y + s / 2);
+        g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+      }
       const w = Math.max(0, Math.min(s, s * wischPos));
       g.save();
-      g.beginPath(); g.rect(x, y, w, s); g.clip();
-      if (blend < 100) bildZeichnen(g, bildVon(e, 'alt'), x, y, s);
-      bildZeichnen(g, bildVon(e, 'neu'), x, y, s, blend / 100);
-      markenZeichnen(g, e, x, y, k.N, s, p);
+      g.beginPath(); g.rect(x + w, y, s - w, s); g.clip();
+      g.fillStyle = kachelGrund();
+      g.fillRect(x + w, y, s - w, s);
+      bildZeichnen(g, bildVon(e, 'neu'), x, y, s, na);
+      flaechenZeichnen(g, e, x, y, s);
       g.restore();
+      punkteZeichnen(g, e, x, y, s, k.N, p);
       // Griff
       g.save();
       g.strokeStyle = dunkel ? 'rgba(255,255,255,.9)' : 'rgba(20,20,30,.8)';
@@ -813,24 +1046,14 @@
       g.beginPath(); g.arc(x + w, y + s / 2, 6 * p, 0, Math.PI * 2); g.fill();
       g.strokeStyle = 'rgba(20,20,30,.35)'; g.stroke();
       g.restore();
-      pillZeichnen(g, t('pill.vorher'), x + 4 * p, y + 4 * p, p);
+      pillZeichnen(g, vorherPille(), x + 4 * p, y + 4 * p, p);
+      g.font = '700 ' + Math.round(9 * p) + 'px Inter, system-ui, sans-serif';
       const bb = g.measureText(t('pill.nachher')).width + 8 * p;
       pillZeichnen(g, t('pill.nachher'), x + s - bb - 4 * p, y + 4 * p, p);
+      snapPille(g, 0, y + 21 * p, p, x + s - 4 * p);
       kantenPille(g, k, x, y, s, p);
-    } else {
-      if (welche === 'neu' && blend < 100) bildZeichnen(g, bildVon(e, 'alt'), x, y, s);
-      bildZeichnen(g, bildVon(e, welche), x, y, s, welche === 'neu' ? blend / 100 : 1);
-      if (welche === 'neu') markenZeichnen(g, e, x, y, k.N, s, p);
-      if (welche === 'alt' && !bildVon(e, 'alt')) {
-        g.fillStyle = textFarbe2();
-        g.font = Math.round(9 * p) + 'px Inter, system-ui, sans-serif';
-        g.textAlign = 'center'; g.textBaseline = 'middle';
-        g.fillText(t('diff.nuralt'), x + s / 2, y + s / 2);
-        g.textAlign = 'left';
-      }
-      pillZeichnen(g, welche === 'alt' ? t('pill.vorher') : t('pill.nachher'), x + 4 * p, y + 4 * p, p);
-      if (welche === 'neu') kantenPille(g, k, x, y, s, p);
     }
+
     // Pixelraster ab 6 Gerätepixeln je Icon-Pixel, sehr dezent
     if (KAM.z >= 6) {
       g.save();
@@ -850,6 +1073,7 @@
     g.lineWidth = p;
     g.strokeRect(x + p / 2, y + p / 2, s - p, s - p);
   }
+
   function zeichnen() {
     const cv = leinwand();
     if (!cv || !cv.getContext) return;
@@ -863,7 +1087,6 @@
       const x = dx(k.x - W_POLSTER), y = dy(k.y - W_POLSTER);
       const w = (k.breite + 2 * W_POLSTER) * KAM.z, h = (k.N + 2 * W_POLSTER) * KAM.z;
       if (x > cv.width || x + w < 0) return;
-      // Kartenrahmen
       g.strokeStyle = k.i === aktiveKarte ? akzent() : rahmenFarbe();
       g.lineWidth = p;
       rundRechteck(g, x + p / 2, y + p / 2, w - p, h - p, 8 * p);
@@ -875,7 +1098,6 @@
       const titel = zahl(k.N) + ' px';
       g.fillText(titel, x, ty);
       const tb = g.measureText(titel).width;
-      // Der Titel ist anklickbar: er zentriert seine Karte.
       k.titelFeld = { x: x - 4 * p, y: ty - 13 * p, w: tb + 8 * p, h: 18 * p };
       let tx = x + tb + 6 * p;
       const ok = massStimmt(k.e.zelle);
@@ -884,14 +1106,15 @@
         g.beginPath(); g.arc(tx + 3 * p, ty - 3.5 * p, 3 * p, 0, Math.PI * 2); g.fill();
         tx += 10 * p;
       }
-      const d = deltaText(k.e.aaAlt, k.e.aaNeu);
+      const d = deltaText(k.e.aaVor, k.e.aaNeu);
       if (d) {
         g.font = '700 ' + Math.round(9.5 * p) + 'px Inter, system-ui, sans-serif';
         g.fillStyle = d.charAt(0) === '−' ? '#12a76a' : '#c98a12';
         g.fillText(d, tx, ty);
       }
-      kacheln(k).forEach(ka => kachelZeichnen(g, k, ka.x, ka.y, ka.welche, p));
+      kachelZeichnen(g, k, p);
     });
+    if (blendeStart) anstossen(false);
   }
 
   // ---- Hit-Test und Hover --------------------------------------------------
@@ -905,16 +1128,26 @@
   function kachelUnter(devX, devY) {
     const wx = weltX(devX), wy = weltY(devY);
     for (const k of LAYOUT) {
-      for (const ka of kacheln(k)) {
-        if (wx >= ka.x && wy >= ka.y && wx < ka.x + k.N && wy < ka.y + k.N) {
-          return { k: k, ka: ka, px: Math.floor(wx - ka.x), py: Math.floor(wy - ka.y) };
-        }
+      if (wx >= k.x && wy >= k.y && wx < k.x + k.N && wy < k.y + k.N) {
+        return { k: k, lx: wx - k.x, ly: wy - k.y,
+          px: Math.floor(wx - k.x), py: Math.floor(wy - k.y) };
       }
     }
     return null;
   }
+  // Nächster verschobener Punkt unter dem Zeiger (in Icon-Pixeln gemessen).
+  function paarUnter(tr) {
+    if (!punkteAn || !tr) return null;
+    const grenze = Math.max(0.35, 8 / Math.max(1, KAM.z));
+    let best = null, bestD = grenze;
+    (tr.k.e.paare || []).forEach(pa => {
+      const d = Math.sqrt((tr.lx - pa.bx) * (tr.lx - pa.bx) + (tr.ly - pa.by) * (tr.ly - pa.by));
+      if (d < bestD) { bestD = d; best = pa; }
+    });
+    return best;
+  }
   function griffNah(devX, devY) {
-    if (vglModus !== 'wischen') return null;
+    if (vglModus !== 'vn') return null;
     for (const k of LAYOUT) {
       const s = k.N * KAM.z;
       const x = dx(k.x), y = dy(k.y);
@@ -924,9 +1157,9 @@
     return null;
   }
   function hoverSetzen(treffer) {
-    const alt = HOVER && HOVER.region;
+    const alt = HOVER && HOVER.paar;
     HOVER = treffer;
-    if ((treffer && treffer.region) !== alt) anstossen(false);
+    if ((treffer && treffer.paar) !== alt) anstossen(false);
     const tip = $('vpTip');
     if (treffer && treffer.text) {
       tip.hidden = false;
@@ -942,6 +1175,11 @@
     $('zoomWertAnzeige').textContent = Math.round(ZIEL.z * 100) + ' %';
   }
 
+  // Kamera-Reset nur, wenn wirklich etwas anderes zu sehen ist.
+  function fitSignatur() {
+    if (!letzterDiff) return '';
+    return (letzterDiff.name || '') + '|' + (letzterDiff.zellen || []).map(c => c.N).join(',');
+  }
   async function renderKarten() {
     if (!letzterDiff) return;
     const A = await analyseHolen();
@@ -950,22 +1188,36 @@
     hintingZeichnen(A);
     layoutRechnen(A);
     leinwandMessen();
-    if (fitQuelle !== letzterDiff) { fitQuelle = letzterDiff; zoomFit(false); }
+    const fsig = fitSignatur();
+    if (fitQuelle !== fsig) { fitQuelle = fsig; zoomFit(false); }
     else { klemmen(ZIEL); kameraSetzen(ZIEL.x, ZIEL.y, ZIEL.z, false); }
     kopfZeichnen();
     anstossen(false);
   }
 
-  // ---- Kopf ----------------------------------------------------------------
+  // ---- Werkzeuge und Zeilen ------------------------------------------------
+  function reglerZeichnen() {
+    // Der Regler ist sichtbar, sobald es eine Vergleichsbasis gibt (§39.5).
+    const basis = !!basisAktiv();
+    const zeile = $('scrubberZeile');
+    zeile.hidden = !basis;
+    $('scrubberLabel').textContent = vglModus === 'ueberlagern' ? t('v.gewichtung') : t('v.scrubber');
+    const wert100 = vglModus === 'ueberlagern' ? blend : Math.round(wischPos * 100);
+    wert($('blendRegler'), wert100);
+  }
   function kopfZeichnen() {
     $('diff').classList.add('an');
     $('diff').classList.toggle('dunkel', dunkel);
     MODI.forEach(m => $('diff').classList.toggle('modus-' + m, vglModus === m));
     try { $('segModus').setAttribute('value', vglModus); } catch (e) {}
     try { $('segDarstellung').setAttribute('value', darstellung); } catch (e) {}
-    $('vTitel').textContent = t('v.titel', { name: (letzterDiff && letzterDiff.name) || '' });
-    $('scrubberZeile').hidden = !verbesserung;
-    $('retinaHalter').hidden = darstellung !== 'pixel';
+    try { $('segBasis').setAttribute('value', vglBasis); } catch (e) {}
+    $('basisZeile').hidden = !(diffHatOhne() && nachQuelle() === 'neu');
+    $('btnRetina').hidden = darstellung !== 'pixel';
+    $('btnRetina').classList.toggle('an', retina);
+    anhaken($('chkPunkte'), punkteAn);
+    anhaken($('chkFlaechen'), flaechenAn);
+    reglerZeichnen();
     legendeZeichnen();
     zoomPilleSetzen();
   }
@@ -974,6 +1226,27 @@
     kopfZeichnen();
     renderKarten();
   }
+
+  // ---- Pixel-Snapping live umschalten -------------------------------------
+  // Liegt die ungesnappte Fassung im Diff, tauscht der Schalter nur die
+  // Nachher-Quelle: keine neue Vorschau, keine Kamera-Bewegung. Fehlt sie
+  // (Vorschau wurde ohne Snapping erzeugt), wird sie einmal nachgefordert.
+  function snapUmschalten(an) {
+    snapAn = !!an;
+    if (!letzterDiff || !$('diff').classList.contains('an')) return false;
+    if (!diffHatOhne()) {
+      if (!snapAn || !hatAuswahl || beschaeftigt) return false;
+      $('fazit').className = 'fazit';
+      sperren(true);
+      send({ type: 'vorschau', snap: true });
+      return true;
+    }
+    blendeStart = Date.now();
+    kopfZeichnen();
+    renderKarten();
+    return true;
+  }
+  bei('einstellungen', m => { if (m && typeof m.snap === 'boolean') snapAn = m.snap; });
 
   // Vektor ist der Standard; Pixel zeigt die echte Rasterung (mit Retina 2×).
   function darstellungSetzen(v, melden) {
@@ -991,10 +1264,23 @@
     if (letzterDiff) renderKarten();
     if (melden) send({ type: 'merkerSetzen', schluessel: 'vergleichsmodus', wert: vglModus });
   }
+  function basisSetzen(b, melden) {
+    const neu = b === 'alt' ? 'alt' : 'ohne';
+    if (neu === vglBasis) return;
+    vglBasis = neu;
+    kopfZeichnen();
+    if (letzterDiff) renderKarten();
+    if (melden) send({ type: 'merkerSetzen', schluessel: 'vglBasis', wert: vglBasis });
+  }
   bei('merker', m => {
     if (!m) return;
     if (m.schluessel === 'vergleichsmodus' && MODI.indexOf(m.wert) >= 0) {
       vglModus = m.wert;
+      kopfZeichnen();
+      if (letzterDiff) renderKarten();
+    }
+    if (m.schluessel === 'vglBasis' && (m.wert === 'ohne' || m.wert === 'alt')) {
+      vglBasis = m.wert;
       kopfZeichnen();
       if (letzterDiff) renderKarten();
     }
@@ -1006,11 +1292,12 @@
     }
     if (m.schluessel === 'retina') {
       retina = !!m.wert;
-      anhaken($('chkRetina'), retina);
+      kopfZeichnen();
       if (letzterDiff) renderKarten();
     }
   });
   send({ type: 'merkerLaden', schluessel: 'vergleichsmodus' });
+  send({ type: 'merkerLaden', schluessel: 'vglBasis' });
   send({ type: 'merkerLaden', schluessel: 'buehneHoehe' });
   send({ type: 'merkerLaden', schluessel: 'darstellung' });
   send({ type: 'merkerLaden', schluessel: 'retina' });
@@ -1035,35 +1322,42 @@
 
   // ---- Bedienung -----------------------------------------------------------
   $('segModus').addEventListener('change', e => {
-    modusSetzen(String((e && e.detail) || $('segModus').value || 'neben'), true);
+    modusSetzen(String((e && e.detail) || $('segModus').value || 'vn'), true);
   });
   $('segDarstellung').addEventListener('change', e => {
     const v = String((e && e.detail) || $('segDarstellung').value || 'vektor');
     if (v === darstellung) return;
     darstellungSetzen(v, true);
   });
-  $('chkRetina').addEventListener('change', e => {
-    retina = !!e.target.checked;
+  $('segBasis').addEventListener('change', e => {
+    basisSetzen(String((e && e.detail) || $('segBasis').value || 'ohne'), true);
+  });
+  $('btnRetina').addEventListener('click', () => {
+    retina = !retina;
     send({ type: 'merkerSetzen', schluessel: 'retina', wert: retina });
+    kopfZeichnen();
     if (letzterDiff) renderKarten();
   });
-  $('chkMarkieren').addEventListener('change', e => { markieren = !!e.target.checked; anstossen(false); });
-  $('chkVerbesserung').addEventListener('change', e => {
-    verbesserung = !!e.target.checked;
-    $('scrubberZeile').hidden = !verbesserung;
-    $('retinaHalter').hidden = darstellung !== 'pixel';
+  $('chkPunkte').addEventListener('change', e => {
+    punkteAn = !!e.target.checked;
     legendeZeichnen();
-    blend = verbesserung ? Number($('blendRegler').value || 100) : 100;
+    if (letzterDiff) kennzahlenZeichnen(ANA);
     anstossen(false);
   });
-  const blendNehmen = e => {
+  $('chkFlaechen').addEventListener('change', e => {
+    flaechenAn = !!e.target.checked;
+    legendeZeichnen();
+    anstossen(false);
+  });
+  // Ein Regler, zwei Bedeutungen: Wischposition bzw. Gewichtung.
+  const reglerNehmen = e => {
     const v = Number((e && e.target && e.target.value) != null ? e.target.value : $('blendRegler').value);
     if (!isFinite(v)) return;
-    blend = v;
+    if (vglModus === 'ueberlagern') { blend = v; } else { wischPos = Math.max(0, Math.min(1, v / 100)); }
     anstossen(false);
   };
-  $('blendRegler').addEventListener('input', blendNehmen);
-  $('blendRegler').addEventListener('change', blendNehmen);
+  $('blendRegler').addEventListener('input', reglerNehmen);
+  $('blendRegler').addEventListener('change', reglerNehmen);
   $('btnGrund').addEventListener('click', () => {
     dunkel = !dunkel;
     if (letzterDiff) renderDiff(); else kopfZeichnen();
@@ -1176,7 +1470,7 @@
 
     let px = 0, py = 0, kx = 0, ky = 0, wischK = null;
     box.addEventListener('pointerdown', e => {
-      if (e.target.closest('fig-button, .zoompille, .bhgriff')) return;
+      if (e.target.closest('fig-button, .ovl, .bhgriff')) return;
       const d = devPos(e);
       const g = griffNah(d.x, d.y);
       if (g && !raumTaste && e.button === 0) {
@@ -1212,17 +1506,16 @@
       hoverTimer = setTimeout(() => {
         const tr = kachelUnter(d.x, d.y);
         if (!tr) { hoverSetzen(null); return; }
-        let text = t('px.koord', { x: tr.px, y: tr.py }), region = null;
-        if (markenAn() && (tr.ka.welche === 'neu' || tr.ka.welche === 'wisch')) {
-          region = (tr.k.e.regionen || []).filter(r =>
-            tr.px >= r.x && tr.py >= r.y && tr.px < r.x + r.w && tr.py < r.y + r.h)[0] || null;
-          if (region) text = regionText(region);
-        }
-        hoverSetzen({ region: region, text: text, cssX: d.cssX, cssY: d.cssY });
+        const paar = paarUnter(tr);
+        const text = paar ? punktText(paar) : t('px.koord', { x: tr.px, y: tr.py });
+        hoverSetzen({ paar: paar, text: text, cssX: d.cssX, cssY: d.cssY });
       }, 60);
     });
     const ende = e => {
       if (zieht) { zieht = false; box.classList.remove('zieht'); }
+      // Der Regler unter der Bühne zeigt dieselbe Position — einmal am Ende
+      // nachziehen, nicht bei jedem Frame (sonst Attribut-Gewitter).
+      if (wischZieht && vglModus !== 'ueberlagern') wert($('blendRegler'), Math.round(wischPos * 100));
       wischZieht = false; wischK = null;
       try { box.releasePointerCapture(e.pointerId); } catch (err) {}
     };

@@ -9,29 +9,52 @@
   }
   function chipLeeren() { const c = $('auswahlStatus'); c.className = 'chip'; c.textContent = ''; }
 
+  // Titelzeile: Name, Klassen-Chip, Status-Chip (§39.7b). Die Klasse ist kein
+  // eigenes Feld mehr — im ZDS-Modus steht sie fest (sie kommt aus dem Grid),
+  // im freien Modus öffnet der Chip ein kleines Menü mit den vier Klassen.
   function auswahlZeichnen() {
     const txt = $('auswahlText');
     txt.textContent = hatAuswahl && ziel ? ziel.name : t('auswahl.leer');
-    txt.className = hatAuswahl ? 'name' : 'hinweis';
-    $('auswahl').classList.toggle('aktiv', hatAuswahl);
+    txt.className = 'tname' + (hatAuswahl ? '' : ' leer');
+    $('auswahl').hidden = !hatAuswahl;
 
     const frei = !!(ziel && ziel.adapter === 'frei');
+    const geraten = !!(ziel && ziel.klasseQuelle === 'heuristik');
     const kchip = $('klasseChip');
-    if (hatAuswahl && ziel && ziel.klasse && !frei) {
-      kchip.className = 'chip grau';
-      kchip.textContent = ziel.klasse + (ziel.klasseQuelle === 'heuristik' ? ' · ' + t('klasse.geraten') : '');
-    } else { kchip.className = 'chip'; kchip.textContent = ''; }
-
-    // Frei-Modus: Klasse ist änderbar.
-    $('klassenzeile').hidden = !(hatAuswahl && frei);
-    if (hatAuswahl && frei) {
-      wert($('klasseSel'), ziel.klasse || 'Square');
-      const g = $('klasseGeraten');
-      g.hidden = ziel.klasseQuelle !== 'heuristik';
-      g.textContent = t('klasse.geraten');
-    }
+    if (hatAuswahl && ziel && ziel.klasse) {
+      kchip.className = 'chip grau klassechip' + (frei ? ' klickbar' : '');
+      kchip.textContent = ziel.klasse + (geraten ? ' ?' : '');
+      kchip.title = geraten ? t('klasse.geratenTip') : (frei ? t('klasse.wechselnTip') : t('klasse.festTip'));
+    } else { kchip.className = 'chip klassechip'; kchip.textContent = ''; kchip.title = ''; }
+    if (!frei) klasseMenuSetzen(false);
     leerzustandZeichnen();
   }
+
+  // ---- Klassen-Menü (nur Frei-Modus) --------------------------------------
+  function klasseMenuSetzen(auf) {
+    const m = $('klasseMenu');
+    if (!m) return;
+    try { m.open = auf; } catch (e) { if (auf) m.setAttribute('open', 'true'); else m.removeAttribute('open'); }
+  }
+  $('klasseChip').addEventListener('click', e => {
+    if (!hatAuswahl || beschaeftigt) return;
+    if (!ziel || ziel.adapter !== 'frei') return;
+    e.stopPropagation();
+    klasseMenuSetzen(!$('klasseMenu').open);
+  });
+  $('klasseMenu').addEventListener('click', e => {
+    const b = e.target.closest('[data-klasse]');
+    if (!b) return;
+    klasseMenuSetzen(false);
+    const k = b.getAttribute('data-klasse');
+    if (!k || beschaeftigt || !hatAuswahl || (ziel && ziel.klasse === k)) return;
+    send({ type: 'klasseSetzen', klasse: k });
+  });
+  document.addEventListener('click', e => {
+    if ($('klasseMenu').open && !$('klasseMenu').contains(e.target) && e.target !== $('klasseChip')) {
+      klasseMenuSetzen(false);
+    }
+  }, true);
 
   // ---- Startseite ---------------------------------------------------------
   // Ohne Ziel zeigt der Icon-Tab eine Startseite: Begrüßung mit Modus-Chip,
@@ -72,6 +95,8 @@
     const lib = umfang === 'library';
     $('grpIcon').hidden = lib;
     $('grpLibrary').hidden = !lib;
+    $('titelzeile').hidden = lib;
+    $('libSumme').hidden = !lib;
     try { $('segUmfang').setAttribute('value', umfang); } catch (e) {}
     if (lib) uebersichtAnfordern();
     libSummeZeichnen();
@@ -214,10 +239,4 @@
 
   $('auswahl').addEventListener('click', () => {
     if (hatAuswahl && !beschaeftigt) send({ type: 'fokus' });
-  });
-  $('klasseSel').addEventListener('change', e => {
-    const k = (e && e.detail) || $('klasseSel').value;
-    if (!k || !hatAuswahl || beschaeftigt) return;
-    if (ziel && ziel.klasse === k) return;
-    send({ type: 'klasseSetzen', klasse: k });
   });

@@ -23,23 +23,46 @@
   // ---- Rückgängig (§35) ----------------------------------------------------
   // Ein Schritt = ein Icon. Nach dem Einzelbau nimmt ein Klick das Icon
   // zurück, nach einem Batch zählt der Button herunter.
+  // Der Knopf in der Aktionsreihe ist IMMER sichtbar — ohne Stapel nur
+  // deaktiviert. Die Pille auf der Bühne und das Protokoll-Icon kommen dazu,
+  // sobald es etwas zurückzunehmen gibt.
   let undoRest = 0;
   function undoZeichnen() {
-    const b = $('btnUndo'), l = $('btnUndoLog');
-    b.hidden = undoRest <= 0;
+    const b = $('btnUndo'), l = $('btnUndoLog'), p = $('undoPille'), s = $('btnUndoBuehne');
+    const text = undoRest > 1 ? t('btn.undoN', { n: undoRest }) : t('btn.undo');
+    b.setAttribute('title', text);
+    aus(b, beschaeftigt || undoRest <= 0);
     l.hidden = undoRest <= 0;
-    b.textContent = '↶ ' + (undoRest > 1 ? t('btn.undoN', { n: undoRest }) : t('btn.undo'));
-    aus(b, beschaeftigt);
     aus(l, beschaeftigt);
+    if (p) p.hidden = undoRest <= 0;
+    if (s) { s.textContent = '↶ ' + text; aus(s, beschaeftigt); }
   }
   function rueckgaengig() {
     if (undoRest <= 0 || beschaeftigt) return;
     aus($('btnUndo'), true);
     aus($('btnUndoLog'), true);
+    aus($('btnUndoBuehne'), true);
     send({ type: 'rueckgaengig' });
   }
   $('btnUndo').addEventListener('click', rueckgaengig);
   $('btnUndoLog').addEventListener('click', rueckgaengig);
+  $('btnUndoBuehne').addEventListener('click', rueckgaengig);
+
+  // „⋯“ in der Aktionsreihe: selten Gebrauchtes, nicht in der Hauptzeile.
+  function mehrIconMenuSetzen(auf) {
+    const m = $('mehrIconMenu');
+    try { m.open = auf; } catch (e) { if (auf) m.setAttribute('open', 'true'); else m.removeAttribute('open'); }
+  }
+  $('btnMehrIcon').addEventListener('click', e => {
+    e.stopPropagation();
+    mehrIconMenuSetzen(!$('mehrIconMenu').open);
+  });
+  document.addEventListener('click', e => {
+    if ($('mehrIconMenu').open && !$('mehrIconMenu').contains(e.target) && e.target !== $('btnMehrIcon')) {
+      mehrIconMenuSetzen(false);
+    }
+  }, true);
+  $('btnRundgangMenu').addEventListener('click', () => { mehrIconMenuSetzen(false); obAuf(0); });
   bei('fazit', m => {
     if (!m || !m.undoMoeglich) return;
     undoRest = Number(m.undoSchritte) > 0 ? Number(m.undoSchritte) : 1;
@@ -60,6 +83,7 @@
     aus($('btnAudit'), an);
     aus($('btnAlle'), an);
     aus($('btnBeispiel'), an);
+    aus($('btnBeispielMenu'), an);
     aus($('btnBericht'), an);
     aus($('btnExport'), an);
     aus($('btnVorschauMit'), an || !hatAuswahl || !cfgLokal);
@@ -76,12 +100,15 @@
     send({ type: 'abbrechen' });
     aus($('btnAbbrechen'), true);
   });
-  $('btnBeispiel').addEventListener('click', () => {
+  function beispielAnlegen() {
     if (beschaeftigt) return;
+    mehrIconMenuSetzen(false);
     $('fazit').className = 'fazit';
     sperren(true);
     send({ type: 'beispielAnlegen' });
-  });
+  }
+  $('btnBeispiel').addEventListener('click', beispielAnlegen);
+  $('btnBeispielMenu').addEventListener('click', beispielAnlegen);
 
   // ---- Trockenlauf ---------------------------------------------------------
   function planAnfordern(umfang) {
@@ -181,15 +208,13 @@
       stroke: !!$('chkStroke').checked, trockenlaufEinzel: !!trockenlaufEinzel });
   }
   $('chkStroke').addEventListener('change', einstellungMelden);
-  // Snapping-Schalter aktualisiert eine offene Vorschau sofort —
-  // die „neu“-Ebene zeigt sonst einen veralteten Zustand.
+  // Der Snapping-Schalter wirkt bei offener Vorschau LIVE: die ungesnappte
+  // Fassung liegt im selben Diff, also tauscht snapUmschalten() nur die
+  // Nachher-Quelle — ohne neuen Export, ohne Kamera-Reset. Fehlt sie, fordert
+  // snapUmschalten() einmal eine Vorschau nach (siehe 70-vorschau.js).
   $('chkSnap').addEventListener('change', () => {
     einstellungMelden();
-    if (letzterDiff && hatAuswahl && !beschaeftigt) {
-      $('fazit').className = 'fazit';
-      sperren(true);
-      send({ type: 'vorschau', snap: !!$('chkSnap').checked });
-    }
+    snapUmschalten(!!$('chkSnap').checked);
   });
 
   function dialogAuf(id) {
