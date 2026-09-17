@@ -638,3 +638,34 @@ Button „Status aktualisieren“ (→ `lizenzStatus`, für den Fall, dass ein K
 |---|---|
 | `rueckgaengig` | `undoStand {schritte}`; `fazit {…, undoMoeglich?, undoName?, undoSchritte?}` |
 | `merkerSetzen {schluessel:'umfang'}` | — |
+
+## 39. Runde 6 — Vorschau final, flache Hierarchie, Inhalte pflegbar (2026-09-17)
+
+Vorbilder (Mobbin): Figma/Framer/Jitter/Rive-Eigenschaftenpanels — flache Abschnitte mit 1-px-Trennern, Titel 11 px halbfett,
+Label links / Wert rechts, Icon-Buttons 24 px, keine verschachtelten Kästen; Canvas mit schwebender Zoom-Pille unten rechts und
+Undo/Redo-Pille unten links (Slite, Figma).
+
+1. **Modi**: nur „Vorher/Nachher“ (bisher Wischen) und „Überlagern“. Nebeneinander entfällt.
+2. **Vergleichsbasis**: `zellen[].ohne/pngOhne*/gueteOhne/mitSnap` liefert der Hauptthread bei aktivem Snapping. UI-Umschalter „Vergleich mit:
+   ohne Snapping | Library-Stand“ (nur wenn `ohne` vorhanden; sonst nur Library). Standard: ohne Snapping. Die Vorher-Pille trägt die Basis
+   („Vorher · ohne Snapping“). Urteil und Kennzahlen rechnen gegen die gewählte Basis (`gueteOhne` bzw. `gueteAlt`).
+3. **Vektor scharf**: SVG je Zoom-Stufe 2^k (bis 64) × dpr lazy rastern und 1:1 zeichnen; Cache je Zelle/Stufe/Quelle.
+4. **Punkte & Kanten** (ersetzt „Änderungen markieren“): SVG-Pfade von Vorher und Nachher parsen (absolute M/L/H/V/C/S/Q/Z), Ankerpunkte
+   extrahieren, nächste Nachbarn ≤ 1,5 px matchen. Darstellung: Vorher-Kontur dünn gestrichelt orange, Nachher-Kontur 1 px dunkel/hell;
+   verschobene Punkte: hohler oranger Ring (alt) → gefüllter blauer Punkt (neu) mit Verbindungslinie; Hover: „Punkt um 0,25 px nach rechts
+   gerastet“. Punkte mit Verschiebung < 0,01 px nicht markieren. Farbflächen-Differenz (orange/blau) bleibt als Schalter „Flächen“ wählbar.
+5. **Regler** „Vorher · Nachher“ immer sichtbar, wenn eine Vergleichsbasis existiert; in Überlagern beschriftet als „Gewichtung“.
+6. **Begriffe mit ?**: Rasterfehler, Weiche Kanten (Anti-Aliasing) [statt „Weiche Pixel“], Keyline (Icon-Körper) je mit kleinem „?“
+   und fig-tooltip: Rasterfehler = „Wie stark die gerenderten Pixel vom idealen, scharfen Bild abweichen. 0 = perfekt; unter 0,02 sehr gut.“
+   Weiche Kanten = „Anteil halbtransparenter Randpixel. Weniger = schärfer; runde Formen haben naturgemäß mehr.“
+7. **Flache Hierarchie**: keine verschachtelten Kästen im Icon-Tab. Abschnitte: (a) Umfang-Segment; (b) Titelzeile „mail · Wide“ mit Klassen-Chip
+   und Status-Chip; (c) Aktionsreihe: primär „Icon bauen“ / sekundär „Vorschau“ / Icon-Button ↶ Rückgängig (immer sichtbar, disabled ohne
+   Stapel) / „⋯“; (d) Schnellschalter-Zeile 9,5 px; (e) Bühne mit SCHWEBENDEN Overlays: oben links Modus- und Darstellungs-Segment (klein),
+   oben rechts Icon-Buttons (Fit, Grund, Retina, ⋯), unten links Undo-Pille, unten rechts Zoom-Pille; (f) darunter Urteil-Zeile, Kennzahlen,
+   Legende, Hinting — als flache Zeilen mit Trennern. Abstände 8/12, Titel 11 px halbfett, Werte tabular.
+8. **Onboarding**: Slide 1 als Welcome-Hero (volle Bildbühne 240 px mit Gitter + großer Marke, Headline „Willkommen bei Icon Pipeline“,
+   Subline, primär „Rundgang starten“, sekundär „Direkt loslegen“). Slides 2–4 wie bisher.
+9. **Inhalte pflegbar**: `src/ui/inhalte/onboarding.mjs` (`export default [{ id, titel:{de,en}, text:{de,en}, svg }]`),
+   `src/ui/inhalte/lizenz.mjs` (`export default { svg, titel:{de,en}, text:{de,en} }`), `src/ui/inhalte/welcome.mjs`. gen-ui.mjs lädt sie und
+   stellt sie der Logik als `__INHALTE__` (JSON) bereit. `docs/INHALTE.md` erklärt, wie Texte und SVGs geändert werden (nur diese Dateien, dann `node build.mjs`).
+10. **Lizenz-Grafik** in der Einstellungs-Karte aus `inhalte/lizenz.mjs` (Schloss/Schlüssel-Skizze in Akzent + Grau, 2 px).
