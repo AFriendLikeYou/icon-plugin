@@ -10,6 +10,8 @@
 // ===========================================================================
 
 Object.assign(SPRACHEN.de, {
+  'log.rueckgaengig': 'Letzter Schritt zurückgenommen.',
+  'log.rueckgaengigFehlt': 'Rückgängig nicht möglich — bitte Cmd+Z in Figma nutzen.',
   // --- Trockenlauf ---
   'plan.keineSource': 'keine Vorlage gefunden',
   'plan.frameWandeln': 'Frame wird beim Bauen in eine Komponente umgewandelt',
@@ -95,6 +97,8 @@ Object.assign(SPRACHEN.de, {
 });
 
 Object.assign(SPRACHEN.en, {
+  'log.rueckgaengig': 'Last step undone.',
+  'log.rueckgaengigFehlt': 'Undo not available — please use Cmd+Z in Figma.',
   // --- dry run ---
   'plan.keineSource': 'no source found',
   'plan.frameWandeln': 'frame will be converted to a component when building',

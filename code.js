@@ -771,6 +771,8 @@ function listeUnd(werte) {
 // ===========================================================================
 
 Object.assign(SPRACHEN.de, {
+  'log.rueckgaengig': 'Letzter Schritt zurückgenommen.',
+  'log.rueckgaengigFehlt': 'Rückgängig nicht möglich — bitte Cmd+Z in Figma nutzen.',
   // --- Trockenlauf ---
   'plan.keineSource': 'keine Vorlage gefunden',
   'plan.frameWandeln': 'Frame wird beim Bauen in eine Komponente umgewandelt',
@@ -856,6 +858,8 @@ Object.assign(SPRACHEN.de, {
 });
 
 Object.assign(SPRACHEN.en, {
+  'log.rueckgaengig': 'Last step undone.',
+  'log.rueckgaengigFehlt': 'Undo not available — please use Cmd+Z in Figma.',
   // --- dry run ---
   'plan.keineSource': 'no source found',
   'plan.frameWandeln': 'frame will be converted to a component when building',
@@ -3338,7 +3342,8 @@ async function beispielAnlegen(snap) {
 let aktivesZiel = null;
 let bereit = false;
 let auswahlHaengt = false;
-let uiSprache = null;   // von der UI beim init gemeldet (navigator.language), für Sprache "auto"
+let uiSprache = null;
+let UNDO_STAPEL = 0;   // Plugin-Undo-Schritte des letzten Laufs (1 je gebautes Icon)   // von der UI beim init gemeldet (navigator.language), für Sprache "auto"
 
 // Abbruch-Flag für die langen Schleifen (alle, audit, bericht, exportieren).
 // Es wird zwischen zwei Icons geprüft — ein laufendes Icon wird fertig gebaut,
@@ -3541,6 +3546,18 @@ figma.ui.onmessage = async m => {
       return;
     }
 
+    if (m.type === 'rueckgaengig') {
+      // Nimmt den letzten Bau zurück (ein Schritt = ein Icon). Ohne Stapel: normales Figma-Undo.
+      let ok = false;
+      try { figma.triggerUndo(); ok = true; } catch (e) { ok = false; }
+      if (ok && UNDO_STAPEL > 0) UNDO_STAPEL--;
+      logZeile(ok ? 'ok' : 'warn', t(ok ? 'log.rueckgaengig' : 'log.rueckgaengigFehlt'), null, { schwere: 'info' });
+      ui({ type: 'undoStand', schritte: UNDO_STAPEL });
+      await auswahlMelden();
+      ui({ type: 'fertig' });
+      return;
+    }
+
     if (m.type === 'fokus') {
       let node = null;
       if (m.nodeId) { try { node = await figma.getNodeByIdAsync(m.nodeId); } catch (e) { node = null; } }
@@ -3643,7 +3660,8 @@ figma.ui.onmessage = async m => {
         { name: ziel.name, schwere: 'info' });
       try { figma.commitUndo(); } catch (e) {}
       logZeile('info', t('log.undo', { name: ziel.name }), null, { name: ziel.name, schwere: 'info' });
-      ui({ type: 'fazit', gut: true, text: t('fazit.neuGebaut'), beiAuswahl: true });
+      UNDO_STAPEL = 1;
+      ui({ type: 'fazit', gut: true, text: t('fazit.neuGebaut'), beiAuswahl: true, undoMoeglich: true, undoName: ziel.name });
     }
 
     if (m.type === 'vorschau') {
@@ -3689,12 +3707,14 @@ figma.ui.onmessage = async m => {
       await lizenzPruefen('alle');
       const ziele = await ADAPTER.alle();
       let ok = 0, i = 0, abgebrochen = false;
+      UNDO_STAPEL = 0;
       for (; i < ziele.length; i++) {
         if (abbruchAktiv()) { abgebrochen = true; break; }
         ui({ type: 'progress', i: i + 1, n: ziele.length, name: ziele[i].name });
         try {
           const text = await einIcon(ziele[i], !!m.snap, !!m.stroke);
-          ok++; logZeile('ok', text, ziele[i].fokusNode ? ziele[i].fokusNode.id : null,
+          ok++; UNDO_STAPEL++;
+          logZeile('ok', text, ziele[i].fokusNode ? ziele[i].fokusNode.id : null,
             { name: ziele[i].name, schwere: 'info' });
         } catch (e) {
           ui(fehlerLog(e));
@@ -3714,6 +3734,7 @@ figma.ui.onmessage = async m => {
         if (r.abgebrochen) fazitAbgebrochen(r.geprueft, r.n);
         else ui({
           type: 'fazit', gut: ok === ziele.length && r.abw.length === 0,
+          undoMoeglich: ok > 0, undoSchritte: ok,
           text: t('fazit.alle', {
             ok: ok, n: ziele.length, treffer: r.treffer, gesamt: r.gesamt,
             rAuf: r.rasterAuf, rGesamt: r.rasterGesamt,

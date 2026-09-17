@@ -557,3 +557,84 @@ Neue Fehlercodes: `LIZENZ_NOETIG`, Audit-Codes aus 28.1.
 | UI-1 | siehe 29 |
 | UI-2 | siehe 30 |
 | Fable | Integration, `test/run.mjs` anpassen, Doku-Nachzug |
+
+---
+
+# Runde 5 — Vorschau als Herzstück, Umfang-Umschalter, Rückgängig, Onboarding-Polish (2026-09-17)
+
+Vorbilder (Mobbin): Customer.io Asset Optimizer (View type Before | After | Side-by-side, Kennzahlenliste mit
+hervorgehobener Verbesserung „−44 %“), Magnific/Leonardo/ElevenLabs (eine große Fläche, Wisch-Trenner als Standard,
+kleine Pills „Before/After“ in den Ecken, Zoom unten rechts), Figma „Compare changes“ (Side by side | Overlay, Fit).
+
+## 33. Vorschau — Zielbild
+
+Eine Vorschau beantwortet drei Fragen in dieser Reihenfolge: **Was hat sich geändert? Ist es besser geworden? Stimmt das Maß?**
+
+Aufbau von oben nach unten (Icon-Tab, unterhalb der Aktionen):
+
+1. **Kopfzeile der Vorschau**: links Titel „Vorschau · {name}“ (12 px, fett); rechts eine Zoom-Gruppe: `−` `+` `Fit` und Prozent/Faktor
+   (`fig-button ghost`, kompakt), daneben ein kleiner Umschalter für den Hintergrund hell/dunkel (Icon-Button, kein Text).
+2. **Urteil-Zeile** (eine Karte, `fig-card`, volle Breite): ein Satz in Klartext plus bis zu drei Kennzahlen als Pills:
+   „Schärfer: Rasterfehler 0,021 → 0,012 (−43 %)“ · „Maß stimmt in 3 von 3 Größen“ · „7 Kanten gerastet“.
+   Grün wenn besser, neutral wenn gleich, orange wenn schlechter oder Maß-Abweichung. Ohne bestehendes Set: „Neu — noch kein Vergleich“.
+3. **Größenkarten** nebeneinander (horizontal scrollbar, gleiche Höhe), je Größe EINE Karte:
+   - Kopf: „14 px“ (11 px, semibold) + Statuspunkt + kleines Delta „−43 %“ rechts.
+   - Bühne: **Vorher | Nachher** als Standard, zwei gleich große Kacheln nebeneinander mit Pills „Vorher“ / „Nachher“ (9,5 px, uppercase,
+     sekundär) oben links in der Kachel. Darstellung = echte Rasterung (PNG 1×, pixelig hochskaliert), NICHT der Vektor-Onionskin.
+     Kein Magenta/Türkis. Änderungen werden auf Wunsch (Schalter „Änderungen markieren“, Standard an) in der Nachher-Kachel durch
+     einen 1-px-Rahmen in der Akzentfarbe um jeden veränderten Pixel-Block gezeigt (aus der Differenz berechnet, zusammenhängende Bereiche
+     als Rechtecke zusammengefasst).
+   - Zweiter Modus **Wischen**: eine Kachel, senkrechter Trenner mit Griff, links Vorher / rechts Nachher, Pills an den Rändern.
+     Moduswahl als `fig-segmented-control` „Nebeneinander | Wischen“ in der Kopfzeile der Vorschau — nur diese zwei. Überlagern und Blinken entfallen.
+   - Fuß: drei Zeilen Kennzahlen, tabellarisch, Label links sekundär, Wert rechts tabular: „Rasterfehler 0,021 → 0,012“, „Weiche Pixel 79 % → 61 %“,
+     „Keyline 12,00 / 12 ✓“. Tooltip auf jedem Label mit dem Erklärsatz aus Abschnitt 27.
+4. **Details** (eine `fig-group collapsible`, Standard zu): Vektor-Ansicht (bisheriger Onionskin, aber in Grau/Schwarz statt Farbe: Vorher grau 40 %,
+   Nachher schwarz), Pixelraster 1×/2×, Differenz-Heatmap. Alles, was heute an der Oberfläche ist, wandert hierhin.
+
+Visuelle Hierarchie: genau drei Textgrößen (12 fett / 11 / 9,5 sekundär), Karten mit 1-px-Rahmen und 8-px-Radius, Innenabstand 12, Abstände zwischen
+Karten 12, Kachel-Hintergrund weiß bzw. #1e1e1e mit 1-px-Rahmen, Pixelraster nur ab Zoom ≥ 6 und nur als sehr dezente Linien (8 % Deckung).
+Kein Text in den Kacheln außer den Pills. Hover über eine Kachel zeigt Koordinate rechts unten in der Kachel als kleine Pill.
+
+Zoom: Fit ist Standard (alle Größenkarten passen nebeneinander, mindestens Zoom 3), −/+ in Stufen 3, 4, 6, 8, 12, 16, Ctrl+Wheel, Tasten +/−/0 (0 = Fit).
+Zoom gilt für alle Karten gleich. Wenn nur eine Größe konfiguriert ist, nimmt die Karte die volle Breite.
+
+## 34. Umfang-Umschalter statt zwei Gruppen
+
+Im Icon-Tab ersetzt EIN `fig-segmented-control` „Dieses Icon | Ganze Library“ die bisherigen Gruppen „Icon“ und „Library“:
+- **Dieses Icon**: Auswahlzeile, Buttons „Vorschau“ (secondary) und „Icon bauen“ (primary), Schnellschalter.
+- **Ganze Library**: Zusammenfassung „76 Icons · 0 ohne Set · 2 Vorlage geändert“ (aus `uebersicht`), Buttons „Prüfen“ (= audit, secondary) und
+  „Alle bauen“ (primary, mit Trockenlauf), Schnellschalter. Die Vorschau-Fläche zeigt hier die Startseiten-Liste (Abschnitt 29) — sie ist damit die
+  Library-Ansicht, und der Leerzustand bei fehlender Auswahl im Modus „Dieses Icon“ zeigt nur einen kurzen Hinweis + Beispiel-Button.
+Der gewählte Umfang wird als Merker `umfang` gespeichert. Damit entfällt die Startseite als eigener Zustand: Startseite = Modus „Ganze Library“.
+
+## 35. Rückgängig
+
+- Main: Nachricht UI→Main `rueckgaengig` → `figma.triggerUndo()`; Antwort `undoStand { schritte }` und `fertig`. `fazit` trägt nach Bau
+  `undoMoeglich: true`, `undoName?` (Einzelbau) bzw. `undoSchritte` (Batch). (Bereits umgesetzt in 70-main.)
+- UI: Nach einem Bau erscheint neben dem Fazit ein Button „Rückgängig“ (`fig-button secondary`, Icon ↶). Einzelbau: ein Klick nimmt das Icon zurück,
+  Button verschwindet. Batch: Button zeigt „Rückgängig (12)“, jeder Klick nimmt ein Icon zurück und zählt herunter; Tooltip erklärt „ein Schritt = ein Icon“.
+  `bei('undoStand', …)` aktualisiert den Zähler; bei 0 ausblenden. Zusätzlich im Protokoll-Kopf ein ↶-Icon-Button mit derselben Funktion.
+
+## 36. Onboarding-Polish
+
+- Höchstens 12 Wörter je Headline, höchstens 2 Sätze Text je Slide. Slides: (1) „Aus einer Vorlage alle Größen“ mit Skizze 72 → 24/18/14,
+  (2) „Dein File, dein Modus“ (erkannter Modus + Profilwahl als Karten), (3) „Auswählen, ansehen, bauen“ (drei Schritte als nummerierte Mini-Karten,
+  Rückgängig erwähnen), (4) „Vollversion“: Testphase, was sie enthält, Hinweis „Kauf läuft über dein Figma-Konto — kein Lizenzschlüssel nötig“.
+- Bildbühne feste Höhe (200 px), Illustrationen in einer Akzentfarbe + Grau, gleiche Strichstärke wie unsere Icons (2 px), Gitter dezent.
+- Dots klickbar, aktiver Dot länglich (16 px), Fortschrittstext „2 von 4“. Buttons: „Weiter“ primär rechts, „Zurück“ ghost links, „Überspringen“ ghost oben rechts.
+  Letzter Slide: „Los geht’s“. Übergang 180 ms. Pfeiltasten und Esc wie bisher.
+- Der Paywall-Screen teilt Bühne und Typografie. Kein Rabattcode.
+
+## 37. Lizenz — Ablauf für den Nutzer (Text für Einstellungen und Slide 4)
+
+Mit Figma Payments gibt es keinen Lizenzschlüssel. Der Kauf läuft im Figma-Checkout, der Status hängt am Figma-Konto und gilt auf allen Geräten.
+Einstellungen → Lizenz zeigt: Status (Testphase mit Resttagen / Vollversion / abgelaufen), Button „Vollversion kaufen“ (→ `lizenzKaufen`),
+Button „Status aktualisieren“ (→ `lizenzStatus`, für den Fall, dass ein Kauf auf einem anderen Gerät noch nicht angezeigt wird), und den Satz
+„Gekauft wird über dein Figma-Konto. Ein Lizenzschlüssel ist nicht nötig.“ Der Entwickler-Umschalter bleibt nur im Debug-Build sichtbar.
+
+## 38. Protokoll-Ergänzungen Runde 5
+
+| UI → Main | Main → UI |
+|---|---|
+| `rueckgaengig` | `undoStand {schritte}`; `fazit {…, undoMoeglich?, undoName?, undoSchritte?}` |
+| `merkerSetzen {schluessel:'umfang'}` | — |
