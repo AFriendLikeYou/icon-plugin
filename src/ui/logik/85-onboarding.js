@@ -96,7 +96,10 @@
   function obInhalt(i) {
     if (i === 0) {
       const w = INHALTE.welcome || {};
-      return { welcome: true, bild: w.svg || '', titel: inh(w.titel), text: inh(w.text),
+      // `animiert: false` in welcome.mjs schaltet auf die statische Fassung um
+      // (siehe docs/INHALTE.md, Abschnitt „Animierte Welcome-Grafik“).
+      const bild = w.animiert === false ? (w.svgStatisch || w.svg || '') : (w.svg || '');
+      return { welcome: true, bild: bild, titel: inh(w.titel), text: inh(w.text),
         primaer: inh(w.primaer) || t('ob.weiter'), sekundaer: inh(w.sekundaer) || t('ob.ueberspringen') };
     }
     const s = OB_SLIDES[i - 1] || {};
@@ -117,6 +120,10 @@
     // keine Punkte, zwei gleichwertige Wege hinein (§39.8).
     dlg.classList.toggle('welcome', !!s.welcome);
     $('obBild').innerHTML = s.bild;
+    // Die Welcome-Grafik animiert nur, solange der Dialog offen ist und sie
+    // sichtbar ist — die Keyframes im SVG hängen an `.an` am Container.
+    $('obBild').classList.toggle('an', !!s.welcome && obOffen);
+    $('obFuss').hidden = !!s.welcome;
     $('obZaehler').hidden = !!s.welcome;
     $('obZaehler').textContent = t('ob.zaehler', { i: obSchritt + 1, n: OB_ANZ });
     $('obTitel').textContent = s.titel;
@@ -146,8 +153,16 @@
       const info = (profilInfo && profilInfo.length)
         ? profilInfo
         : (profile || []).map(n => ({ name: n, titel: t('profil.' + n), beschreibung: '' }));
+      // Eigene scrollbare Zone; das Fade unten zeigt an, dass mehr folgt.
+      const zone = document.createElement('div');
+      zone.className = 'profilzone';
       const liste = document.createElement('div');
       liste.className = 'profilliste';
+      const fadePruefen = () => {
+        const mehr = liste.scrollHeight - liste.clientHeight - liste.scrollTop > 4;
+        zone.classList.toggle('mehr', mehr);
+      };
+      liste.addEventListener('scroll', fadePruefen);
       info.forEach(p => {
         const k = document.createElement('div');
         k.className = 'profilkarte';
@@ -170,7 +185,10 @@
         });
         liste.appendChild(k);
       });
-      extra.appendChild(liste);
+      zone.appendChild(liste);
+      extra.appendChild(zone);
+      // Erst nach dem Layout messbar.
+      requestAnimationFrame(fadePruefen);
     }
 
     // Punkt-Navigation
@@ -207,6 +225,7 @@
   }
   function obZu() {
     obOffen = false;
+    $('obBild').classList.remove('an');   // Animation anhalten
     dialogZu('dlgOnboarding');
     if (!onboardingGesehen) { onboardingGesehen = true; merkerSetzen('onboardingGesehen', true); }
     paywallStartPruefen();

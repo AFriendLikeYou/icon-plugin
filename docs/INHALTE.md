@@ -46,7 +46,8 @@ Grafiken sind vollständige `<svg>`-Zeichenketten in Backticks. Hausstil:
 - `viewBox` setzen und `width="100%" height="100%"`, damit die Grafik mit der
   Bildbühne skaliert. Die Bühne ist 200 px hoch, beim Welcome-Screen 240 px.
 - Kein `<script>`, keine externen Verweise (Bilder, Fonts). Die Datei landet
-  inline in `ui.html`.
+  inline in `ui.html`. Ein `<style>` **innerhalb** des `<svg>` ist erlaubt —
+  so ist die Welcome-Grafik animiert (siehe unten).
 
 ## Die einzelnen Dateien
 
@@ -54,11 +55,53 @@ Grafiken sind vollständige `<svg>`-Zeichenketten in Backticks. Hausstil:
 
 | Feld | Bedeutung |
 |---|---|
-| `svg` | Bildbühne, 240 px hoch, randlos (dunkler Grund, Gitter, große Marke) |
+| `animiert` | `true` → `svg` (animierte Fassung), `false` → `svgStatisch` |
+| `svg` | Bildbühne, 240 px hoch, randlos (dunkler Grund, Gitter) — animiert |
+| `svgStatisch` | dieselbe Szene ohne Animation (Endzustand) |
 | `titel` | Headline, höchstens 12 Wörter |
 | `text` | Subline, höchstens zwei Sätze |
 | `primaer` | Beschriftung der primären Schaltfläche (führt in den Rundgang) |
 | `sekundaer` | Beschriftung der sekundären Schaltfläche (schließt den Rundgang) |
+
+#### Animierte Welcome-Grafik
+
+Die Grafik zeigt: links die **Vorlage** (großer Kasten mit Icon-Umriss), rechts
+die drei **Zielgrößen** im Verhältnis 24 / 18 / 14 (dreifach gezeichnet, also
+72 / 54 / 42 Einheiten der `viewBox`). Die Vorlage „zerfällt“, die drei Kästen
+fliegen nacheinander nach rechts, rasten mit leichtem Überschwingen ein, und
+direkt danach blitzen kurz Rasterlinien auf.
+
+- **Technik:** CSS-Keyframes in einem `<style>` **innerhalb** des `<svg>` —
+  kein SMIL, keine externen Verweise. Inline-SVG teilt das Dokument, das
+  `<style>` wirkt also wie ein normales Stylesheet und verschwindet mit der
+  Grafik, sobald der Slide wechselt.
+- **An/Aus:** alle Keyframes hängen an der Klasse `.an`. Die Logik setzt sie am
+  Container (`#obBild`), solange der Onboarding-Dialog offen ist, und entfernt
+  sie beim Schließen — geschlossener Dialog = keine laufende Animation.
+- **Ruhezustand = Endzustand:** ohne `.an` (und bei
+  `prefers-reduced-motion: reduce`) sieht man die drei eingerasteten Kästen und
+  die blasse Vorlage. Nichts bleibt unsichtbar, wenn die Animation aus ist.
+- **Loop:** 6 s. `0–75 %` Bewegung (4,5 s), `75–100 %` Pause (1,5 s). Die
+  Prozentwerte in den Keyframes sind also Sechzigstel-Sekunden × 100/6:
+  Kasten A löst sich bei 10 % (0,6 s), B bei 20 %, C bei 30 %; jeder rastet
+  8,33 % (0,5 s) später ein.
+
+**Ändern:**
+
+| Wunsch | Stelle |
+|---|---|
+| Tempo | die drei `6s` in `.an .ipw-*` gemeinsam ändern (Prozentwerte bleiben) |
+| längere Pause | Bewegung früher beenden: die `70 %`/`75 %`-Keyframes nach vorne ziehen |
+| anderer Staffel-Abstand | Startprozente 10 / 20 / 30 in `ipwKastenA/B/C` |
+| stärkeres Überschwingen | `scale(1.07)` und der Versatz in den `18,33/28,33/38,33 %`-Keyframes |
+| Flugbahn | `translate(…)` in den `0 %`/`75 %`/`100 %`-Keyframes — das ist der Weg von der Vorlage zum Landeplatz, also *Mitte Vorlage minus Mitte Zielkasten* |
+| Farben | `--ipw-akzent` / `--ipw-grau` im `<style>` |
+| Raster-Blitz | `ipwRasterA/B/C` (Deckung `.8`) und die `<path>`-Linien in den `ipw-raster-*`-Gruppen |
+
+**Gegen ein statisches SVG tauschen:** `animiert: false` setzen und
+`node gen-ui.mjs` laufen lassen — dann wird `svgStatisch` gezeigt. Wer ein
+eigenes statisches Motiv will, ersetzt einfach `svgStatisch` (normale
+`<svg>`-Zeichenkette nach den Regeln oben, kein `<style>` nötig).
 
 ### `onboarding.mjs` — Slides 2 bis 4
 

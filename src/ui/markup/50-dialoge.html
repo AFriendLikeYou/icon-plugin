@@ -29,13 +29,17 @@
   <fig-header dialog-header hidden></fig-header>
   <div class="bh-bild" id="obBild"></div>
   <fig-button id="obSkip" variant="ghost" class="bh-x"></fig-button>
+  <!-- Nur .bh-text wächst und scrollt; .bh-fuss und .bh-knoepfe stehen fest
+       am unteren Rand (Punkte + Zähler, darunter 12 px, dann die Buttons). -->
   <div class="bh-text">
-    <div class="bh-zaehler" id="obZaehler"></div>
     <h2 class="bh-titel" id="obTitel"></h2>
     <p class="bh-fliess" id="obText"></p>
     <div class="bh-extra" id="obExtra"></div>
   </div>
-  <div class="bh-dots" id="obDots"></div>
+  <div class="bh-fuss" id="obFuss">
+    <div class="bh-dots" id="obDots"></div>
+    <div class="bh-zaehler" id="obZaehler"></div>
+  </div>
   <div class="bh-knoepfe zwei">
     <fig-button id="obZurueck" variant="ghost" class="bh-sekundaer"></fig-button>
     <fig-button id="obWeiter" class="bh-primaer"></fig-button>

@@ -102,9 +102,17 @@ fig-group.kollektion .varzeile { padding-left: 8px; }
   color: var(--figma-color-text-onsuccess, #fff); }
 
 /* ---- Bühne: Onboarding-Slideshow und Lizenz-Screen ---------------------- */
+/* Anatomie (Flex-Spalte, von oben nach unten):
+     .bh-bild     feste Höhe 200 px (Welcome 240 px)              flex: none
+     .bh-text     wächst, scrollt bei Bedarf          flex: 1 1 auto; min-height: 0
+     .bh-fuss     Punkte + Zähler in einer Zeile, fest unten      flex: none
+     .bh-knoepfe  Button-Reihe, fest unten                        flex: none
+   Nur .bh-text darf scrollen — deshalb `overflow: hidden` am Dialog und
+   `min-height: 0`, sonst bläht der Inhalt die Spalte auf (das war der Bug:
+   fester Textblock, abgeschnittene Profilkarten, Punkte in der Luft). */
 dialog[is="fig-dialog"].buehne-dlg {
-  position: fixed; inset: 0; width: 100%; height: 100%;
-  max-width: none; max-height: none; margin: 0; padding: 0; border-radius: 0;
+  position: fixed; inset: 0; margin: auto; width: 100%; height: 100%;
+  max-width: none; max-height: calc(100vh - 24px); padding: 0; border-radius: 0;
   background: var(--figma-color-bg, #fff);
   display: flex; flex-direction: column; overflow: hidden;
 }
@@ -132,28 +140,64 @@ dialog[is="fig-dialog"].buehne-dlg.welcome .bh-bild { height: 240px; padding: 0;
 .bh-bild .bunt { color: #cfc9e6; font-size: 9.5px; letter-spacing: .06em;
   text-transform: uppercase; font-weight: 700; }
 .bh-x { position: absolute; top: 10px; right: 10px; z-index: 2; color: #e7e3f4; }
-.bh-text { padding: 16px 20px 0; transition: opacity .18s ease; }
+/* Textbereich: einzige wachsende Zone, scrollt selbst. Dezente Scrollbar. */
+.bh-text { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+  padding: 16px 20px 4px; transition: opacity .18s ease;
+  scrollbar-width: thin;
+  scrollbar-color: var(--figma-color-bg-tertiary, #e6e6ea) transparent; }
+.bh-text::-webkit-scrollbar { width: 6px; }
+.bh-text::-webkit-scrollbar-track { background: transparent; }
+.bh-text::-webkit-scrollbar-thumb { border-radius: 3px;
+  background: var(--figma-color-bg-tertiary, #e6e6ea); }
 .bh-zaehler { font-size: 9.5px; font-weight: 700; letter-spacing: .08em;
-  color: var(--figma-color-text-tertiary, #9a9aa0); margin-bottom: 6px; }
+  color: var(--figma-color-text-tertiary, #9a9aa0); font-variant-numeric: tabular-nums; }
 .bh-titel { font-size: 26px; line-height: 1.15; font-weight: 700; margin: 0 0 8px;
   letter-spacing: -.01em; text-wrap: balance; }
 .bh-fliess { font-size: 14px; line-height: 1.5; margin: 0;
   color: var(--figma-color-text-secondary, #6e6e76); }
 .bh-extra { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
-.bh-extra .profilliste { padding: 0; max-height: 150px; }
 .bh-wechsel .bh-bild, .bh-wechsel .bh-text { opacity: 0; }
 .bh-zaehler[hidden] { display: none; }
 .bh-x[hidden] { display: none; }
 .bh-dots[hidden] { display: none; }
 .welcome .bh-titel { font-size: 28px; }
-.bh-dots { display: flex; gap: 7px; justify-content: center; padding: 16px 0 4px; }
+
+/* Profilkarten im Onboarding: kompakter als in den Einstellungen und eine
+   eigene scrollbare Zone. `.mehr` (aus der Logik) blendet unten ein Fade ein,
+   solange noch etwas folgt. */
+.bh-extra .profilzone { position: relative; min-height: 0; }
+.bh-extra .profilliste { padding: 0; gap: 6px; max-height: 176px;
+  overflow-y: auto; overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--figma-color-bg-tertiary, #e6e6ea) transparent; }
+.bh-extra .profilliste::-webkit-scrollbar { width: 6px; }
+.bh-extra .profilliste::-webkit-scrollbar-track { background: transparent; }
+.bh-extra .profilliste::-webkit-scrollbar-thumb { border-radius: 3px;
+  background: var(--figma-color-bg-tertiary, #e6e6ea); }
+.bh-extra .profilkarte { padding: 8px 10px; gap: 2px; }
+.bh-extra .profilkarte .ptitel { font-size: 11px; line-height: 1.4; }
+.bh-extra .profilkarte .pbeschr { font-size: 9.5px; line-height: 1.4; }
+.bh-extra .profilzone::after { content: ''; position: absolute; z-index: 1;
+  left: 0; right: 0; bottom: 0; height: 26px; pointer-events: none;
+  opacity: 0; transition: opacity .18s ease;
+  background: linear-gradient(to top, var(--figma-color-bg, #fff) 15%, transparent); }
+.bh-extra .profilzone.mehr::after { opacity: 1; }
+
+/* Fest am unteren Rand: Punkte (mittig) und Zähler (rechts) in einer Zeile,
+   12 px über der Button-Reihe. */
+.bh-fuss { flex: none; display: grid; grid-template-columns: 1fr auto 1fr;
+  align-items: center; min-height: 20px; padding: 12px 20px 0; }
+.bh-fuss[hidden] { display: none; }
+.bh-fuss .bh-dots { grid-column: 2; }
+.bh-fuss .bh-zaehler { grid-column: 3; justify-self: end; }
+.bh-dots { display: flex; gap: 7px; justify-content: center; padding: 0; }
 .bh-dots button { appearance: none; border: 0; padding: 0; cursor: pointer;
   width: 7px; height: 7px; border-radius: 50%;
   background: var(--figma-color-border, #d9d9de); transition: all .18s ease; }
 .bh-dots button.an { width: 16px; border-radius: 4px;
   background: var(--figma-color-bg-brand, #0d99ff); }
-.bh-knoepfe { display: flex; flex-direction: column; gap: 8px;
-  padding: 8px 20px 12px; margin-top: auto; }
+.bh-knoepfe { flex: none; display: flex; flex-direction: column; gap: 8px;
+  padding: 12px 20px; }
 .bh-knoepfe.zwei { flex-direction: row; }
 .bh-knoepfe fig-button { flex: 1; height: 44px; font-size: 12px; }
 .bh-hinweis { display: flex; align-items: flex-start; gap: 8px; cursor: default;
