@@ -1,7 +1,12 @@
 <div class="panel" id="panelIcon">
 
-  <div class="gruppe">
-    <div class="gruppenkopf" data-t="gruppe.icon"></div>
+  <!-- Umfang: ersetzt die früheren Gruppen „Icon“ und „Library“ (§34) ------ -->
+  <fig-segmented-control id="segUmfang" value="icon" class="umfang">
+    <fig-segment value="icon" selected="true"><span data-t="umf.icon"></span></fig-segment>
+    <fig-segment value="library"><span data-t="umf.library"></span></fig-segment>
+  </fig-segmented-control>
+
+  <div class="gruppe" id="grpIcon">
     <div class="auswahlzeile">
       <fig-tooltip data-t-text="auswahl.tip" delay="600">
         <fig-button variant="input" id="auswahl">
@@ -26,36 +31,37 @@
       <fig-button id="btnDiff" variant="secondary" disabled data-t="btn.vorschau"></fig-button>
       <fig-button id="btnRun" disabled data-t="btn.bauen"></fig-button>
     </div>
-    <div class="optzeile">
-      <fig-tooltip data-t-text="tip.snap" delay="400">
-        <fig-switch id="chkSnap"><span data-t="chk.snap"></span></fig-switch>
-      </fig-tooltip>
-      <fig-tooltip data-t-text="tip.stroke" delay="400">
-        <fig-switch id="chkStroke"><span data-t="chk.stroke"></span></fig-switch>
-      </fig-tooltip>
+  </div>
+
+  <div class="gruppe" id="grpLibrary" hidden>
+    <div class="libsumme" id="libSumme"></div>
+    <div class="reihe">
+      <fig-button id="btnAudit" variant="secondary" data-t="btn.audit"></fig-button>
+      <fig-button id="btnAlle" data-t="btn.alle"></fig-button>
     </div>
+  </div>
+
+  <div class="optzeile">
+    <fig-tooltip data-t-text="tip.snap" delay="400">
+      <fig-switch id="chkSnap"><span data-t="chk.snap"></span></fig-switch>
+    </fig-tooltip>
+    <fig-tooltip data-t-text="tip.stroke" delay="400">
+      <fig-switch id="chkStroke"><span data-t="chk.stroke"></span></fig-switch>
+    </fig-tooltip>
   </div>
 
   <div class="gruppe leerzustand" id="leerzustand" hidden>
-    <div class="gruppenkopf" data-t="leer.titel"></div>
-    <ul>
-      <li data-t="leer.master"></li>
-      <li data-t="leer.keyline"></li>
-      <li data-t="leer.raster"></li>
-    </ul>
-    <p class="ctlLabel" id="leerKarte" hidden data-t="leer.karte"></p>
+    <p class="fhilfe" id="leerKarte" hidden data-t="leer.karte"></p>
+    <p class="fhilfe" id="leerHinweis" data-t="leer.kurz"></p>
     <fig-button id="btnBeispiel" variant="secondary" data-t="btn.beispiel"></fig-button>
   </div>
 
-  <div class="gruppe">
-    <div class="gruppenkopf" data-t="gruppe.library"></div>
-    <div class="reihe">
-      <fig-button id="btnAudit" variant="secondary" data-t="btn.audit"></fig-button>
-      <fig-button id="btnAlle" variant="destructiveSecondary" data-t="btn.alle"></fig-button>
-    </div>
+  <div class="fazitzeile">
+    <div class="fazit" id="fazit"></div>
+    <fig-tooltip data-t-text="tip.undo" delay="400">
+      <fig-button id="btnUndo" variant="secondary" hidden></fig-button>
+    </fig-tooltip>
   </div>
-
-  <div class="fazit" id="fazit"></div>
 
   <div class="fortschritt" id="fortschritt">
     <fig-spinner aria-label="…"></fig-spinner>
@@ -65,67 +71,105 @@
     <fig-button id="btnAbbrechen" variant="ghost" data-t="btn.abbrechen" style="flex:none"></fig-button>
   </div>
 
+  <!-- Vorschau (§33): Kopf, Urteil, Canvas-Bühne, Kennzahlen, Details ------ -->
   <div id="diff">
-    <div class="diffkopf">
-      <span class="seklabel" data-t="diff.vergleich"></span>
-      <fig-tooltip data-t-text="tip.vergleich" delay="500">
-        <fig-segmented-control id="segModus" value="ueberlagern">
-          <fig-segment value="ueberlagern" selected="true"><span data-t="modus.ueberlagern"></span></fig-segment>
-          <fig-segment value="wischen"><span data-t="modus.wischen"></span></fig-segment>
-          <fig-segment value="neben"><span data-t="modus.neben"></span></fig-segment>
-          <fig-segment value="blinken"><span data-t="modus.blinken"></span></fig-segment>
-        </fig-segmented-control>
-      </fig-tooltip>
-      <div class="chips" id="lagenSchalter">
-        <fig-switch id="chkAlt" checked><span class="dot alt"></span><span data-t="diff.aktuell"></span></fig-switch>
-        <fig-switch id="chkNeu" checked><span class="dot neu"></span><span data-t="diff.neu"></span></fig-switch>
-      </div>
-      <div class="chips">
-        <fig-switch id="chkDunkel"><span data-t="diff.dunkel"></span></fig-switch>
-      </div>
+    <div class="vkopf">
+      <span class="vtitel" id="vTitel"></span>
       <div class="zoom">
         <fig-button id="zoomMinus" variant="ghost" data-t-title="zoom.kleiner">−</fig-button>
-        <fig-slider id="zoomRegler" min="3" max="32" step="1" value="6" text="false"></fig-slider>
         <fig-button id="zoomPlus" variant="ghost" data-t-title="zoom.groesser">+</fig-button>
         <fig-button id="zoomFit" variant="ghost" data-t-title="zoom.fitTitel" data-t="zoom.fit"></fig-button>
-        <span class="zwert" id="zoomWertAnzeige" data-t-title="zoom.zurueck">6×</span>
+        <fig-tooltip data-t-text="v.grund" delay="400">
+          <fig-button id="btnGrund" variant="ghost" class="grundknopf" aria-label="◐">◐</fig-button>
+        </fig-tooltip>
       </div>
-      <span class="klein blinkhinweis" id="blinkHinweis" hidden data-t="blink.hinweis"></span>
     </div>
+    <div class="vkopf zwei">
+      <fig-tooltip data-t-text="tip.vergleich" delay="500">
+        <fig-segmented-control id="segModus" value="neben">
+          <fig-segment value="neben" selected="true"><span data-t="modus.neben"></span></fig-segment>
+          <fig-segment value="wischen"><span data-t="modus.wischen"></span></fig-segment>
+        </fig-segmented-control>
+      </fig-tooltip>
+      <fig-tooltip data-t-text="tip.darstellung" delay="500">
+        <fig-segmented-control id="segDarstellung" value="pixel">
+          <fig-segment value="pixel" selected="true"><span data-t="dar.pixel"></span></fig-segment>
+          <fig-segment value="vektor"><span data-t="dar.vektor"></span></fig-segment>
+        </fig-segmented-control>
+      </fig-tooltip>
+      <fig-tooltip data-t-text="tip.markieren" delay="400">
+        <fig-switch id="chkMarkieren" checked><span data-t="v.markieren"></span></fig-switch>
+      </fig-tooltip>
+      <fig-tooltip data-t-text="tip.verbesserung" delay="400">
+        <fig-switch id="chkVerbesserung"><span data-t="v.verbesserung"></span></fig-switch>
+      </fig-tooltip>
+    </div>
+    <div class="sprungleiste" id="sprungleiste" hidden></div>
+
+    <fig-card class="urteil" id="urteil">
+      <span class="utext" id="urteilText"></span>
+      <span class="upills" id="urteilPills"></span>
+    </fig-card>
+
     <div class="buehne" id="buehne">
-      <div class="zeile" id="zellen"></div>
-      <div class="koordanzeige" id="koordAnzeige" hidden></div>
-
-      <fig-group collapsible open="true" id="grpPixel" class="diffgruppe">
-        <div class="sektion">
-          <div class="chips">
-            <span class="ctlLabel" data-t="diff.rasterung"></span>
-            <fig-segmented-control id="segRaster" value="1">
-              <fig-segment value="1" selected="true">1×</fig-segment>
-              <fig-segment value="2">2×</fig-segment>
-            </fig-segmented-control>
-          </div>
-          <span class="klein" data-t="diff.schaerfe"></span>
+      <canvas id="vpCanvas"></canvas>
+      <div class="vptip" id="vpTip" hidden></div>
+      <div class="zoompille" id="zoomPille">
+        <fig-button id="zoomWertAnzeige" variant="ghost">100 %</fig-button>
+        <div class="zoommenu" id="zoomMenu" hidden>
+          <fig-button variant="ghost" data-zoom="fit" data-t="zoom.fit"></fig-button>
+          <fig-button variant="ghost" data-zoom="1">100 %</fig-button>
+          <fig-button variant="ghost" data-zoom="2">200 %</fig-button>
+          <fig-button variant="ghost" data-zoom="4">400 %</fig-button>
+          <fig-button variant="ghost" data-zoom="8">800 %</fig-button>
         </div>
-        <div class="zeile" id="pxzellen"></div>
-      </fig-group>
-
-      <fig-group collapsible open="true" id="grpDifferenz" class="diffgruppe">
-        <div class="sektion">
-          <div class="chips">
-            <span class="ctlLabel"><span class="dot weg"></span><span data-t="diff.weg"></span></span>
-            <span class="ctlLabel"><span class="dot dazu"></span><span data-t="diff.dazu"></span></span>
-          </div>
-        </div>
-        <div class="zeile" id="dfzellen"></div>
-      </fig-group>
+      </div>
+      <div class="bhgriff" id="bhGriff" data-t-title="v.hoehe"></div>
     </div>
+
+    <div class="scrubberzeile" id="scrubberZeile" hidden>
+      <span class="slabel" data-t="v.scrubber"></span>
+      <fig-slider id="blendRegler" min="0" max="100" step="1" value="100" text="false"></fig-slider>
+    </div>
+
+    <div class="kennzahlen" id="kennzahlen"></div>
+    <div class="vlegende" id="vLegende" data-t="v.legende"></div>
+
+    <fig-group collapsible open="false" id="grpDetails" class="diffgruppe">
+      <fig-header><h3 data-t="det.titel"></h3></fig-header>
+
+      <div class="sektion">
+        <span class="ctlLabel" data-t="det.vektor"></span>
+        <span class="klein" data-t="det.vektorHinweis"></span>
+      </div>
+      <div class="detailband"><div class="zeile" id="zellen"></div></div>
+
+      <div class="sektion">
+        <span class="ctlLabel" data-t="det.pixel"></span>
+        <fig-segmented-control id="segRaster" value="1">
+          <fig-segment value="1" selected="true">1×</fig-segment>
+          <fig-segment value="2">2×</fig-segment>
+        </fig-segmented-control>
+        <span class="klein" data-t="diff.schaerfe"></span>
+      </div>
+      <div class="detailband"><div class="zeile" id="pxzellen"></div></div>
+
+      <div class="sektion">
+        <span class="ctlLabel" data-t="det.differenz"></span>
+        <span class="ctlLabel"><span class="dot weg"></span><span data-t="diff.weg"></span></span>
+        <span class="ctlLabel"><span class="dot dazu"></span><span data-t="diff.dazu"></span></span>
+      </div>
+      <div class="detailband"><div class="zeile" id="dfzellen"></div></div>
+    </fig-group>
   </div>
 
   <div class="logblock">
     <div class="logkopf">
       <span data-t="log.titel"></span>
       <span class="logaktionen">
+        <fig-tooltip data-t-text="tip.undo" delay="400">
+          <fig-button id="btnUndoLog" variant="ghost" hidden>↶</fig-button>
+        </fig-tooltip>
         <fig-button id="btnKopieren" variant="ghost" data-t="btn.kopieren"></fig-button>
         <fig-button id="btnLeeren" variant="ghost" data-t="btn.leeren"></fig-button>
       </span>

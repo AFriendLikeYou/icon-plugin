@@ -98,7 +98,7 @@ dialog[is="fig-dialog"].buehne-dlg {
   display: flex; flex-direction: column; overflow: hidden;
 }
 dialog[is="fig-dialog"].buehne-dlg:not([open]) { display: none; }
-.bh-bild { position: relative; flex: none; height: 190px;
+.bh-bild { position: relative; flex: none; height: 200px;
   display: flex; align-items: center; padding: 0 20px;
   background-color: #221f2b;
   background-image:
@@ -132,7 +132,7 @@ dialog[is="fig-dialog"].buehne-dlg:not([open]) { display: none; }
 .bh-dots button { appearance: none; border: 0; padding: 0; cursor: pointer;
   width: 7px; height: 7px; border-radius: 50%;
   background: var(--figma-color-border, #d9d9de); transition: all .18s ease; }
-.bh-dots button.an { width: 18px; border-radius: 4px;
+.bh-dots button.an { width: 16px; border-radius: 4px;
   background: var(--figma-color-bg-brand, #0d99ff); }
 .bh-knoepfe { display: flex; flex-direction: column; gap: 8px;
   padding: 8px 20px 12px; margin-top: auto; }
@@ -145,3 +145,19 @@ dialog[is="fig-dialog"].buehne-dlg:not([open]) { display: none; }
   font-size: 10px; line-height: 1.5; color: var(--figma-color-text-secondary, #6e6e76); }
 .bh-hinweis .punkt { width: 7px; height: 7px; border-radius: 50%; flex: none;
   margin-top: 4px; background: #12a76a; }
+
+/* ---- Umfang-Umschalter, Fazit, Rückgängig (Runde 5, §34/§35) ------------ */
+.umfang { flex: none; width: 100%; }
+#grpLibrary[hidden] { display: none; }
+#grpIcon[hidden] { display: none; }
+.libsumme { font-size: 11px; font-variant-numeric: tabular-nums;
+  color: var(--figma-color-text-secondary, #6e6e76); }
+.fazitzeile { display: flex; align-items: center; gap: 8px; flex: none; }
+.fazitzeile .fazit { flex: 1; }
+.fazitzeile fig-tooltip { display: inline-flex; flex: none; }
+.fazitzeile fig-button[hidden] { display: none; }
+#btnUndoLog[hidden] { display: none; }
+#btnUndoLog { min-width: 22px; }
+.leerzustand .fhilfe { margin: 0; }
+.lizknoepfe { display: flex; gap: 8px; align-items: center; }
+.lizknoepfe fig-button[hidden] { display: none; }

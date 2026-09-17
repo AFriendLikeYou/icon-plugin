@@ -93,6 +93,8 @@
     send({ type: 'lizenzKaufen', grund: paywallGrund === 'PAID_FEATURE' ? 'PAID_FEATURE' : 'TRIAL_ENDED' });
   });
   $('btnLizKaufen').addEventListener('click', () => send({ type: 'lizenzKaufen', grund: 'PAID_FEATURE' }));
+  // Kauf auf einem anderen Gerät: Status neu vom Figma-Konto holen.
+  $('btnLizStatus').addEventListener('click', () => { send({ type: 'lizenzStatus' }); toast(t('toast.lizStatus')); });
   $('segLizDebug').addEventListener('change', e => {
     const v = (e && e.detail) || $('segLizDebug').value;
     if (v) send({ type: 'lizenzDebug', status: v });

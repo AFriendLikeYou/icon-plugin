@@ -20,9 +20,41 @@
     } else rest.textContent = '';
   });
 
+  // ---- Rückgängig (§35) ----------------------------------------------------
+  // Ein Schritt = ein Icon. Nach dem Einzelbau nimmt ein Klick das Icon
+  // zurück, nach einem Batch zählt der Button herunter.
+  let undoRest = 0;
+  function undoZeichnen() {
+    const b = $('btnUndo'), l = $('btnUndoLog');
+    b.hidden = undoRest <= 0;
+    l.hidden = undoRest <= 0;
+    b.textContent = '↶ ' + (undoRest > 1 ? t('btn.undoN', { n: undoRest }) : t('btn.undo'));
+    aus(b, beschaeftigt);
+    aus(l, beschaeftigt);
+  }
+  function rueckgaengig() {
+    if (undoRest <= 0 || beschaeftigt) return;
+    aus($('btnUndo'), true);
+    aus($('btnUndoLog'), true);
+    send({ type: 'rueckgaengig' });
+  }
+  $('btnUndo').addEventListener('click', rueckgaengig);
+  $('btnUndoLog').addEventListener('click', rueckgaengig);
+  bei('fazit', m => {
+    if (!m || !m.undoMoeglich) return;
+    undoRest = Number(m.undoSchritte) > 0 ? Number(m.undoSchritte) : 1;
+    undoZeichnen();
+  });
+  bei('undoStand', m => {
+    undoRest = Math.max(0, Number(m && m.schritte) || 0);
+    undoZeichnen();
+  });
+  undoZeichnen();
+
   function sperren(an) {
     beschaeftigt = an;
-    if (an) { chipLeeren(); fortStart = Date.now(); $('restzeit').textContent = ''; }
+    // Ein neuer Lauf macht den alten Undo-Stand ungültig.
+    if (an) { chipLeeren(); fortStart = Date.now(); $('restzeit').textContent = ''; undoRest = 0; }
     aus($('btnRun'), an || !hatAuswahl);
     aus($('btnDiff'), an || !hatAuswahl);
     aus($('btnAudit'), an);
@@ -37,6 +69,7 @@
     $('fortschritt').classList.toggle('an', an);
     if (!an) { $('balken').style.width = '0%'; $('zahl').textContent = '';
       $('restzeit').textContent = ''; fortStart = 0; }
+    undoZeichnen();
   }
   $('btnAbbrechen').addEventListener('click', () => {
     if (!beschaeftigt) return;

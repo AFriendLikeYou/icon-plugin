@@ -108,14 +108,14 @@
   }
   function umfangZeichnen() {
     const n = gewaehlteNamen().length;
-    const el = $('segUmfangNamen');
+    const el = $('segExportNamen');
     if (el) el.textContent = t('ber.umfangNamen', { n: n });
-    const seg = $('segUmfang').querySelector('fig-segment[value="namen"]');
+    const seg = $('segExportUmfang').querySelector('fig-segment[value="namen"]');
     if (seg) {
       if (n) seg.removeAttribute('disabled');
       else {
         seg.setAttribute('disabled', '');
-        if (String($('segUmfang').value || '') === 'namen') $('segUmfang').setAttribute('value', 'alle');
+        if (String($('segExportUmfang').value || '') === 'namen') $('segExportUmfang').setAttribute('value', 'alle');
       }
     }
   }

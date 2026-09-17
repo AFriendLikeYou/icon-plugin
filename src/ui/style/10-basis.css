@@ -23,6 +23,7 @@
 
   body > fig-tabs { flex: none; }
   .panel { display: flex; flex-direction: column; gap: 9px; flex: 1 1 auto; min-height: 0; }
+  #panelIcon { overflow-y: auto; padding-right: 2px; }
   .panel[hidden] { display: none; }
   #panelCfg { overflow-y: auto; padding-right: 2px; gap: 12px; }
 
@@ -72,10 +73,8 @@
   .fazit.rot { display: block; background: rgba(194,64,42,.1); color: #c2402a; }
 
   #diff { display: none; border: 1px solid var(--figma-color-border, #e3e3e6);
-    border-radius: 8px; padding: 10px 12px; background: var(--figma-color-bg-secondary, #fafafc);
-    flex: 2 1 auto; min-height: 220px; }
+    border-radius: 8px; padding: 12px; background: var(--figma-color-bg, #fff); flex: none; }
   #diff.an { display: flex; flex-direction: column; }
-  #diff .diffkopf { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
   .seklabel { margin-right: auto; font-size: 9px; font-weight: 700;
     letter-spacing: .07em; text-transform: uppercase;
     color: var(--figma-color-text-secondary, #6e6e76); }
@@ -83,25 +82,18 @@
   .chips fig-switch { font-size: 9.5px; white-space: nowrap; }
   .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block;
     margin-right: 5px; flex: none; vertical-align: 0; }
-  .dot.alt { background: #d3308f; } .dot.neu { background: #0e8a9a; }
-  .dot.weg { background: #d3308f; } .dot.dazu { background: #0e8a9a; }
+  .dot.weg { background: #8a8a96; }
+  .dot.dazu { background: var(--figma-color-bg-brand, #0d99ff); }
   .ctlLabel { font-size: 9.5px; color: var(--figma-color-text-secondary, #6e6e76); }
   .zoom { display: flex; align-items: center; gap: 4px; flex: none; }
-  .zoom fig-slider { width: 84px; }
   .zoom fig-button { min-width: 22px; }
   .zwert { font-size: 9px; width: 20px; text-align: right; cursor: pointer;
     font-variant-numeric: tabular-nums; color: var(--figma-color-text-secondary, #6e6e76); }
 
-  .buehne { overflow: auto; flex: 1 1 auto; min-height: 0; cursor: grab;
-    user-select: none; overscroll-behavior: contain; padding-bottom: 4px; }
-  .buehne.zieht { cursor: grabbing; }
-  .buehne img { pointer-events: none; -webkit-user-drag: none; }
   .sektion { position: sticky; left: 0; z-index: 1; width: max-content;
     display: flex; align-items: center; gap: 12px; padding: 2px 0 7px;
     background: var(--figma-color-bg-secondary, #fafafc); }
   .sektion .klein { color: var(--figma-color-text-tertiary, #9a9aa0); font-size: 9px; }
-  .trennlinie { min-width: 100%; border-top: 2px solid var(--figma-color-border, #cfcfd6);
-    margin: 12px 0; }
   .zeile { display: flex; gap: 16px; align-items: flex-end; width: max-content; }
   .zelle, .pxzelle, .dfzelle { flex: none; }
   .zelle .schau { position: relative; border-radius: 4px;
@@ -118,8 +110,6 @@
     font-size: 9px; color: var(--figma-color-text-secondary, #6e6e76);
     margin-top: 5px; font-variant-numeric: tabular-nums; text-align: center;
     white-space: pre-line; line-height: 1.4; }
-  #zellen.ohneAlt img.lage-alt { display: none; }
-  #zellen.ohneNeu img.lage-neu { display: none; }
   .pxzelle .wrap, .dfzelle .wrap { border-radius: 4px; overflow: hidden;
     border: 1px solid var(--figma-color-border, #e3e3e6);
     box-shadow: 0 1px 3px rgba(0,0,0,.07); background: #fff; }
@@ -142,8 +132,6 @@
       #1e1e1e; }
   #diff.dunkel .zelle .schau img { mix-blend-mode: screen; }
   #diff.dunkel .pxzelle .wrap, #diff.dunkel .dfzelle .wrap { background: #1e1e1e; border-color: #3a3a42; }
-  #diff.dunkel .dot.alt, #diff.dunkel .dot.weg { background: #ff7ad0; }
-  #diff.dunkel .dot.neu, #diff.dunkel .dot.dazu { background: #4fe3f0; }
 
   .optionen fig-tooltip { display: inline-flex; }
   #segRaster { flex: none; }

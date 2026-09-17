@@ -367,7 +367,14 @@ async function vorschau(ziel, snap, ohneNormalisieren) {
       }
     }
     b.box.remove();
+    // Rasterfehler/AA der bestehenden Variante — damit die Urteil-Zeile „vorher → nachher“ zeigen kann.
+    let gueteAlt = null;
+    if (pngAlt && pngAlt8) {
+      try { const w = await messeGuete([{ px1: pngAlt, px8: pngAlt8 }]);
+        if (w && w[0] && w[0].fehler < 900) gueteAlt = { fehler: w[0].fehler, aa: w[0].aa }; } catch (e) {}
+    }
     zellen.push({
+      gueteAlt: gueteAlt,
       N: N, kontur: g.kontur, raster: g.raster, radius: g.radius,
       alt: altSvg, neu: neuSvg,
       pngNeu: pngNeu, pngNeu2: pngNeu2, pngNeu8: pngNeu8,

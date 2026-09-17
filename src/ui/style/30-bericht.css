@@ -7,80 +7,115 @@
   /* ---- Fortschritt ------------------------------------------------------ */
   .fortschritt .zahl.rest { color: var(--figma-color-text-tertiary, #9a9aa0); }
 
-  /* ---- Vorschau: Kopfzeile ---------------------------------------------- */
-  #diff .diffkopf { gap: 12px; margin-bottom: 12px; }
-  #diff .diffkopf .seklabel { margin-right: 0; }
-  #diff .diffkopf > fig-tooltip { display: inline-flex; }
-  #segModus { flex: none; }
-  #diff .zoom { margin-left: auto; }
-  #diff .zoom fig-button#zoomFit { min-width: 30px; font-size: 9.5px; }
-  .blinkhinweis { flex: none; }
-  .chips[hidden] { display: none; }
+  /* ---- Vorschau: Kopf ---------------------------------------------------- */
+  /* Genau drei Textgrößen: 12 fett (Titel), 11 (Werte), 9,5 sekundär.
+     Abstände 12 und 8, Karten 1 px Rahmen und 8 px Radius. */
+  #diff .vkopf { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex: none; }
+  #diff .vkopf.zwei { gap: 8px; margin-top: 8px; }
+  #diff .vtitel { font-size: 12px; font-weight: 700; margin-right: auto;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #diff .vkopf > fig-tooltip { display: inline-flex; }
+  #diff .vkopf fig-switch { font-size: 9.5px; white-space: nowrap; }
+  #segModus, #segDarstellung { flex: none; }
+  #diff .zoom { display: flex; align-items: center; gap: 4px; flex: none; }
+  #diff .zoom fig-button { min-width: 22px; font-size: 10px; }
+  #diff .grundknopf { min-width: 22px; }
 
-  /* ---- Vorschau: Zellen -------------------------------------------------- */
-  .zeile { gap: 16px; }
-  .zelle .schau {
-    border-radius: 6px; overflow: hidden;
-    box-shadow: 0 1px 4px rgba(0,0,0,.08);
-  }
-  /* Pixelraster erst ab Zoom 4 — darunter wäre es nur Grau. */
+  .sprungleiste { display: flex; gap: 8px; flex: none; margin-top: 8px; flex-wrap: wrap; }
+  .sprungleiste[hidden] { display: none; }
+  .sprungleiste fig-button.sprung { font-size: 9.5px; height: 20px; border-radius: 10px; }
+  .sprungleiste fig-button.sprung.an {
+    background: var(--figma-color-bg-brand-tertiary, rgba(13,153,255,.14));
+    color: var(--figma-color-text-brand, #0d99ff); font-weight: 700; }
+
+  /* ---- Urteil-Zeile ------------------------------------------------------ */
+  fig-card.urteil { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    cursor: default; flex: none; margin-top: 12px; padding: 12px;
+    border: 1px solid var(--figma-color-border, #e3e3e6); border-radius: 8px;
+    background: var(--figma-color-bg, #fff); }
+  fig-card.urteil .utext { font-size: 11px; font-weight: 700; }
+  fig-card.urteil .upills { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+  fig-card.urteil.gut { border-color: rgba(18,167,106,.5); background: rgba(18,167,106,.07); }
+  fig-card.urteil.gut .utext { color: #0e8a57; }
+  fig-card.urteil.warn { border-color: rgba(201,138,18,.5); background: rgba(201,138,18,.09); }
+  fig-card.urteil.warn .utext { color: #8a6208; }
+  .upill { font-size: 9.5px; font-weight: 700; padding: 2px 9px; border-radius: 10px;
+    white-space: nowrap; font-variant-numeric: tabular-nums;
+    background: var(--figma-color-bg-secondary, #f0f0f3);
+    color: var(--figma-color-text-secondary, #6e6e76); }
+  .upill.gut { background: rgba(18,167,106,.14); color: #0e8a57; }
+  .upill.warn { background: rgba(201,138,18,.16); color: #8a6208; }
+
+  /* ---- Bühne: Canvas-Viewport -------------------------------------------- */
+  .buehne { position: relative; flex: none; margin-top: 12px; overflow: hidden;
+    border-radius: 8px; border: 1px solid var(--figma-color-border, #e3e3e6);
+    background: var(--figma-color-bg-secondary, #fafafc);
+    touch-action: none; user-select: none; height: 320px; }
+  .buehne canvas { display: block; width: 100%; height: 100%; }
+  .buehne.zieht { cursor: grabbing; }
+  .buehne.raum { cursor: grab; }
+  .vptip { position: absolute; z-index: 4; pointer-events: none; max-width: 220px;
+    font-size: 9px; font-variant-numeric: tabular-nums; padding: 3px 7px; border-radius: 4px;
+    background: var(--figma-color-bg-inverse, #1e1e1e);
+    color: var(--figma-color-text-oninverse, #fff);
+    box-shadow: 0 1px 4px rgba(0,0,0,.25); }
+  .vptip[hidden] { display: none; }
+  .zoompille { position: absolute; right: 8px; bottom: 8px; z-index: 5; }
+  .zoompille > fig-button { font-size: 9.5px; height: 22px; border-radius: 11px;
+    font-variant-numeric: tabular-nums;
+    background: var(--figma-color-bg, #fff);
+    box-shadow: 0 1px 4px rgba(0,0,0,.18); }
+  .zoommenu { position: absolute; right: 0; bottom: 26px; display: flex; flex-direction: column;
+    gap: 2px; padding: 4px; border-radius: 8px; min-width: 88px;
+    border: 1px solid var(--figma-color-border, #e3e3e6);
+    background: var(--figma-color-bg, #fff); box-shadow: 0 4px 14px rgba(0,0,0,.18); }
+  .zoommenu[hidden] { display: none; }
+  .zoommenu fig-button { font-size: 9.5px; height: 20px; justify-content: flex-start; }
+  .bhgriff { position: absolute; left: 0; right: 0; bottom: 0; height: 8px;
+    cursor: ns-resize; z-index: 3; }
+  .bhgriff::after { content: ""; position: absolute; left: 50%; bottom: 2px;
+    width: 26px; height: 3px; margin-left: -13px; border-radius: 2px;
+    background: var(--figma-color-border, #d9d9de); }
+
+  .scrubberzeile { display: flex; align-items: center; gap: 12px; flex: none; margin-top: 8px; }
+  .scrubberzeile[hidden] { display: none; }
+  .scrubberzeile .slabel { font-size: 9.5px; color: var(--figma-color-text-secondary, #6e6e76); }
+  .scrubberzeile fig-slider { flex: 1; }
+
+  /* ---- Kennzahlen unter der Bühne ---------------------------------------- */
+  .kennzahlen { flex: none; margin-top: 12px; overflow-x: auto; }
+  table.kztab { border-collapse: collapse; font-size: 11px;
+    font-variant-numeric: tabular-nums; width: 100%; }
+  table.kztab th { text-align: right; padding: 4px 8px; font-size: 11px; font-weight: 700;
+    color: var(--figma-color-text, #1c1c22);
+    border-bottom: 1px solid var(--figma-color-border, #e3e3e6); white-space: nowrap; }
+  table.kztab th.gut { color: #0e8a57; } table.kztab th.warn { color: #8a6208; }
+  table.kztab td { text-align: right; padding: 4px 8px; white-space: nowrap;
+    border-bottom: 1px solid color-mix(in srgb, var(--figma-color-border, #e3e3e6) 45%, transparent); }
+  table.kztab td.kzlabel { text-align: left; font-size: 9.5px;
+    color: var(--figma-color-text-secondary, #6e6e76); }
+  table.kztab td.kzlabel fig-tooltip { display: inline-flex; }
+  .vlegende { flex: none; margin-top: 8px; font-size: 9.5px;
+    color: var(--figma-color-text-tertiary, #9a9aa0); }
+
+  /* ---- Details ------------------------------------------------------------ */
+  fig-group.diffgruppe { margin: 12px 0 0; flex: none; }
+  .detailband { overflow-x: auto; padding-bottom: 4px; }
+  .zelle .schau { border-radius: 6px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  /* Pixelraster erst ab Zoom 6 — darunter wäre es nur Grau. */
   .zelle .schau:not(.raster),
-  #diff.dunkel .zelle .schau:not(.raster) {
-    background-image: none;
-  }
-  .zelle .schau .leer { position: absolute; inset: 0; display: flex;
-    align-items: center; justify-content: center; text-align: center;
-    color: var(--figma-color-text-tertiary, #9a9aa0); font-size: 9px; padding: 4px; }
+  #diff.dunkel .zelle .schau:not(.raster) { background-image: none; }
   .zelle .label { margin-top: 8px; text-align: left; white-space: normal; }
   .zelle .label .l1, .pxzelle .label .l1, .dfzelle .label .l1 {
-    display: flex; align-items: center; gap: 5px;
-    font-size: 10px; font-weight: 700;
+    display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700;
     color: var(--figma-color-text, #1c1c22); }
   .zelle .label .l2, .pxzelle .label .l2, .dfzelle .label .l2 {
-    font-size: 9px; color: var(--figma-color-text-secondary, #6e6e76);
+    font-size: 9.5px; color: var(--figma-color-text-secondary, #6e6e76);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .pxzelle .label, .dfzelle .label { text-align: left; white-space: normal; margin-top: 8px; }
   .statuspunkt { width: 6px; height: 6px; border-radius: 50%; flex: none; }
   .statuspunkt.gut { background: #12a76a; }
   .statuspunkt.ab { background: #c98a12; }
-
-  /* Wischen: Regler mit Griff, Beschriftung an den Rändern */
-  .schau.wisch { cursor: ew-resize; touch-action: none; }
-  .schau.wisch .wischklipp { position: absolute; inset: 0 auto 0 0;
-    overflow: hidden; width: 50%; }
-  .schau.wisch .wischklipp img { position: absolute; inset: 0 auto auto 0; max-width: none; }
-  .schau.wisch .wischgriff { position: absolute; top: 0; bottom: 0; left: 50%;
-    width: 0; border-left: 1px solid rgba(255,255,255,.9);
-    box-shadow: 0 0 0 1px rgba(20,20,30,.45); pointer-events: none; }
-  .schau.wisch .wischgriff::after {
-    content: ""; position: absolute; top: 50%; left: 0;
-    width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%;
-    background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35); }
-  .schau.wisch .wischkante { position: absolute; bottom: 3px; font-size: 8px;
-    padding: 1px 4px; border-radius: 3px; pointer-events: none;
-    background: rgba(255,255,255,.82); color: #3a3a42; }
-  .schau.wisch .wischkante.links { left: 3px; }
-  .schau.wisch .wischkante.rechts { right: 3px; }
-  #diff.dunkel .schau.wisch .wischkante { background: rgba(30,30,30,.8); color: #d8d8e0; }
-
-  /* Blinken: die neue Lage wird im Takt ein- und ausgeblendet */
-  #zellen.blink img.lage-neu { display: none; }
-  #zellen.blink.blinkNeu img.lage-neu { display: block; }
-  #zellen.blink.blinkNeu img.lage-alt { display: none; }
-
-  /* Pixelkoordinate unter dem Zeiger */
-  .koordanzeige { position: fixed; z-index: 20; pointer-events: none;
-    font-size: 9px; font-variant-numeric: tabular-nums;
-    padding: 2px 6px; border-radius: 4px;
-    background: var(--figma-color-bg-inverse, #1e1e1e);
-    color: var(--figma-color-text-oninverse, #fff);
-    box-shadow: 0 1px 4px rgba(0,0,0,.25); }
-  .koordanzeige[hidden] { display: none; }
-
-  /* Pixel- und Differenzbereich als aufklappbare Gruppen */
-  fig-group.diffgruppe { margin: 12px 0 0; width: max-content; min-width: 100%; }
-  fig-group.diffgruppe fig-header { position: sticky; left: 0; }
-  fig-group.diffgruppe .sektion { padding: 4px 0 8px; }
   .pxzelle .wrap, .dfzelle .wrap { border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
 
   /* ---- Protokoll --------------------------------------------------------- */

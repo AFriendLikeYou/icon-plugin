@@ -52,11 +52,54 @@
     uebersichtZeit = jetzt;
     send({ type: 'uebersicht' });
   }
-  bei('uebersicht', m => { uebersichtDaten = m; startseiteFuellen(); });
+  bei('uebersicht', m => { uebersichtDaten = m; startseiteFuellen(); libSummeZeichnen(); });
   bei('fazit', () => uebersichtAnfordern());
   // Beim Start (erste `konfig`-Antwort) einmal holen — davor kennt der
   // Hauptthread weder Konfig noch Adapter.
   bei('konfig', () => uebersichtAnfordern(true));
+
+  // ---- Umfang: Dieses Icon | Ganze Library (§34) --------------------------
+  // Der Umschalter ersetzt die früheren Gruppen. „Ganze Library“ ist zugleich
+  // die Startseite: die Icon-Liste steht dort, wo sonst die Vorschau liegt.
+  let umfang = 'icon', ausListe = false;
+  // Klick in der Library-Liste führt ins Icon: dort steht die Vorschau.
+  bei('auswahl', m => {
+    if (!ausListe) return;
+    ausListe = false;
+    if (m && m.ziel) umfangSetzen('icon', true);
+  });
+  function umfangAnwenden(melden) {
+    const lib = umfang === 'library';
+    $('grpIcon').hidden = lib;
+    $('grpLibrary').hidden = !lib;
+    try { $('segUmfang').setAttribute('value', umfang); } catch (e) {}
+    if (lib) uebersichtAnfordern();
+    libSummeZeichnen();
+    leerzustandZeichnen();
+    if (melden) send({ type: 'merkerSetzen', schluessel: 'umfang', wert: umfang });
+  }
+  function umfangSetzen(v, melden) {
+    const neu = v === 'library' ? 'library' : 'icon';
+    if (neu === umfang) return;
+    umfang = neu;
+    umfangAnwenden(melden);
+  }
+  function libSummeZeichnen() {
+    const z = (uebersichtDaten && uebersichtDaten.zusammenfassung) || null;
+    $('libSumme').textContent = z
+      ? t('start.summe', { icons: z.icons || 0, ohneSet: z.ohneSet || 0, veraltet: z.veraltet || 0 })
+      : t('start.laden');
+  }
+  $('segUmfang').addEventListener('change', e => {
+    umfangSetzen(String((e && e.detail) || $('segUmfang').value || 'icon'), true);
+  });
+  bei('merker', m => {
+    if (!m || m.schluessel !== 'umfang') return;
+    if (m.wert !== 'icon' && m.wert !== 'library') return;
+    umfang = m.wert;
+    umfangAnwenden(false);
+  });
+  send({ type: 'merkerLaden', schluessel: 'umfang' });
 
   function startseiteAufbauen() {
     if (startAufgebaut) return;
@@ -140,28 +183,32 @@
       k.appendChild(c);
       k.addEventListener('click', () => {
         if (beschaeftigt) return;
+        ausListe = true;
         send({ type: 'fokus', nodeId: e.nodeId || null });
       });
       liste.appendChild(k);
     });
   }
 
-  // Ohne Ziel: Startseite statt der alten Erklärliste. Im ZDS-Modus bleibt
-  // zusätzlich der Hinweis „Karte auswählen“, der Beispiel-Button entfällt dort.
+  // „Ganze Library“ zeigt die Icon-Liste (Startseite) an der Stelle der
+  // Vorschau. „Dieses Icon“ ohne Auswahl zeigt nur einen kurzen Hinweis und
+  // den Beispiel-Button.
   function leerzustandZeichnen() {
     const box = $('leerzustand');
     const zds = adapterAktiv === 'zds';
-    box.hidden = hatAuswahl;
+    const lib = umfang === 'library';
+    box.hidden = !lib && hatAuswahl;
     startseiteAufbauen();
-    // Leeres File: Haupt-Button „Beispiel-Icon anlegen“; sonst führt die Liste.
     const leerFile = !uebersichtDaten || !(uebersichtDaten.eintraege || []).length;
-    $('leerKarte').hidden = !(zds && leerFile);
-    box.querySelectorAll('ul').forEach(ul => { ul.hidden = true; });
-    const kopf = box.querySelector('.gruppenkopf');
-    if (kopf) kopf.hidden = true;
-    $('btnBeispiel').hidden = !leerFile;
+    $('startseite').hidden = !lib;
+    $('leerHinweis').hidden = lib || hatAuswahl;
+    $('leerKarte').hidden = !(zds && !lib && !hatAuswahl);
+    $('btnBeispiel').hidden = !leerFile || (lib && !leerFile);
     aus($('btnBeispiel'), beschaeftigt);
-    if (!hatAuswahl) startseiteFuellen();
+    if (lib) startseiteFuellen();
+    // Die Vorschau gehört zum Modus „Dieses Icon“.
+    if (lib) $('diff').classList.remove('an');
+    else if (letzterDiff) $('diff').classList.add('an');
     lizenzZeichnen();
   }
 

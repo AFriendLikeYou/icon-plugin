@@ -122,3 +122,14 @@ The original single-file script (`code.v1.js`, kept as a reference).
 - Vorschau: Vergleichsmodi Überlagern / Wischen / Nebeneinander / Blinken, Fit-Zoom, kompakte Beschriftung, Statuspunkt
 - Design-Token-Liste mit Farbfeldern, Library-Werte werden nachgeladen
 - Beispiel-Icon auch im ZDS-Modus; UI in Module geteilt (src/ui), Handler-Registry
+
+## Runde 5 — 2026-09-17
+
+- Vorschau als Canvas-Viewport mit Kamera: Figma-Gesten (Rad = Pan, Ctrl/Cmd+Rad und Pinch = Zoom um den Cursor, Leertaste+Drag, Shift+0/1/2, Doppelklick), Zoompille mit Menü, ziehbare Bühnenhöhe
+- Vorher | Nachher als echte Rasterung, Modi Nebeneinander und Wischen, Darstellung Pixel | Vektor, Retina-scharf
+- Änderungs-Highlighting pixelgenau als Regionen mit Akzentrahmen und Hover-Erklärung; Überblend-Regler Vorher → Nachher
+- Urteil-Zeile in Klartext („Schärfer: Rasterfehler 0,021 → 0,012“), Kennzahlen-Tabelle je Größe, Details (Vektor, Pixel, Differenz) zugeklappt
+- Umfang-Umschalter „Dieses Icon | Ganze Library“ ersetzt zwei Gruppen; Library-Ansicht = Icon-Liste
+- Rückgängig-Button nach jedem Bau (Batch zählt je Icon herunter), Hauptthread nutzt figma.triggerUndo
+- Onboarding gekürzt, Illustrationen in Akzent + Grau, Slide 4 erklärt Kauf über das Figma-Konto (kein Lizenzschlüssel)
+- Lizenz-Block: „Status aktualisieren“; Rasterfehler der bestehenden Variante wird mitgemessen (gueteAlt)

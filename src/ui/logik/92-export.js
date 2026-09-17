@@ -4,7 +4,7 @@
   // Umfang: Alle · Ausgewählte (Haken in der Bericht-Tabelle) · Aktuelles Icon.
   $('btnExport').addEventListener('click', () => {
     if (beschaeftigt) return;
-    const wahl = String($('segUmfang').value || 'alle');
+    const wahl = String($('segExportUmfang').value || 'alle');
     const namen = gewaehlteNamen();
     if (wahl === 'namen' && !namen.length) { toast(t('ber.exportLeer')); return; }
     if (wahl === 'auswahl' && !hatAuswahl) { toast(t('ber.exportLeer')); return; }

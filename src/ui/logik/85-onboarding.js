@@ -80,64 +80,69 @@
     halter.appendChild(karte);
   }
 
-  // ---- Skizzen (Inline-SVG, Plugin-Farben) --------------------------------
-  function obMasterCfg() {
-    return (cfgLokal && cfgLokal.master)
-      || { groesse: 72, keylines: { Square: 56, Circular: 60, Wide: 64, Tall: 64 } };
+  // ---- Skizzen (Inline-SVG) ------------------------------------------------
+  // Eine Akzentfarbe plus Grau, überall 2 px Strich wie in unseren Icons,
+  // das Gitter sehr dezent. Keine dritte Farbe.
+  const OB_AKZ = '#0d99ff', OB_GRAU = '#8a8a96';
+  function obGitter(w, h, s) {
+    let g = '';
+    for (let x = s; x < w; x += s) g += '<line x1="' + x + '" y1="0" x2="' + x + '" y2="' + h + '" stroke="#ffffff" stroke-opacity=".07"/>';
+    for (let y = s; y < h; y += s) g += '<line x1="0" y1="' + y + '" x2="' + w + '" y2="' + y + '" stroke="#ffffff" stroke-opacity=".07"/>';
+    return g;
   }
-  // Keylines für eine Zielgröße: aus der Konfig, sonst proportional zum Master.
-  function obKeylines(N) {
-    const g = ((cfgLokal && cfgLokal.groessen) || []).filter(x => x.N === N)[0];
-    if (g && g.keylines) return g.keylines;
-    const m = obMasterCfg(), f = N / (m.groesse || 72), k = {};
-    KLASSEN.forEach(kl => { k[kl] = Math.round(m.keylines[kl] * f * 2) / 2; });
-    return k;
+  function obSvg(w, h, inhalt) {
+    return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">'
+      + obGitter(w, h, 12) + inhalt + '</svg>';
   }
-  // Schritt 1: Master-Kasten, Pfeil, drei kleine Kästen nebeneinander.
+  function obKasten(x, y, s, farbe, gestrichelt) {
+    return '<rect x="' + x + '" y="' + y + '" width="' + s + '" height="' + s + '" rx="4" fill="none" stroke="'
+      + farbe + '" stroke-width="2"' + (gestrichelt ? ' stroke-dasharray="4 3"' : '') + '/>';
+  }
+  function obPfeil(x, y) {
+    return '<path d="M' + x + ' ' + y + ' h14 m-5 -5 l5 5 l-5 5" fill="none" stroke="' + OB_GRAU
+      + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+  }
+  // Schritt 1: Vorlage (groß, mit Keyline) → drei Zielgrößen.
   function obSkizzeGroessen() {
-    const m = obMasterCfg();
-    const klein = [24, 18, 14].map(N => keylineSvg(N, obKeylines(N), 22 + N)).join('');
-    return '<div class="skizze">' + keylineSvg(m.groesse, m.keylines, 96)
-      + '<span class="pfeil">→</span>' + klein + '</div>';
-  }
-  // Schritt 2: erkannter Modus — ZDS-Board als Kartenraster, Frei als einzelne Komponente.
-  function obSkizzeModus() {
-    const zds = adapterAktiv === 'zds';
-    const kasten = (x, y, w, h, f, o) => '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h
-      + '" rx="4" fill="' + f + '" fill-opacity="' + (o || .18) + '" stroke="' + f + '" stroke-opacity=".8"/>';
-    let inhalt = '';
-    if (zds) {
-      for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++) {
-        inhalt += kasten(4 + c * 40, 4 + r * 40, 32, 32, c === 1 && r === 0 ? '#0d99ff' : '#8a8a96', c === 1 && r === 0 ? .3 : .12);
-      }
-    } else {
-      inhalt = kasten(20, 8, 72, 72, '#0d99ff', .16)
-        + '<circle cx="20" cy="8" r="3" fill="#0d99ff"/><circle cx="92" cy="8" r="3" fill="#0d99ff"/>'
-        + '<circle cx="20" cy="80" r="3" fill="#0d99ff"/><circle cx="92" cy="80" r="3" fill="#0d99ff"/>';
-    }
-    return '<div class="skizze"><svg width="120" height="88" viewBox="0 0 120 88">' + inhalt + '</svg></div>';
-  }
-  // Schritt 3: Ablauf auswählen → Vorschau → Bauen.
-  function obSkizzeAblauf() {
-    const stufe = (x, f) => '<rect x="' + x + '" y="20" width="44" height="44" rx="8" fill="' + f
-      + '" fill-opacity=".16" stroke="' + f + '" stroke-opacity=".85"/>';
-    const pfeil = x => '<path d="M' + x + ' 42 h12 m-4 -4 l4 4 l-4 4" stroke="#cfc9e6" stroke-opacity=".6" fill="none" stroke-width="1.5"/>';
-    return '<div class="skizze"><svg width="176" height="84" viewBox="0 0 176 84">'
-      + stufe(4, '#5b5bd6') + pfeil(50) + stufe(66, '#0e8a9a') + pfeil(112) + stufe(128, '#12a76a')
-      + '</svg></div>';
-  }
-  // Schritt 4: Mini-Bericht mit Balken und Schloss.
-  function obSkizzeBericht() {
-    let zeilen = '';
-    [0.9, 0.62, 0.78, 0.35].forEach((w, i) => {
-      zeilen += '<rect x="4" y="' + (6 + i * 18) + '" width="34" height="8" rx="3" fill="#ffffff" fill-opacity=".18"/>'
-        + '<rect x="44" y="' + (6 + i * 18) + '" width="' + (72 * w) + '" height="8" rx="3" fill="'
-        + (w > 0.75 ? '#12a76a' : w > 0.5 ? '#c98a12' : '#c2402a') + '" fill-opacity=".75"/>';
+    let i = obKasten(4, 12, 84, OB_GRAU) + obKasten(16, 24, 60, OB_AKZ, true);
+    i += obPfeil(96, 54);
+    [[120, 34, 40], [172, 42, 30], [212, 48, 24]].forEach(k => {
+      i += obKasten(k[0], k[1], k[2], OB_GRAU) + obKasten(k[0] + 4, k[1] + 4, k[2] - 8, OB_AKZ, true);
     });
-    return '<div class="skizze"><svg width="124" height="82" viewBox="0 0 124 82">' + zeilen + '</svg>'
-      + '<svg width="44" height="52" viewBox="0 0 44 52">'
-      + '<rect x="8" y="20" width="28" height="22" rx="4" fill="#0d99ff" fill-opacity=".22" stroke="#0d99ff"/>'
-      + '<path d="M14 20 v-5 a8 8 0 0 1 16 0 v5" fill="none" stroke="#0d99ff" stroke-width="2"/></svg></div>';
+    return '<div class="skizze">' + obSvg(248, 108, i) + '</div>';
+  }
+  // Schritt 2: erkannter Modus — ZDS-Board als Kartenraster, Frei als Einzelstück.
+  function obSkizzeModus() {
+    let i = '';
+    if (adapterAktiv === 'zds') {
+      for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++)
+        i += obKasten(6 + c * 44, 10 + r * 44, 34, (c === 1 && r === 0) ? OB_AKZ : OB_GRAU);
+    } else {
+      i = obKasten(40, 14, 64, OB_AKZ)
+        + '<circle cx="40" cy="14" r="3" fill="' + OB_GRAU + '"/><circle cx="104" cy="14" r="3" fill="' + OB_GRAU + '"/>'
+        + '<circle cx="40" cy="78" r="3" fill="' + OB_GRAU + '"/><circle cx="104" cy="78" r="3" fill="' + OB_GRAU + '"/>';
+    }
+    return '<div class="skizze">' + obSvg(146, 100, i) + '</div>';
+  }
+  // Schritt 3: auswählen → Vorschau → bauen, der letzte Schritt im Akzent.
+  function obSkizzeAblauf() {
+    const stufe = (x, f) => obKasten(x, 26, 44, f);
+    const i = stufe(6, OB_GRAU) + obPfeil(56, 48) + stufe(78, OB_GRAU) + obPfeil(128, 48) + stufe(150, OB_AKZ);
+    return '<div class="skizze">' + obSvg(204, 100, i) + '</div>';
+  }
+  // Schritt 4: Vollversion — Schloss offen, Häkchenliste.
+  function obSkizzeLizenz() {
+    let i = '<rect x="18" y="44" width="44" height="34" rx="6" fill="none" stroke="' + OB_AKZ + '" stroke-width="2"/>'
+      + '<path d="M28 44 v-8 a12 12 0 0 1 24 0" fill="none" stroke="' + OB_GRAU + '" stroke-width="2" stroke-linecap="round"/>'
+      + '<circle cx="40" cy="61" r="4" fill="' + OB_AKZ + '"/>';
+    [0, 1, 2].forEach(k => {
+      const y = 34 + k * 18;
+      i += '<path d="M78 ' + y + ' l5 5 l9 -10" fill="none" stroke="' + OB_AKZ
+        + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+        + '<line x1="100" y1="' + y + '" x2="' + (100 + [54, 40, 48][k]) + '" y2="' + y
+        + '" stroke="' + OB_GRAU + '" stroke-width="2" stroke-linecap="round"/>';
+    });
+    return '<div class="skizze">' + obSvg(180, 100, i) + '</div>';
   }
 
   // ---- Slideshow ----------------------------------------------------------
@@ -150,7 +155,7 @@
     if (i === 1) return { bild: obSkizzeModus(), titel: t('ob.2.titel', { modus: modus }),
       text: adapterAktiv === 'zds' ? t('ob.2.textZds') : t('ob.2.textFrei'), profile: true };
     if (i === 2) return { bild: obSkizzeAblauf(), titel: t('ob.3.titel'), text: t('ob.3.text') };
-    return { bild: obSkizzeBericht(), titel: t('ob.4.titel'), text: t('ob.4.text') };
+    return { bild: obSkizzeLizenz(), titel: t('ob.4.titel'), text: t('ob.4.text'), lizenz: true };
   }
 
   function obZeichnen() {
@@ -167,6 +172,12 @@
     // Profilwahl auf Schritt 2
     const extra = $('obExtra');
     extra.textContent = '';
+    if (s.lizenz) {
+      const h = document.createElement('div');
+      h.className = 'fhilfe';
+      h.textContent = t('liz.figma');
+      extra.appendChild(h);
+    }
     if (s.profile) {
       const info = (profilInfo && profilInfo.length)
         ? profilInfo
