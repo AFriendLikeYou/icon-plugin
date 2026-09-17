@@ -210,6 +210,11 @@ const css = `
   .keyauf { align-self: flex-start; font-size: 9.5px; }
   .keyblock[hidden] { display: none; }
   .keyblock { border-top: 1px dashed var(--figma-color-border, #e3e3e6); padding-top: 6px; }
+  .keyzeile { display: flex; align-items: center; gap: 6px; }
+  .keyzeile .keykurz { font-size: 9.5px; color: var(--figma-color-text-secondary, #6e6e76); font-variant-numeric: tabular-nums; }
+  .keyhinweis { font-size: 9.5px; color: var(--figma-color-text-secondary, #6e6e76); margin: 2px 0 6px; line-height: 1.4; }
+  .keyprop { font-size: 9.5px; align-self: flex-start; }
+  fig-input-number.unplausibel { outline: 1px solid #c98a12; border-radius: 4px; }
   .ungueltig { outline: 1px solid #c98a12; outline-offset: 1px; border-radius: 4px; }
   .fehlerbox { border-radius: 6px; padding: 7px 10px; font-size: 10px;
     background: rgba(201,138,18,.12); color: #8a6208; }
@@ -321,6 +326,9 @@ const WOERTER = {
     'cfg.standard': 'Standard',
     'cfg.entfernen': 'Größe entfernen',
     'cfg.keylinesAuf': 'Keylines',
+    'cfg.keylinesProp': 'proportional neu berechnen',
+    'cfg.keylinesHinweis': 'Die Keyline ist die Größe des Icon-Körpers im {N}-px-Kasten. Sie folgt N automatisch, bis du sie von Hand änderst.',
+    'cfg.keylineUnplausibel': 'Keyline {wert} passt nicht zu N = {N} (erwartet zwischen {min} und {N}).',
     'btn.groesseHinzu': 'Größe hinzufügen',
     'opt.aus': 'aus',
     'radius.proportional': 'proportional',
@@ -435,6 +443,9 @@ const WOERTER = {
     'cfg.standard': 'Default',
     'cfg.entfernen': 'Remove size',
     'cfg.keylinesAuf': 'Keylines',
+    'cfg.keylinesProp': 'recompute proportionally',
+    'cfg.keylinesHinweis': 'The keyline is the size of the icon body inside the {N} px box. It follows N automatically until you edit it by hand.',
+    'cfg.keylineUnplausibel': 'Keyline {wert} does not fit N = {N} (expected between {min} and {N}).',
     'btn.groesseHinzu': 'Add size',
     'opt.aus': 'off',
     'radius.proportional': 'proportional',
@@ -1316,11 +1327,17 @@ const logik = `
         + '<div class="feld"><span class="fname">' + esc(t('cfg.radiusMin')) + '</span>'
         + '<fig-input-number class="fRadMin" min="0" step="0.5" data-pfad="' + pf + '.radius.min" value="' + esc(g.radius.min) + '"></fig-input-number></div>'
         + '</div>'
-        + '<fig-button class="keyauf" variant="ghost">' + esc(t('cfg.keylinesAuf')) + ' ▾</fig-button>'
-        + '<div class="keyblock vier"' + (keylinesOffen[i] ? '' : ' hidden') + '>'
+        + '<div class="keyzeile"><fig-button class="keyauf" variant="ghost">' + esc(t('cfg.keylinesAuf')) + ' ▾</fig-button>'
+        + '<span class="keykurz">' + esc(keylinesKurz(g)) + '</span></div>'
+        + '<div class="keyblock"' + (keylinesOffen[i] ? '' : ' hidden') + '>'
+        + '<div class="keyhinweis">' + esc(t('cfg.keylinesHinweis', { N: zahl(g.N) })) + '</div>'
+        + '<div class="vier">'
         + KLASSEN.map(kl => '<div class="feld"><span class="fname">' + esc(kl) + '</span>'
-            + '<fig-input-number class="fKey" data-kl="' + kl + '" min="0.1" step="0.5" data-pfad="' + pf + '.keylines.' + kl + '"'
+            + '<fig-input-number class="fKey' + (keylinePlausibel(g, g.keylines[kl]) ? '' : ' unplausibel') + '" data-kl="' + kl + '" min="0.1" step="0.5" data-pfad="' + pf + '.keylines.' + kl + '"'
+            + (keylinePlausibel(g, g.keylines[kl]) ? '' : ' title="' + esc(t('cfg.keylineUnplausibel', { wert: zahl(g.keylines[kl]), N: zahl(g.N), min: zahl(g.N / 2) })) + '"')
             + ' value="' + esc(g.keylines[kl]) + '"></fig-input-number></div>').join('')
+        + '</div>'
+        + '<fig-button class="keyprop" variant="ghost">' + esc(t('cfg.keylinesProp')) + '</fig-button>'
         + '</div>';
 
       const zahlBinden = (sel, setzen) => {
@@ -1331,15 +1348,33 @@ const logik = `
           if (isFinite(v)) { setzen(v); }
         });
       };
-      zahlBinden('.fN', v => { g.N = Math.round(v); karte.querySelector('.gtitel').textContent = zahl(g.N) + ' px'; });
+      zahlBinden('.fN', v => {
+        const alt = g.N, neuN = Math.round(v);
+        if (!(neuN > 0) || neuN === alt) return;
+        g.N = neuN;
+        if (!g.keylinesManuell && alt > 0) keylinesSkalieren(g, neuN / alt);
+        keylinesOffen[i] = true;            // zeigen, was sich geändert hat
+        groessenZeichnen();
+      });
       zahlBinden('.fKontur', v => { g.kontur = v; });
       zahlBinden('.fRadWert', v => { g.radius.wert = v; });
       zahlBinden('.fRadMin', v => { g.radius.min = v; });
       karte.querySelectorAll('.fKey').forEach(el => {
         el.addEventListener('change', e => {
           const v = parseFloat(e.detail != null ? e.detail : el.value);
-          if (isFinite(v)) g.keylines[el.getAttribute('data-kl')] = v;
+          if (isFinite(v)) { g.keylines[el.getAttribute('data-kl')] = v; g.keylinesManuell = true; }
         });
+      });
+      karte.querySelector('.keyprop').addEventListener('click', () => {
+        // Bezug: die nächstkleinere Zeile, sonst die nächstgrößere
+        const andere = cfgLokal.groessen.filter(x => x !== g && x.N > 0);
+        if (!andere.length) return;
+        const kleiner = andere.filter(x => x.N < g.N).sort((a, b) => b.N - a.N)[0];
+        const bezug = kleiner || andere.sort((a, b) => a.N - b.N)[0];
+        KLASSEN.forEach(kl => { g.keylines[kl] = Math.round(bezug.keylines[kl] * (g.N / bezug.N) * 2) / 2; });
+        g.keylinesManuell = false;
+        keylinesOffen[i] = true;
+        groessenZeichnen();
       });
       karte.querySelector('.fRaster').addEventListener('change', e => {
         const v = parseFloat((e && e.detail) || karte.querySelector('.fRaster').value);
@@ -1379,6 +1414,17 @@ const logik = `
     korrekturenMarkieren();
   }
 
+  function keylinesSkalieren(g, f) {
+    KLASSEN.forEach(kl => { g.keylines[kl] = Math.round(g.keylines[kl] * f * 2) / 2; });
+  }
+  function keylinesKurz(g) {
+    return KLASSEN.map(kl => kl.slice(0, 1) + ' ' + zahl(g.keylines[kl])).join(' · ');
+  }
+  // Plausibel: Icon-Körper zwischen halber und voller Kastengröße.
+  function keylinePlausibel(g, wert) {
+    return isFinite(wert) && wert >= g.N / 2 - 1e-9 && wert <= g.N + 1e-9;
+  }
+
   // Vorschlag für eine neue Zeile: N + 4 (bzw. + 6 ab 24 px), Kontur wie die
   // letzte, Keylines proportional (auf 0,5 gerundet), Raster wie die letzte.
   $('btnGroesseHinzu').addEventListener('click', () => {
@@ -1393,6 +1439,7 @@ const logik = `
     };
     neu.N = N;
     neu.standard = false;
+    neu.keylinesManuell = false;
     if (letzte) {
       const f = N / letzte.N;
       KLASSEN.forEach(kl => {

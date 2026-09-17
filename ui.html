@@ -201,6 +201,11 @@ html,:host{width:100%;height:100%;color:var(--figma-color-text);-webkit-font-smo
   .keyauf { align-self: flex-start; font-size: 9.5px; }
   .keyblock[hidden] { display: none; }
   .keyblock { border-top: 1px dashed var(--figma-color-border, #e3e3e6); padding-top: 6px; }
+  .keyzeile { display: flex; align-items: center; gap: 6px; }
+  .keyzeile .keykurz { font-size: 9.5px; color: var(--figma-color-text-secondary, #6e6e76); font-variant-numeric: tabular-nums; }
+  .keyhinweis { font-size: 9.5px; color: var(--figma-color-text-secondary, #6e6e76); margin: 2px 0 6px; line-height: 1.4; }
+  .keyprop { font-size: 9.5px; align-self: flex-start; }
+  fig-input-number.unplausibel { outline: 1px solid #c98a12; border-radius: 4px; }
   .ungueltig { outline: 1px solid #c98a12; outline-offset: 1px; border-radius: 4px; }
   .fehlerbox { border-radius: 6px; padding: 7px 10px; font-size: 10px;
     background: rgba(201,138,18,.12); color: #8a6208; }
@@ -652,7 +657,7 @@ fig-icon[size="small"] {
   const aus = (el, on) => { if (el) el.toggleAttribute('disabled', !!on); };
   const kopie = o => JSON.parse(JSON.stringify(o));
 
-  const T = {"de":{"titel":"Icon Pipeline","tab.icon":"Icon","tab.cfg":"Einstellungen","adapter.zds":"ZDS","adapter.frei":"Frei","gruppe.icon":"Icon","auswahl.leer":"Icon auswählen …","auswahl.tip":"Klick: im Canvas zeigen","btn.vorschau":"Vorschau","btn.bauen":"Icon bauen","tip.snap":"Gerade Kanten und Kurven-Scheitel aufs eingestellte Raster. Das AA-Orakel behält automatisch die schärfere Fassung. Gilt fürs Durchziehen und für „Alle neu bauen“.","chk.snap":"Pixel-Snapping","tip.stroke":"Ungeplättete Fassung neben der Source, kantenidentisch zum Ergebnis. Wird nicht publiziert.","chk.stroke":"Stroke-Fassung ablegen","klasse.label":"Klasse","klasse.geraten":"geraten","gruppe.library":"Library — alle Icons","btn.audit":"Audit","btn.alle":"Alle neu bauen","dlg.alle.titel":"Alle Icons neu bauen?","dlg.alle.text":"Jedes Icon wird neu durchgezogen. Bestehende Varianten werden überschrieben. Das kann eine Weile dauern.","btn.abbrechen":"Abbrechen","btn.alleOk":"Alle neu bauen","diff.vektor":"Vektor","diff.aktuell":"aktuell","diff.neu":"neu","diff.dunkel":"dunkler Grund","diff.pixel":"Pixelansicht","diff.rasterung":"Rasterung","diff.schaerfe":"weniger AA = schärfer","diff.differenz":"Differenz","diff.weg":"nur alt","diff.dazu":"nur neu","diff.nuralt":"kein bestehendes Set","zoom.kleiner":"kleiner","zoom.groesser":"größer","zoom.zurueck":"Doppelklick: zurück auf 6×","zelle.keyline":"Keyline {ist}/{soll}","zelle.masse":"Kontur {k} · Raster {r}","zelle.gerastet":"{n} Kanten gerastet","zelle.radius":"Radius {v}","zelle.neu":"neu","pixel.aa":"AA {aa} %","pixel.alt":"aktuell {aa} %","pixel.hint":"Hinting: {v}","hint.fehler":"Fehler −{d} %","hint.gleich":"gleichwertig","hint.ohne":"ohne Wirkung","log.titel":"Protokoll","btn.leeren":"Leeren","log.leer":"Noch nichts gelaufen.","log.zeigen":"zeigen","cfg.allgemein":"Allgemein","cfg.adapter":"Adapter","cfg.sprache":"Sprache","cfg.variantenProperty":"Variantenproperty","opt.auto":"automatisch","opt.zds":"ZDS","opt.frei":"Frei","opt.de":"Deutsch","opt.en":"Englisch","cfg.master":"Master","cfg.masterGroesse":"Größe","cfg.masterKontur":"Kontur","cfg.keylines":"Keylines","cfg.groessen":"Größen","cfg.N":"N (px)","cfg.kontur":"Kontur","cfg.raster":"Raster","cfg.rasterGrob":"Grob","cfg.radiusModus":"Radius","cfg.radiusWert":"Wert","cfg.radiusMin":"Min","cfg.standard":"Standard","cfg.entfernen":"Größe entfernen","cfg.keylinesAuf":"Keylines","btn.groesseHinzu":"Größe hinzufügen","opt.aus":"aus","radius.proportional":"proportional","radius.fest":"fest","radius.keine":"keine","cfg.farbe":"Farbe","farbe.source":"Source","farbe.hex":"Hex","farbe.variable":"Variable","farbe.suche":"Variable suchen …","farbe.lokal":"Lokale Variablen","farbe.leer":"Keine Farbvariablen gefunden.","farbe.laden":"Variablen werden geladen …","farbe.angleichen":"Source-Farbe angleichen","farbe.gewaehlt":"Gewählt","farbe.unaufloesbar":"Variable nicht auflösbar.","btn.speichern":"Speichern","btn.zuruecksetzen":"Zurücksetzen","dlg.reset.titel":"Einstellungen zurücksetzen","dlg.reset.text":"Auf welches Profil soll zurückgesetzt werden? Die aktuelle Konfiguration wird ersetzt.","profil.zds":"ZDS-Profil (72 px Source, 14/18/24)","profil.generic":"Allgemein (24 px Source, 16/20/24)","btn.resetOk":"Zurücksetzen","fehler.kopf":"Angepasst beim Prüfen:","hinweis.korrigiert":"Wert wurde beim Prüfen korrigiert","toast.gespeichert":"Einstellungen gespeichert"},"en":{"titel":"Icon Pipeline","tab.icon":"Icon","tab.cfg":"Settings","adapter.zds":"ZDS","adapter.frei":"Free","gruppe.icon":"Icon","auswahl.leer":"Select an icon …","auswahl.tip":"Click: reveal on canvas","btn.vorschau":"Preview","btn.bauen":"Build icon","tip.snap":"Snaps straight edges and curve extrema to the configured grid. The AA oracle keeps whichever version is sharper. Applies to single builds and to “Rebuild all”.","chk.snap":"Pixel snapping","tip.stroke":"Unflattened version next to the source, edge-identical to the result. Not published.","chk.stroke":"Keep stroke version","klasse.label":"Class","klasse.geraten":"guessed","gruppe.library":"Library — all icons","btn.audit":"Audit","btn.alle":"Rebuild all","dlg.alle.titel":"Rebuild all icons?","dlg.alle.text":"Every icon is rebuilt. Existing variants are overwritten. This may take a while.","btn.abbrechen":"Cancel","btn.alleOk":"Rebuild all","diff.vektor":"Vector","diff.aktuell":"current","diff.neu":"new","diff.dunkel":"dark background","diff.pixel":"Pixel view","diff.rasterung":"Rasterization","diff.schaerfe":"less AA = sharper","diff.differenz":"Difference","diff.weg":"old only","diff.dazu":"new only","diff.nuralt":"no existing set","zoom.kleiner":"smaller","zoom.groesser":"larger","zoom.zurueck":"Double click: back to 6×","zelle.keyline":"keyline {ist}/{soll}","zelle.masse":"stroke {k} · grid {r}","zelle.gerastet":"{n} edges snapped","zelle.radius":"radius {v}","zelle.neu":"new","pixel.aa":"AA {aa} %","pixel.alt":"current {aa} %","pixel.hint":"Hinting: {v}","hint.fehler":"error −{d} %","hint.gleich":"equivalent","hint.ohne":"no effect","log.titel":"Log","btn.leeren":"Clear","log.leer":"Nothing has run yet.","log.zeigen":"show","cfg.allgemein":"General","cfg.adapter":"Adapter","cfg.sprache":"Language","cfg.variantenProperty":"Variant property","opt.auto":"automatic","opt.zds":"ZDS","opt.frei":"Free","opt.de":"German","opt.en":"English","cfg.master":"Master","cfg.masterGroesse":"Size","cfg.masterKontur":"Stroke","cfg.keylines":"Keylines","cfg.groessen":"Sizes","cfg.N":"N (px)","cfg.kontur":"Stroke","cfg.raster":"Grid","cfg.rasterGrob":"Coarse","cfg.radiusModus":"Radius","cfg.radiusWert":"Value","cfg.radiusMin":"Min","cfg.standard":"Default","cfg.entfernen":"Remove size","cfg.keylinesAuf":"Keylines","btn.groesseHinzu":"Add size","opt.aus":"off","radius.proportional":"proportional","radius.fest":"fixed","radius.keine":"none","cfg.farbe":"Color","farbe.source":"Source","farbe.hex":"Hex","farbe.variable":"Variable","farbe.suche":"Search variable …","farbe.lokal":"Local variables","farbe.leer":"No color variables found.","farbe.laden":"Loading variables …","farbe.angleichen":"Match source color","farbe.gewaehlt":"Selected","farbe.unaufloesbar":"Variable cannot be resolved.","btn.speichern":"Save","btn.zuruecksetzen":"Reset","dlg.reset.titel":"Reset settings","dlg.reset.text":"Which profile should be restored? The current configuration is replaced.","profil.zds":"ZDS profile (72 px source, 14/18/24)","profil.generic":"Generic (24 px source, 16/20/24)","btn.resetOk":"Reset","fehler.kopf":"Adjusted while checking:","hinweis.korrigiert":"value was corrected while checking","toast.gespeichert":"Settings saved"}};
+  const T = {"de":{"titel":"Icon Pipeline","tab.icon":"Icon","tab.cfg":"Einstellungen","adapter.zds":"ZDS","adapter.frei":"Frei","gruppe.icon":"Icon","auswahl.leer":"Icon auswählen …","auswahl.tip":"Klick: im Canvas zeigen","btn.vorschau":"Vorschau","btn.bauen":"Icon bauen","tip.snap":"Gerade Kanten und Kurven-Scheitel aufs eingestellte Raster. Das AA-Orakel behält automatisch die schärfere Fassung. Gilt fürs Durchziehen und für „Alle neu bauen“.","chk.snap":"Pixel-Snapping","tip.stroke":"Ungeplättete Fassung neben der Source, kantenidentisch zum Ergebnis. Wird nicht publiziert.","chk.stroke":"Stroke-Fassung ablegen","klasse.label":"Klasse","klasse.geraten":"geraten","gruppe.library":"Library — alle Icons","btn.audit":"Audit","btn.alle":"Alle neu bauen","dlg.alle.titel":"Alle Icons neu bauen?","dlg.alle.text":"Jedes Icon wird neu durchgezogen. Bestehende Varianten werden überschrieben. Das kann eine Weile dauern.","btn.abbrechen":"Abbrechen","btn.alleOk":"Alle neu bauen","diff.vektor":"Vektor","diff.aktuell":"aktuell","diff.neu":"neu","diff.dunkel":"dunkler Grund","diff.pixel":"Pixelansicht","diff.rasterung":"Rasterung","diff.schaerfe":"weniger AA = schärfer","diff.differenz":"Differenz","diff.weg":"nur alt","diff.dazu":"nur neu","diff.nuralt":"kein bestehendes Set","zoom.kleiner":"kleiner","zoom.groesser":"größer","zoom.zurueck":"Doppelklick: zurück auf 6×","zelle.keyline":"Keyline {ist}/{soll}","zelle.masse":"Kontur {k} · Raster {r}","zelle.gerastet":"{n} Kanten gerastet","zelle.radius":"Radius {v}","zelle.neu":"neu","pixel.aa":"AA {aa} %","pixel.alt":"aktuell {aa} %","pixel.hint":"Hinting: {v}","hint.fehler":"Fehler −{d} %","hint.gleich":"gleichwertig","hint.ohne":"ohne Wirkung","log.titel":"Protokoll","btn.leeren":"Leeren","log.leer":"Noch nichts gelaufen.","log.zeigen":"zeigen","cfg.allgemein":"Allgemein","cfg.adapter":"Adapter","cfg.sprache":"Sprache","cfg.variantenProperty":"Variantenproperty","opt.auto":"automatisch","opt.zds":"ZDS","opt.frei":"Frei","opt.de":"Deutsch","opt.en":"Englisch","cfg.master":"Master","cfg.masterGroesse":"Größe","cfg.masterKontur":"Kontur","cfg.keylines":"Keylines","cfg.groessen":"Größen","cfg.N":"N (px)","cfg.kontur":"Kontur","cfg.raster":"Raster","cfg.rasterGrob":"Grob","cfg.radiusModus":"Radius","cfg.radiusWert":"Wert","cfg.radiusMin":"Min","cfg.standard":"Standard","cfg.entfernen":"Größe entfernen","cfg.keylinesAuf":"Keylines","cfg.keylinesProp":"proportional neu berechnen","cfg.keylinesHinweis":"Die Keyline ist die Größe des Icon-Körpers im {N}-px-Kasten. Sie folgt N automatisch, bis du sie von Hand änderst.","cfg.keylineUnplausibel":"Keyline {wert} passt nicht zu N = {N} (erwartet zwischen {min} und {N}).","btn.groesseHinzu":"Größe hinzufügen","opt.aus":"aus","radius.proportional":"proportional","radius.fest":"fest","radius.keine":"keine","cfg.farbe":"Farbe","farbe.source":"Source","farbe.hex":"Hex","farbe.variable":"Variable","farbe.suche":"Variable suchen …","farbe.lokal":"Lokale Variablen","farbe.leer":"Keine Farbvariablen gefunden.","farbe.laden":"Variablen werden geladen …","farbe.angleichen":"Source-Farbe angleichen","farbe.gewaehlt":"Gewählt","farbe.unaufloesbar":"Variable nicht auflösbar.","btn.speichern":"Speichern","btn.zuruecksetzen":"Zurücksetzen","dlg.reset.titel":"Einstellungen zurücksetzen","dlg.reset.text":"Auf welches Profil soll zurückgesetzt werden? Die aktuelle Konfiguration wird ersetzt.","profil.zds":"ZDS-Profil (72 px Source, 14/18/24)","profil.generic":"Allgemein (24 px Source, 16/20/24)","btn.resetOk":"Zurücksetzen","fehler.kopf":"Angepasst beim Prüfen:","hinweis.korrigiert":"Wert wurde beim Prüfen korrigiert","toast.gespeichert":"Einstellungen gespeichert"},"en":{"titel":"Icon Pipeline","tab.icon":"Icon","tab.cfg":"Settings","adapter.zds":"ZDS","adapter.frei":"Free","gruppe.icon":"Icon","auswahl.leer":"Select an icon …","auswahl.tip":"Click: reveal on canvas","btn.vorschau":"Preview","btn.bauen":"Build icon","tip.snap":"Snaps straight edges and curve extrema to the configured grid. The AA oracle keeps whichever version is sharper. Applies to single builds and to “Rebuild all”.","chk.snap":"Pixel snapping","tip.stroke":"Unflattened version next to the source, edge-identical to the result. Not published.","chk.stroke":"Keep stroke version","klasse.label":"Class","klasse.geraten":"guessed","gruppe.library":"Library — all icons","btn.audit":"Audit","btn.alle":"Rebuild all","dlg.alle.titel":"Rebuild all icons?","dlg.alle.text":"Every icon is rebuilt. Existing variants are overwritten. This may take a while.","btn.abbrechen":"Cancel","btn.alleOk":"Rebuild all","diff.vektor":"Vector","diff.aktuell":"current","diff.neu":"new","diff.dunkel":"dark background","diff.pixel":"Pixel view","diff.rasterung":"Rasterization","diff.schaerfe":"less AA = sharper","diff.differenz":"Difference","diff.weg":"old only","diff.dazu":"new only","diff.nuralt":"no existing set","zoom.kleiner":"smaller","zoom.groesser":"larger","zoom.zurueck":"Double click: back to 6×","zelle.keyline":"keyline {ist}/{soll}","zelle.masse":"stroke {k} · grid {r}","zelle.gerastet":"{n} edges snapped","zelle.radius":"radius {v}","zelle.neu":"new","pixel.aa":"AA {aa} %","pixel.alt":"current {aa} %","pixel.hint":"Hinting: {v}","hint.fehler":"error −{d} %","hint.gleich":"equivalent","hint.ohne":"no effect","log.titel":"Log","btn.leeren":"Clear","log.leer":"Nothing has run yet.","log.zeigen":"show","cfg.allgemein":"General","cfg.adapter":"Adapter","cfg.sprache":"Language","cfg.variantenProperty":"Variant property","opt.auto":"automatic","opt.zds":"ZDS","opt.frei":"Free","opt.de":"German","opt.en":"English","cfg.master":"Master","cfg.masterGroesse":"Size","cfg.masterKontur":"Stroke","cfg.keylines":"Keylines","cfg.groessen":"Sizes","cfg.N":"N (px)","cfg.kontur":"Stroke","cfg.raster":"Grid","cfg.rasterGrob":"Coarse","cfg.radiusModus":"Radius","cfg.radiusWert":"Value","cfg.radiusMin":"Min","cfg.standard":"Default","cfg.entfernen":"Remove size","cfg.keylinesAuf":"Keylines","cfg.keylinesProp":"recompute proportionally","cfg.keylinesHinweis":"The keyline is the size of the icon body inside the {N} px box. It follows N automatically until you edit it by hand.","cfg.keylineUnplausibel":"Keyline {wert} does not fit N = {N} (expected between {min} and {N}).","btn.groesseHinzu":"Add size","opt.aus":"off","radius.proportional":"proportional","radius.fest":"fixed","radius.keine":"none","cfg.farbe":"Color","farbe.source":"Source","farbe.hex":"Hex","farbe.variable":"Variable","farbe.suche":"Search variable …","farbe.lokal":"Local variables","farbe.leer":"No color variables found.","farbe.laden":"Loading variables …","farbe.angleichen":"Match source color","farbe.gewaehlt":"Selected","farbe.unaufloesbar":"Variable cannot be resolved.","btn.speichern":"Save","btn.zuruecksetzen":"Reset","dlg.reset.titel":"Reset settings","dlg.reset.text":"Which profile should be restored? The current configuration is replaced.","profil.zds":"ZDS profile (72 px source, 14/18/24)","profil.generic":"Generic (24 px source, 16/20/24)","btn.resetOk":"Reset","fehler.kopf":"Adjusted while checking:","hinweis.korrigiert":"value was corrected while checking","toast.gespeichert":"Settings saved"}};
   const KLASSEN = ['Square', 'Circular', 'Wide', 'Tall'];
   const RASTER_WERTE = [1, 0.5, 0.25];
 
@@ -1272,11 +1277,17 @@ fig-icon[size="small"] {
         + '<div class="feld"><span class="fname">' + esc(t('cfg.radiusMin')) + '</span>'
         + '<fig-input-number class="fRadMin" min="0" step="0.5" data-pfad="' + pf + '.radius.min" value="' + esc(g.radius.min) + '"></fig-input-number></div>'
         + '</div>'
-        + '<fig-button class="keyauf" variant="ghost">' + esc(t('cfg.keylinesAuf')) + ' ▾</fig-button>'
-        + '<div class="keyblock vier"' + (keylinesOffen[i] ? '' : ' hidden') + '>'
+        + '<div class="keyzeile"><fig-button class="keyauf" variant="ghost">' + esc(t('cfg.keylinesAuf')) + ' ▾</fig-button>'
+        + '<span class="keykurz">' + esc(keylinesKurz(g)) + '</span></div>'
+        + '<div class="keyblock"' + (keylinesOffen[i] ? '' : ' hidden') + '>'
+        + '<div class="keyhinweis">' + esc(t('cfg.keylinesHinweis', { N: zahl(g.N) })) + '</div>'
+        + '<div class="vier">'
         + KLASSEN.map(kl => '<div class="feld"><span class="fname">' + esc(kl) + '</span>'
-            + '<fig-input-number class="fKey" data-kl="' + kl + '" min="0.1" step="0.5" data-pfad="' + pf + '.keylines.' + kl + '"'
+            + '<fig-input-number class="fKey' + (keylinePlausibel(g, g.keylines[kl]) ? '' : ' unplausibel') + '" data-kl="' + kl + '" min="0.1" step="0.5" data-pfad="' + pf + '.keylines.' + kl + '"'
+            + (keylinePlausibel(g, g.keylines[kl]) ? '' : ' title="' + esc(t('cfg.keylineUnplausibel', { wert: zahl(g.keylines[kl]), N: zahl(g.N), min: zahl(g.N / 2) })) + '"')
             + ' value="' + esc(g.keylines[kl]) + '"></fig-input-number></div>').join('')
+        + '</div>'
+        + '<fig-button class="keyprop" variant="ghost">' + esc(t('cfg.keylinesProp')) + '</fig-button>'
         + '</div>';
 
       const zahlBinden = (sel, setzen) => {
@@ -1287,15 +1298,33 @@ fig-icon[size="small"] {
           if (isFinite(v)) { setzen(v); }
         });
       };
-      zahlBinden('.fN', v => { g.N = Math.round(v); karte.querySelector('.gtitel').textContent = zahl(g.N) + ' px'; });
+      zahlBinden('.fN', v => {
+        const alt = g.N, neuN = Math.round(v);
+        if (!(neuN > 0) || neuN === alt) return;
+        g.N = neuN;
+        if (!g.keylinesManuell && alt > 0) keylinesSkalieren(g, neuN / alt);
+        keylinesOffen[i] = true;            // zeigen, was sich geändert hat
+        groessenZeichnen();
+      });
       zahlBinden('.fKontur', v => { g.kontur = v; });
       zahlBinden('.fRadWert', v => { g.radius.wert = v; });
       zahlBinden('.fRadMin', v => { g.radius.min = v; });
       karte.querySelectorAll('.fKey').forEach(el => {
         el.addEventListener('change', e => {
           const v = parseFloat(e.detail != null ? e.detail : el.value);
-          if (isFinite(v)) g.keylines[el.getAttribute('data-kl')] = v;
+          if (isFinite(v)) { g.keylines[el.getAttribute('data-kl')] = v; g.keylinesManuell = true; }
         });
+      });
+      karte.querySelector('.keyprop').addEventListener('click', () => {
+        // Bezug: die nächstkleinere Zeile, sonst die nächstgrößere
+        const andere = cfgLokal.groessen.filter(x => x !== g && x.N > 0);
+        if (!andere.length) return;
+        const kleiner = andere.filter(x => x.N < g.N).sort((a, b) => b.N - a.N)[0];
+        const bezug = kleiner || andere.sort((a, b) => a.N - b.N)[0];
+        KLASSEN.forEach(kl => { g.keylines[kl] = Math.round(bezug.keylines[kl] * (g.N / bezug.N) * 2) / 2; });
+        g.keylinesManuell = false;
+        keylinesOffen[i] = true;
+        groessenZeichnen();
       });
       karte.querySelector('.fRaster').addEventListener('change', e => {
         const v = parseFloat((e && e.detail) || karte.querySelector('.fRaster').value);
@@ -1335,6 +1364,17 @@ fig-icon[size="small"] {
     korrekturenMarkieren();
   }
 
+  function keylinesSkalieren(g, f) {
+    KLASSEN.forEach(kl => { g.keylines[kl] = Math.round(g.keylines[kl] * f * 2) / 2; });
+  }
+  function keylinesKurz(g) {
+    return KLASSEN.map(kl => kl.slice(0, 1) + ' ' + zahl(g.keylines[kl])).join(' · ');
+  }
+  // Plausibel: Icon-Körper zwischen halber und voller Kastengröße.
+  function keylinePlausibel(g, wert) {
+    return isFinite(wert) && wert >= g.N / 2 - 1e-9 && wert <= g.N + 1e-9;
+  }
+
   // Vorschlag für eine neue Zeile: N + 4 (bzw. + 6 ab 24 px), Kontur wie die
   // letzte, Keylines proportional (auf 0,5 gerundet), Raster wie die letzte.
   $('btnGroesseHinzu').addEventListener('click', () => {
@@ -1349,6 +1389,7 @@ fig-icon[size="small"] {
     };
     neu.N = N;
     neu.standard = false;
+    neu.keylinesManuell = false;
     if (letzte) {
       const f = N / letzte.N;
       KLASSEN.forEach(kl => {

@@ -169,6 +169,7 @@ function konfigValidieren(k) {
     const rm = cfgZahl(rad.min, null, 0);  rad.min  = rm == null ? 0 : rm;
     g.radius = rad;
     g.standard = !!g.standard;
+    g.keylinesManuell = !!g.keylinesManuell;   // UI-Merker: Keylines von Hand gesetzt → folgen N nicht mehr
   });
 
   gs.sort((a, b) => a.N - b.N);
