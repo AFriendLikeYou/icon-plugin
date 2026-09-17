@@ -10,6 +10,7 @@
 // ===========================================================================
 
 Object.assign(SPRACHEN.de, {
+  'log.resteEntfernt': '{n} temporäre Vorschau-Knoten aus einem früheren Lauf entfernt.',
   'log.rueckgaengig': 'Letzter Schritt zurückgenommen.',
   'log.rueckgaengigFehlt': 'Rückgängig nicht möglich — bitte Cmd+Z in Figma nutzen.',
   // --- Trockenlauf ---
@@ -97,6 +98,7 @@ Object.assign(SPRACHEN.de, {
 });
 
 Object.assign(SPRACHEN.en, {
+  'log.resteEntfernt': 'Removed {n} temporary preview nodes left over from an earlier run.',
   'log.rueckgaengig': 'Last step undone.',
   'log.rueckgaengigFehlt': 'Undo not available — please use Cmd+Z in Figma.',
   // --- dry run ---

@@ -76,7 +76,7 @@ async function baueGroesse(ziel, N, snap, strokeAuch) {
   const srcPaint = CFG.farbe.modus === 'source' ? farbeSourcePaint(src) : null;
 
   async function bauKandidat(mitSnap) {
-    const box = figma.createFrame(); flaeche.appendChild(box);
+    const box = ephemer(figma.createFrame()); flaeche.appendChild(box);
     box.name = '__fit'; box.x = -4000; box.y = -4000;
     box.resize(N, N); box.fills = []; box.clipsContent = false;
     const inst = src.createInstance(); box.appendChild(inst);
@@ -102,7 +102,7 @@ async function baueGroesse(ziel, N, snap, strokeAuch) {
     // Ungeplättete Fassung sichern, bevor union/flatten die Kontur frisst.
     let strokeComp = null;
     if (strokeAuch) {
-      strokeComp = figma.createComponent(); flaeche.appendChild(strokeComp);
+      strokeComp = ephemer(figma.createComponent()); flaeche.appendChild(strokeComp);
       strokeComp.name = variantenName(N); strokeComp.resize(N, N);
       strokeComp.fills = []; strokeComp.clipsContent = true;
       const klon = det.clone();
@@ -149,8 +149,8 @@ async function baueGroesse(ziel, N, snap, strokeAuch) {
     if (wb.fehler < wa.fehler - 1e-6 ||
         (Math.abs(wb.fehler - wa.fehler) <= 1e-6 && wb.aa < wa.aa)) { sieger = B; verlierer = A; }
   }
-  if (verlierer.strokeComp) { try { verlierer.strokeComp.remove(); } catch (e) {} }
-  verlierer.box.remove();
+  ephemerWeg(verlierer.strokeComp);
+  ephemerWeg(verlierer.box);
   if (werte && werte.length === 2) sieger.aaInfo = { snap: werte[0], plain: werte[1], mitSnap: sieger === A };
   return sieger;
 }
@@ -256,7 +256,7 @@ async function einIcon(ziel, snap, strokeAuch) {
       comp.appendChild(b.flat); b.flat.x = fx; b.flat.y = fy;
       frisch.push(comp);
     }
-    b.box.remove();
+    ephemerWeg(b.box);
   }
 
   if (neu) {
@@ -338,19 +338,24 @@ async function einIcon(ziel, snap, strokeAuch) {
 
 // ohneNormalisieren: bei der Vorschau mit ungespeicherter Konfig darf die Source
 // nicht mit einer fremden master.kontur überschrieben werden.
-async function vorschau(ziel, snap, ohneNormalisieren) {
+// Die Vorschau ändert NICHTS am Dokument: Sie arbeitet auf einem temporären Klon der
+// Vorlage, alle Kästen sind ephemer und werden in finally entfernt.
+async function vorschau(ziel, snap) {
   const set = await ADAPTER.zielSet(ziel);
   gesperrtPruefen(ziel, set);
   quellePruefen(ziel);
-  const src = ziel.src;
   await farbeVariableAufloesen(CFG.farbe);
-  if (!ohneNormalisieren) normalisieren(src);
   const kl = ziel.klasse;
   const zellen = [];
-
+  const flaeche = ADAPTER.arbeitsFlaeche(ziel);
+  const klon = ephemer(ziel.src.clone());
+  klon.name = '__vorschau'; flaeche.appendChild(klon); klon.x = -4000; klon.y = -4200;
+  normalisieren(klon);
+  const zielTmp = Object.assign({}, ziel, { src: klon });
+  try {
   for (const g of CFG.groessen) {
     const N = g.N;
-    const b = await baueGroesse(ziel, N, snap, false);
+    const b = await baueGroesse(zielTmp, N, snap, false);
     b.box.clipsContent = true;
     const neuSvg = await b.box.exportAsync({ format: 'SVG_STRING' });
     const pngNeu  = await b.box.exportAsync({ format: 'PNG', constraint: { type: 'SCALE', value: 1 } });
@@ -371,17 +376,17 @@ async function vorschau(ziel, snap, ohneNormalisieren) {
     let ohneSvg = null, pngOhne = null, pngOhne2 = null, pngOhne8 = null, gueteOhne = null;
     if (snap) {
       try {
-        const o = await baueGroesse(ziel, N, false, false);
+        const o = await baueGroesse(zielTmp, N, false, false);
         o.box.clipsContent = true;
         ohneSvg  = await o.box.exportAsync({ format: 'SVG_STRING' });
         pngOhne  = await o.box.exportAsync({ format: 'PNG', constraint: { type: 'SCALE', value: 1 } });
         pngOhne2 = await o.box.exportAsync({ format: 'PNG', constraint: { type: 'SCALE', value: 2 } });
         pngOhne8 = await o.box.exportAsync({ format: 'PNG', constraint: { type: 'SCALE', value: 8 } });
-        o.box.remove();
+        ephemerWeg(o.box);
         if (b.aaInfo && b.aaInfo.plain) gueteOhne = { fehler: b.aaInfo.plain.fehler, aa: b.aaInfo.plain.aa };
       } catch (e) {}
     }
-    b.box.remove();
+    ephemerWeg(b.box);
     // Rasterfehler/AA der bestehenden Variante — damit die Urteil-Zeile „vorher → nachher“ zeigen kann.
     let gueteAlt = null;
     if (pngAlt && pngAlt8) {
@@ -399,6 +404,10 @@ async function vorschau(ziel, snap, ohneNormalisieren) {
       ist: b.ist, soll: keylineVon(g, kl), gerastet: b.gerastet, geschuetzt: b.geschuetzt || 0,
       grob: g.rasterGrob, guete: b.aaInfo || null
     });
+  }
+  } finally {
+    ephemerWeg(klon);
+    ephemerAufraeumen();
   }
   return { name: ziel.name, klasse: kl, kl: kl, zellen: zellen };
 }

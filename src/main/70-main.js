@@ -172,6 +172,13 @@ figma.ui.onmessage = async m => {
       ui({ type: 'einstellungen', snap: sch.snap, stroke: sch.stroke, trockenlaufEinzel: sch.trockenlaufEinzel });
       await auswahlMelden();
       figma.on('selectionchange', auswahlAnstossen);
+      figma.on('close', ephemerAufraeumen);   // Plugin wird geschlossen → keine Reste
+      try {
+        const seiten = [figma.currentPage];
+        if (CTX.zds && CTX.zds.IC && CTX.zds.IC !== figma.currentPage) seiten.push(CTX.zds.IC);
+        const n = ephemerResteEntfernen(seiten);
+        if (n) logZeile('info', t('log.resteEntfernt', { n: n }), null, { schwere: 'info' });
+      } catch (e) {}
       ui({ type: 'fertig' });
       return;
     }
@@ -344,7 +351,7 @@ figma.ui.onmessage = async m => {
         CTX.farbVariable = null; CTX.farbSchluessel = null;
         await farbeVariableAufloesen(CFG.farbe);
         const ziel = await zielStill();
-        const d = await vorschau(ziel, !!m.snap, true);   // Source nicht normalisieren (ungespeicherte Konfig)
+        const d = await vorschau(ziel, !!m.snap);
         ui(Object.assign({ type: 'diff', snap: !!m.snap, temporaer: true }, d));
       } finally {
         CFG = merkCfg;
@@ -477,6 +484,7 @@ figma.ui.onmessage = async m => {
       await auswahlMelden();
     }
   } catch (e) {
+    ephemerAufraeumen();   // abgebrochener Bau/Vorschau hinterlässt keine Kästen
     ui(fehlerLog(e));
     ui({ type: 'fazit', gut: false, text: t('fazit.abgebrochen', { grund: (e && e.message) || String(e) }) });
   }

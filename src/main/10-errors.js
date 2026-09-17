@@ -30,6 +30,33 @@ class PipelineFehler extends Error {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Ephemere Knoten: alles, was die Pipeline nur vorübergehend anlegt (Fit-Kästen,
+// Vorschau-Klone, Kandidaten). Wird bei Abbruch, Fehler und beim Schließen des
+// Plugins entfernt — damit nie „Icon-Leichen“ auf dem Board zurückbleiben.
+// ---------------------------------------------------------------------------
+const EPHEMER = new Set();
+const EPHEMER_NAMEN = ['__fit', '__vorschau', '__kandidat'];
+function ephemer(node) { if (node) EPHEMER.add(node); return node; }
+function ephemerWeg(node) {
+  if (!node) return;
+  EPHEMER.delete(node);
+  try { if (!node.removed) node.remove(); } catch (e) {}
+}
+function ephemerAufraeumen() {
+  for (const n of Array.from(EPHEMER)) ephemerWeg(n);
+}
+// Reste aus abgebrochenen Läufen (z. B. Plugin mitten in der Vorschau geschlossen).
+function ephemerResteEntfernen(seiten) {
+  let n = 0;
+  for (const seite of seiten || []) {
+    let reste = [];
+    try { reste = seite.findAll(x => EPHEMER_NAMEN.indexOf(x.name) >= 0); } catch (e) { reste = []; }
+    reste.forEach(x => { try { x.remove(); n++; } catch (e) {} });
+  }
+  return n;
+}
+
 // Ein einziger Kanal zur UI — auch 60-build und 40-adapter melden hierüber.
 const ui = m => figma.ui.postMessage(m);
 
