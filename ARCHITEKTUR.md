@@ -431,3 +431,129 @@ Neue Fehlercodes: `GESPERRT`, `FRAME_NICHT_ERLAUBT`, `STROKEHEIM_AUS`, `ABGEBROC
 
 A2 darf `00-config.js`/`05-i18n.js` NICHT anfassen und verlässt sich auf die in 14 spezifizierten Namen
 (`CFG.schreiben.frameUmwandeln`, `CFG.schreiben.strokeHeimAnlegen`, `konfigProfilInfo()`, `fehler[].pfad`).
+
+---
+
+# Runde 4 — Verständlichkeit, Vorschau-UX, Lizenz, Onboarding (2026-09-17)
+
+## 26. UI-Module
+
+`gen-ui.mjs` ist Assembler. Quellen in `src/ui/`:
+- `style/*.css` (Reihenfolge), `woerter/*.mjs` (`export default {de,en}`, spätere Dateien überschreiben frühere Schlüssel),
+  `markup/*.html`, `logik/*.js` (ein Skript-Scope, Platzhalter `__WOERTER__` nur in 10-grundlagen).
+- Nachrichten-Registry: `bei('typ', fn)` (10-grundlagen) — Handler in eigenen Modulen registrieren, `95-nachrichten.js` nicht anfassen.
+- Test-Runner zählt `bei('…')` als UI-Empfang.
+
+## 27. Begriffe (de / en) — verbindlich in UI, Hauptthread-Logs und Doku
+
+| bisher | neu de | neu en | Erklärung (Tooltip/Hilfetext) |
+|---|---|---|---|
+| Source | Vorlage | Source | Die Master-Komponente, aus der alle Größen gebaut werden (z. B. 72 px). |
+| Kontur | Strichstärke (px) | Stroke width (px) | Strichstärke der Konturen in dieser Größe. |
+| Raster | Kanten rasten auf | Snap edges to | ganze Pixel (1) / halbe Pixel (0,5) / Viertelpixel (0,25). |
+| Grob | Ganze Pixel bevorzugen | Prefer whole pixels | Kanten wandern auf ganze Pixel, wenn der Weg höchstens 0,35 px ist. Sonst gilt das Raster. Optionen: aus / 1 / 0,5. |
+| Radius (Modus) | Eckenradien | Corner radii | proportional verkleinern / fester Wert / keine Rundung. |
+| Wert | Radius (px) | Radius (px) | nur bei „fester Wert“ sichtbar |
+| Min | Mindestradius (px) | Minimum radius (px) | Kleinere Radien werden eckig. Nur bei proportional/fest sichtbar. |
+| Keyline | Keyline (Icon-Körper) | Keyline (icon body) | Das Maß, das der Icon-Körper im Kasten einnimmt. Skizze zeigt Formklassen. |
+| Farbe: Source | Wie Vorlage | Like source | Fläche übernimmt Farbe/Variable der Vorlage. |
+| Farbe: Hex | Feste Farbe | Fixed color | |
+| Farbe: Variable | Design-Token | Design token | Farbvariable aus diesem File oder einer Library. |
+| Source-Farbe angleichen | Vorlage an diese Farbe binden | Bind source to this color | nur bei Feste Farbe / Design-Token sichtbar |
+| Treue | Rasterfehler | Raster error | Abweichung der echten Pixel vom Ideal, 0 = perfekt, unter 0,02 sehr gut, über 0,05 auffällig. |
+| AA % | weiche Pixel | soft pixels | Anteil halbtransparenter Randpixel. Niedriger ist schärfer, hängt von der Form ab (Kreise haben mehr). |
+| Keyline ✓ | Maß stimmt | Size ok | Icon füllt das vorgesehene Keyline-Maß. |
+| verschlammt | „Zwischenraum {d} px füllt sich bei 1× zu“ | “gap of {d} px closes at 1×” | |
+| schiefe Kante | „Kante bei {ist}° statt {soll}° — in der Vorlage begradigen“ | “edge at {ist}° instead of {soll}° — straighten in the source” | |
+| veraltet | Vorlage geändert | source changed | Vorlage wurde nach dem letzten Bau verändert. |
+
+## 28. Hauptthread (Paket Kern)
+
+1. **Strukturierte Audit-Einträge.** `audit()` und `bericht()` liefern `abw` als `[{ name, N|null, code, text, hinweis?, nodeId, schwere: 'fehler'|'warnung'|'info' }]`.
+   Codes: `KEYLINE_ABWEICHUNG {ist,soll}`, `STRUKTUR_KNOTEN {n}`, `STRUKTUR_TYP {typ}`, `RESTKONTUR`, `FARBE_UNGEBUNDEN`, `LUECKE_ENG {d}`,
+   `KANTE_SCHIEF {ist,soll}`, `VORLAGE_GEAENDERT`, `KEINE_SOURCE`, `KEIN_SET`. Texte in 06-i18n-zusatz.js nach Abschnitt 27 (kein „verschlammt“).
+   `log`-Nachrichten aus dem Audit tragen zusätzlich `name`, `N`, `schwere`. Der Handler sendet sie weiterhin einzeln als `log`.
+2. **Farbwerte nachladen.** UI→Main `farbenWerte { keys: [] }` (max. 40 je Aufruf) → `importVariableByKeyAsync` je Key, hex aus dem ersten Modus
+   (Alias auflösen) → Main→UI `farbenWerteErgebnis { werte: { [key]: hex|null } }`.
+3. **Export nach Namen.** `exportieren { umfang: 'alle'|'auswahl'|'namen', namen?: [] }`; `'namen'` filtert `ADAPTER.alle()` nach `name`;
+   `'auswahl'` = aktuelles Ziel.
+4. **Merker.** Generisch für UI-Zustand im clientStorage: UI→Main `merkerSetzen { schluessel, wert }`, `merkerLaden { schluessel }` →
+   `merker { schluessel, wert }`. Präfix `icon-pipeline/merker/`. Genutzt für `onboardingGesehen`, `ersteSchritte` (Objekt), `vergleichsmodus`.
+5. **Lizenz** NEU `75-lizenz.js`, Manifest `permissions: ["teamlibrary","payments"]`:
+   ```js
+   const LIZENZ = { modell: 'einmalzahlung', testtage: 14, debugUmgehen: true,   // debugUmgehen: Dev-Build — später false
+                    kostenpflichtig: ['alle', 'bericht', 'exportieren', 'konfigImport'] };
+   let LIZENZ_DEBUG = null;   // 'PAID'|'UNPAID'|'TRIAL'|null — nur wenn debugUmgehen
+   function lizenzStatus() → { status: 'PAID'|'UNPAID'|'TRIAL'|'NOT_SUPPORTED'|'DEV', resttage: number|null, debug: bool, modell, kostenpflichtig }
+   //  figma.payments fehlt → 'DEV' (zählt wie PAID) wenn debugUmgehen, sonst 'NOT_SUPPORTED' (zählt wie PAID — nie den Nutzer aussperren, wenn Figma keinen Status liefert)
+   //  status.type 'PAID' → PAID; 'UNPAID' und getUserFirstRanSecondsAgo() < testtage·86400 → TRIAL mit resttage; sonst UNPAID
+   //  LIZENZ_DEBUG überschreibt (nur debugUmgehen)
+   async function lizenzPruefen(funktion)  // wirft PipelineFehler('LIZENZ_NOETIG', { funktion }) bei UNPAID und funktion ∈ kostenpflichtig
+   ```
+   Nachrichten: UI→Main `lizenzStatus` → `lizenz {…}`; `lizenzKaufen { grund: 'PAID_FEATURE'|'TRIAL_ENDED' }` → `initiateCheckoutAsync({ interstitial })`,
+   danach erneut `lizenz`; `lizenzDebug { status }` → `LIZENZ_DEBUG` setzen und, wenn `figma.payments` vorhanden, `setPaymentStatusInDevelopment({type})`,
+   dann `lizenz`. `lizenzPruefen` vor `alle`, `bericht`, `exportieren`, `konfigSpeichern` mit Feld `quelle:'import'`. `konfigSenden` liefert zusätzlich `lizenz`.
+   Fehlercode `LIZENZ_NOETIG` (Text: „{funktion} gehört zur Vollversion“, Hinweis: Einmalkauf, Testphase). Kauf-Interstitial darf die UI nicht blockieren.
+6. **Beispiel-Icon** darf im ZDS-Modus ebenfalls laufen (auf der Seite Source, Frame „Icon Pipeline · Beispiel“); dafür `ADAPTER.aufloesen` auf die frisch angelegte Komponente — im ZDS-Adapter zusätzlich Fallback: Komponente im Master-Maß ohne Karte → Ziel nach Frei-Regeln.
+
+## 29. UI-1 — Einstellungen, Farbe, Onboarding, Lizenz
+
+Dateien: `markup/10-kopf.html`, `40-einstellungen.html`, `50-dialoge.html`, `logik/30-tabs.js`, `40-auswahl.js`, `80-einstellungen.js`, NEU `85-onboarding.js`, `86-lizenz.js`,
+`woerter/10-basis.mjs` (Begriffe nach 27), NEU `woerter/20-einstellungen.mjs`, `style/20-einstellungen.css`.
+
+1. **Größen-Karte** neu beschriften nach 27; jedes Feld mit `fig-tooltip` und einer kurzen Hilfezeile (9,5 px, sekundär) unter dem Feld; „Radius (px)“ nur bei
+   „fester Wert“, „Mindestradius“ nicht bei „keine Rundung“; „Ganze Pixel bevorzugen“ als fig-dropdown aus/1/0,5 mit Hilfetext; Keyline-Bereich mit Skizze bleibt.
+2. **Farbe**: Segment „Wie Vorlage / Feste Farbe / Design-Token“, darunter je Modus ein Satz Erklärung; „Vorlage an diese Farbe binden“ nur bei Feste Farbe/Design-Token.
+   Token-Liste: jede Zeile mit `fig-swatch`; für Library-Variablen ohne hex beim Aufklappen einer Kollektion `farbenWerte` in 40er-Paketen anfordern,
+   Ergebnis in die Zeilen schreiben (Registry `bei('farbenWerteErgebnis', …)`); während des Ladens `fig-shimmer`/Skeleton-Swatch.
+3. **Onboarding** (`85-onboarding.js`): beim ersten Start (`merkerLaden onboardingGesehen` → fehlt) ein `<dialog is="fig-dialog">` mit 4 Schritten,
+   Schrittzähler „1/4“, Zurück/Weiter/Überspringen, am Ende „Los geht’s“ + Merker setzen: (1) Was das Plugin tut, mit Keyline-Skizze 72→24/18/14;
+   (2) Erkannter Modus (ZDS-Board / Frei) + Profilwahl; (3) Ablauf: auswählen → Vorschau → Bauen, mit Hinweis Trockenlauf; (4) Einstellungen, Bericht, Export,
+   Testphase/Lizenz. Kopfzeile bekommt einen „?“-Button (fig-button ghost) → Rundgang erneut. Leerzustand zusätzlich mit Checkliste „Erste Schritte“
+   (3 Punkte: Icon auswählen · Vorschau ansehen · Icon bauen; Häkchen aus Merker `ersteSchritte`, gesetzt aus den Handlern für `auswahl`, `diff`, `fazit`).
+4. **Lizenz** (`86-lizenz.js`): Kopf-Chip zeigt Status („Testphase · 12 Tage“, „Vollversion“, „Kostenlos“); Paywall-Dialog bei `log` mit `code==='LIZENZ_NOETIG'`
+   (Registry): Titel, welche Funktion, was in der Vollversion steckt, Buttons „Kaufen“ → `lizenzKaufen`, „Später“. Einstellungen-Block „Lizenz“ mit Status,
+   Kaufen-Button, und — nur wenn `lizenz.debug` — fig-segmented-control PAID/TRIAL/UNPAID → `lizenzDebug` (Hinweis „Entwicklermodus, nur lokal“).
+   `bei('lizenz', …)`, beim Start `lizenzStatus` senden.
+
+## 30. UI-2 — Bericht, Protokoll, Vorschau, Export-Auswahl
+
+Dateien: `markup/20-icon.html`, `30-bericht.html`, `logik/50-lauf.js`, `60-protokoll.js`, `70-vorschau.js`, `90-bericht.js`, `92-export.js`,
+NEU `woerter/30-bericht.mjs` (darf Basis-Schlüssel für Bericht/Protokoll/Vorschau überschreiben), `style/30-bericht.css`.
+
+1. **Bericht**: Spaltenköpfe mit `fig-tooltip` und einer Legende-Zeile unter den Kacheln (Rasterfehler / weiche Pixel / Maß stimmt, je ein Satz).
+   Werte umbenennen nach 27. Kacheln sind Filter (fig-button variant ghost mit aktivem Zustand): Alle / ohne Set / Vorlage geändert / Maß-Fehler / schlechteste 10 %;
+   aktive Kachel hebt sich ab; Zähler in der Tabellen-Überschrift „12 von 76“. Zeilen mit Checkbox (fig-checkbox) für die Auswahl, Kopfzeile „alle sichtbaren“;
+   Export-Umfang: Alle / Ausgewählte (n) / Aktuelles Icon → `exportieren { umfang:'namen', namen }` bzw. `'auswahl'`/`'alle'`. „Ausgewählte“ deaktiviert bei 0.
+2. **Protokoll**: Einträge gruppiert nach Icon (`name` aus der Nachricht; ohne Namen → Gruppe „Allgemein“), Gruppe zeigt Zähler ✕/△/i, aufklappbar
+   (fig-group collapsible), Filter-Chips Fehler/Warnungen/Hinweise/OK, Suchfeld, „Kopieren“ (Text in Zwischenablage) und „Leeren“. Schrift: Inter statt Mono,
+   Icon-Name fett, Größe als Chip „14 px“, Hinweiszeile sekundär, „zeigen“-Link rechts. Neue Einträge scrollen nur mit, wenn der Nutzer unten ist.
+3. **Vorschau** (Vorbilder: Wipe-Regler wie in Bildbearbeitungs-Vergleichen, Figmas Vergleichsdialog „Side by side | Overlay“ mit Fit-Zoom):
+   Vergleichsmodus als fig-segmented-control „Überlagern | Wischen | Nebeneinander | Blinken“ (Merker `vergleichsmodus`);
+   Wischen = senkrechter Regler mit Griff über der Zelle, links aktuell / rechts neu, Labels an den Rändern; Blinken = 600-ms-Wechsel, Leertaste hält;
+   Nebeneinander = zwei Zellen je Größe mit Labels. Zoom: Buttons −/+, „Fit“ (alle Größen passen nebeneinander in die Bühne), Ctrl+Wheel, Tastatur +/−/0.
+   Beschriftung je Zelle zweizeilig: „14 px“ fett, darunter EINE kompakte Zeile „Keyline 12/12 · 1,5 px · Raster 0,5“ mit Ellipsis und Tooltip mit allen Werten;
+   Status-Punkt grün/orange (Maß stimmt / abweichend). Pixelansicht und Differenz behalten, unter den Vektorzellen als aufklappbare Gruppen (fig-group).
+   Zellen-Hintergrund: Raster nur bei Zoom ≥ 4 zeichnen. Hover über Zelle zeigt Pixelkoordinate.
+4. **Fortschritt**: Text „Baue 3/76 · arrow-left“, Abbrechen daneben, Restzeit-Schätzung ab 5 Icons.
+
+## 31. Protokoll-Ergänzungen Runde 4
+
+| UI → Main | Main → UI |
+|---|---|
+| `farbenWerte {keys}` | `farbenWerteErgebnis {werte}` |
+| `merkerSetzen {schluessel, wert}`, `merkerLaden {schluessel}` | `merker {schluessel, wert}` |
+| `lizenzStatus`, `lizenzKaufen {grund}`, `lizenzDebug {status}` | `lizenz {status, resttage, debug, modell, kostenpflichtig}` |
+| `exportieren {umfang, namen?}` (erweitert) | `log {…, name?, N?, schwere?}` (erweitert) |
+| `konfigSpeichern {konfig, quelle?}` (erweitert) | `konfig {…, lizenz}` (erweitert) |
+
+Neue Fehlercodes: `LIZENZ_NOETIG`, Audit-Codes aus 28.1.
+
+## 32. Paketzuschnitt Runde 4
+
+| Paket | Dateien |
+|---|---|
+| Kern | `src/main/60-build.js`, `66-bericht.js`, `67-export.js`, `68-beispiel.js`, `70-main.js`, `40-adapter.js`, `50-farbe.js`, `06-i18n-zusatz.js`, `10-errors.js` (Codes), NEU `75-lizenz.js`, `manifest.json` |
+| UI-1 | siehe 29 |
+| UI-2 | siehe 30 |
+| Fable | Integration, `test/run.mjs` anpassen, Doku-Nachzug |
