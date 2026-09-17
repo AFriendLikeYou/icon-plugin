@@ -379,7 +379,8 @@ async function vorschau(ziel, snap, ohneNormalisieren) {
       alt: altSvg, neu: neuSvg,
       pngNeu: pngNeu, pngNeu2: pngNeu2, pngNeu8: pngNeu8,
       pngAlt: pngAlt, pngAlt2: pngAlt2, pngAlt8: pngAlt8,
-      ist: b.ist, soll: keylineVon(g, kl), gerastet: b.gerastet, guete: b.aaInfo || null
+      ist: b.ist, soll: keylineVon(g, kl), gerastet: b.gerastet, geschuetzt: b.geschuetzt || 0,
+      grob: g.rasterGrob, guete: b.aaInfo || null
     });
   }
   return { name: ziel.name, klasse: kl, kl: kl, zellen: zellen };

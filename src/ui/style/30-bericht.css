@@ -20,6 +20,8 @@
   .vwerkzeug fig-segment { font-size: 10.5px; white-space: nowrap; }
   .vwerkzeug .iknopf { flex: none; width: 24px; min-width: 24px; height: 24px;
     padding: 0; font-size: 11px; }
+  #retinaHalter[hidden] { display: none; }
+  #retinaHalter fig-switch { font-size: 9.5px; white-space: nowrap; }
   dialog.mehrmenu { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px;
     border: 1px solid var(--figma-color-border, #e3e3e6); border-radius: 8px;
     background: var(--figma-color-bg, #fff); box-shadow: 0 4px 14px rgba(0,0,0,.18);
@@ -108,27 +110,12 @@
   #diff.dunkel .vlegende .legfeld.beide { background: #d9d9de; }
 
 
-  /* ---- Details ------------------------------------------------------------ */
-  fig-group.diffgruppe { margin: 0; flex: none; }
-  fig-group.diffgruppe > fig-header { padding: 2px 10px; min-height: 22px; }
-  fig-group.diffgruppe h3 { margin: 0; font-size: 10px; }
-  .detailband { overflow-x: auto; padding-bottom: 4px; }
-  .zelle .schau { border-radius: 6px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
-  /* Pixelraster erst ab Zoom 6 — darunter wäre es nur Grau. */
-  .zelle .schau:not(.raster),
-  #diff.dunkel .zelle .schau:not(.raster) { background-image: none; }
-  .zelle .label { margin-top: 8px; text-align: left; white-space: normal; }
-  .zelle .label .l1, .pxzelle .label .l1, .dfzelle .label .l1 {
-    display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700;
-    color: var(--figma-color-text, #1c1c22); }
-  .zelle .label .l2, .pxzelle .label .l2, .dfzelle .label .l2 {
-    font-size: 9.5px; color: var(--figma-color-text-secondary, #6e6e76);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .pxzelle .label, .dfzelle .label { text-align: left; white-space: normal; margin-top: 8px; }
-  .statuspunkt { width: 6px; height: 6px; border-radius: 50%; flex: none; }
-  .statuspunkt.gut { background: #12a76a; }
-  .statuspunkt.ab { background: #c98a12; }
-  .pxzelle .wrap, .dfzelle .wrap { border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  /* ---- Hinting (aufklappbar, Standard zu) -------------------------------- */
+  fig-group.hintgruppe { margin: 0; flex: none; }
+  fig-group.hintgruppe > fig-header { padding: 2px 10px; min-height: 22px; }
+  fig-group.hintgruppe h3 { margin: 0; font-size: 10px; }
+  .hintband { overflow-x: auto; padding: 0 2px 4px; }
+  .hintband table.kztab td { height: 20px; }
 
   /* ---- Protokoll --------------------------------------------------------- */
   .logaktionen { display: flex; gap: 6px; align-items: center; }

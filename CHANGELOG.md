@@ -139,3 +139,9 @@ The original single-file script (`code.v1.js`, kept as a reference).
 - Vorschau kompakt: Werkzeugleiste eine Zeile, Bühne wächst mit dem Panel, Urteil und Kennzahlen unter der Bühne, Protokoll zugeklappt
 - Dritter Vergleichsmodus „Überlagern“: farbige Onionskin (unverändert grau, entfernt orange, hinzugekommen blau), Legende, Zeile „Veränderte Pixel“
 - Zahlenformat zentral (3 Nachkommastellen, Prozent ganzzahlig, Gleichstand als „unverändert“)
+
+## Runde 5c — 2026-09-17
+
+- Vorschau: Vektor als Standard, Retina-Schalter in der Pixel-Darstellung, farbiger Differenz-Layer (entfernt orange, hinzugekommen blau) in allen Modi, Legende mit drei Farbfeldern
+- Details-Gruppe entfernt (alles oben sichtbar); neue Gruppe „Hinting“ mit gerasteten Kanten, geschützten Knoten, Orakel-Entscheidung, Raster, Phase, Strichstärke, Radiusregel
+- Hauptthread liefert je Vorschau-Zelle geschuetzt, grob und gueteAlt

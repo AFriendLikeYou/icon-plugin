@@ -21,7 +21,8 @@
   const SICHT_MIN = 64;      // so viel Inhalt bleibt immer im Viewport (Gerätepixel)
 
   let vglModus = 'neben';
-  let darstellung = 'pixel';           // pixel | vektor
+  let darstellung = 'vektor';          // pixel | vektor — Vektor ist Standard
+  let retina = false;                  // Pixel-Darstellung: 1×-PNG (aus) oder 2×-PNG (an)
   let wischPos = 0.5;
   let markieren = true;
   let verbesserung = false, blend = 100;
@@ -37,8 +38,6 @@
   // Cache-Marken: Modus-, Zoom- und Filterwechsel dürfen die PNGs NICHT neu
   // analysieren — die Zellanalyse hängt nur an Diff und Hintergrund.
   let anaQuelle = null, anaSig = '', ANA = [];
-  let pxQuelle = null, pxSig = '';
-  let dfQuelle = null, dfSig = '';
 
   function dpr() { return Math.max(1, window.devicePixelRatio || 1); }
   function akzentRgb() { return dunkel ? [78, 166, 255] : [13, 153, 255]; }
@@ -49,18 +48,10 @@
   function rahmenFarbe() { return dunkel ? '#3a3a42' : '#e3e3e6'; }
   function textFarbe() { return dunkel ? '#e8e8ee' : '#1c1c22'; }
   function textFarbe2() { return dunkel ? '#a9a9b4' : '#6e6e76'; }
-  // Die Detailansichten sind DOM und rechnen in CSS-Pixeln.
-  function domZoom() { return Math.max(2, Math.min(24, Math.round(KAM.z / dpr()))); }
 
   function svgText(svg, farbe) {
     return svg.replace(/fill="[^"]*"/g, 'fill="' + farbe + '"')
               .replace(/fill:[^;"]*/g, 'fill:' + farbe);
-  }
-  function svgLayer(svg, farbe, lage) {
-    const img = document.createElement('img');
-    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgText(svg, farbe));
-    img.className = 'lage-' + lage;
-    return img;
   }
   // Vektor-Bitmap: einmal je Zelle in Bühnenauflösung rastern, danach nur noch
   // skalieren (mit Glättung) — so bleibt die Geometrie bei jedem Zoom glatt.
@@ -132,8 +123,6 @@
     const belegt = voll + teil;
     return { c: c, aa: belegt ? Math.round(100 * teil / belegt) : 0 };
   }
-
-  function rasterSkala() { return String($('segRaster').value) === '2' ? 2 : 1; }
 
   // ---- Änderungsregionen ---------------------------------------------------
   // |alpha_alt − alpha_neu| > 24 ergibt eine Maske auf dem 1×-Raster;
@@ -217,16 +206,19 @@
     return g && isFinite(g.fehler) ? g.fehler : null;
   }
   async function analyseHolen() {
-    const sig = (dunkel ? 'd' : 'h');
+    const sig = (dunkel ? 'd' : 'h') + (retina ? '2' : '1');
     if (anaQuelle === letzterDiff && anaSig === sig) return ANA;
     anaQuelle = letzterDiff; anaSig = sig;
     ANA = [];
     for (const c of (letzterDiff ? letzterDiff.zellen : [])) {
       const e = { N: c.N, zelle: c, bildAlt: null, bildNeu: null, vekAlt: null, vekNeu: null,
         aaAlt: null, aaNeu: null, regionen: [], andersPixel: 0, weg: 0, dazu: 0,
-        misch: null, mischSig: '' };
-      if (c.pngNeu) { const r = await analysiere(c.pngNeu, false, dunkel); e.bildNeu = r.c; e.aaNeu = r.aa; }
-      if (c.pngAlt) { const r = await analysiere(c.pngAlt, false, dunkel); e.bildAlt = r.c; e.aaAlt = r.aa; }
+        misch: null, mischSig: '', dlay: null, dlaySig: '' };
+      // Retina zeigt die 2×-Rasterung, sonst die echte 1×-Rasterung.
+      const qNeu = retina && c.pngNeu2 ? c.pngNeu2 : c.pngNeu;
+      const qAlt = retina && c.pngAlt2 ? c.pngAlt2 : c.pngAlt;
+      if (qNeu) { const r = await analysiere(qNeu, false, dunkel); e.bildNeu = r.c; e.aaNeu = r.aa; }
+      if (qAlt) { const r = await analysiere(qAlt, false, dunkel); e.bildAlt = r.c; e.aaAlt = r.aa; }
       if (c.neu) e.vekNeu = await svgCanvas(c.neu, umrissFarbe(), c.N);
       if (c.alt) e.vekAlt = await svgCanvas(c.alt, umrissFarbe(), c.N);
       if (c.pngAlt && c.pngNeu) {
@@ -288,50 +280,6 @@
     if (typeof c.radius !== 'object') return zahl(c.radius);
     return t('radius.' + c.radius.modus) + (c.radius.modus === 'fest' ? ' ' + zahl(c.radius.wert) : '');
   }
-  function zellenInfo(c) {
-    const kurz = [], voll = [];
-    if (c.soll != null) {
-      const k = t('zelle.keyline', {
-        ist: c.ist == null ? '?' : zahl(Number(c.ist).toFixed(2)), soll: zahl(c.soll) });
-      kurz.push(k); voll.push(k);
-    }
-    if (c.kontur != null) { const s = t('zelle.kontur', { k: zahl(c.kontur) }); kurz.push(s); voll.push(s); }
-    if (c.raster != null) { const s = t('zelle.raster', { r: zahl(c.raster) }); kurz.push(s); voll.push(s); }
-    const r = radiusText(c);
-    if (r) voll.push(t('zelle.radius', { v: r }));
-    if (c.gerastet) voll.push(t('zelle.gerastet', { n: c.gerastet }));
-    if (!c.alt) voll.push(t('zelle.neu'));
-    const ok = massStimmt(c);
-    if (ok != null) voll.push(ok ? t('zelle.massOk') : t('zelle.massAb'));
-    return { kurz: kurz.join(' · '), voll: voll.join('\n') };
-  }
-  function zellenLabel(c, zusatz) {
-    const info = zellenInfo(c);
-    const el = document.createElement('div');
-    el.className = 'label';
-    const z1 = document.createElement('div');
-    z1.className = 'l1';
-    const ok = massStimmt(c);
-    if (ok != null) {
-      const p = document.createElement('span');
-      p.className = 'statuspunkt ' + (ok ? 'gut' : 'ab');
-      p.title = ok ? t('zelle.massOk') : t('zelle.massAb');
-      z1.appendChild(p);
-    }
-    const gr = document.createElement('span');
-    gr.className = 'lgroesse';
-    gr.textContent = zahl(c.N) + ' px' + (zusatz ? ' · ' + zusatz : '');
-    z1.appendChild(gr);
-    el.appendChild(z1);
-    const z2 = document.createElement('div');
-    z2.className = 'l2';
-    z2.textContent = info.kurz;
-    z2.title = info.voll;
-    el.appendChild(z2);
-    el.title = info.voll;
-    return el;
-  }
-
   // ---- Urteil-Zeile --------------------------------------------------------
   function pille(text, art) {
     const s = document.createElement('span');
@@ -389,11 +337,10 @@
     kandidaten.slice(0, 2).forEach(k => pillen.appendChild(pille(k[0], k[1])));
   }
 
-  // Legende: im Überlagern-Modus drei Farbfelder statt des Merksatzes.
+  // Legende: drei Farbfelder — in jedem Modus dieselbe Zuordnung.
   function legendeZeichnen() {
     const box = $('vLegende');
     box.textContent = '';
-    if (vglModus !== 'ueberlagern') { box.textContent = t('v.legende'); return; }
     [['weg', t('leg.weg')], ['dazu', t('leg.dazu')], ['beide', t('leg.beide')]].forEach(x => {
       const s = document.createElement('span');
       s.className = 'legstueck';
@@ -455,6 +402,73 @@
       A.forEach(e => {
         const c = document.createElement('td');
         c.textContent = z.wert(e);
+        tr.appendChild(c);
+      });
+      tab.appendChild(tr);
+    });
+    box.appendChild(tab);
+  }
+
+  // ---- Hinting (aufklappbar, Standard zu) ---------------------------------
+  // Was das Snapping in dieser Größe getan hat. Werte, die der Hauptthread
+  // nicht mitschickt (z. B. geschützte Knoten), fallen als Zeile weg.
+  function hintingZeichnen(A) {
+    const box = $('hintTabelle');
+    box.textContent = '';
+    if (!A.length) return;
+    const zeilen = [
+      { label: t('hint.kanten'), wert: e => {
+        const n = Number(e.zelle.gerastet);
+        return isFinite(n) ? String(n) : null;
+      } },
+      { label: t('hint.geschuetzt'), wert: e => {
+        const n = Number(e.zelle.geschuetzt);
+        return isFinite(n) ? String(n) : null;
+      } },
+      { label: t('hint.orakel'), wert: e => {
+        const g = e.zelle.guete;
+        if (!g) return null;
+        return t(g.mitSnap ? 'hint.orakelSnap' : 'hint.orakelFit');
+      } },
+      { label: t('hint.raster'), wert: e => {
+        const r = e.zelle.raster;
+        if (r == null) return null;
+        const grob = e.zelle.grob;
+        return zahl(r) + (grob ? ' · ' + t('hint.grob', { v: zahl(grob) }) : '');
+      } },
+      { label: t('hint.phase'), wert: e => {
+        const k = Number(e.zelle.kontur), r = Number(e.zelle.raster);
+        if (!isFinite(k) || !isFinite(r) || !(r > 0)) return null;
+        const ph = ((k / 2) % r + r) % r;
+        return fmt('mass', ph) + ' px';
+      } },
+      { label: t('hint.kontur'), wert: e => {
+        const k = Number(e.zelle.kontur);
+        return isFinite(k) ? zahl(k) + ' px' : null;
+      } },
+      { label: t('hint.radius'), wert: e => radiusText(e.zelle) }
+    ].map(z => ({ label: z.label, werte: A.map(z.wert) }))
+     .filter(z => z.werte.some(w => w != null && w !== ''));
+    if (!zeilen.length) return;
+    const tab = document.createElement('table');
+    tab.className = 'kztab';
+    const kopf = document.createElement('tr');
+    kopf.appendChild(document.createElement('th'));
+    A.forEach(e => {
+      const th = document.createElement('th');
+      th.textContent = zahl(e.N) + ' px';
+      kopf.appendChild(th);
+    });
+    tab.appendChild(kopf);
+    zeilen.forEach(z => {
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      td.className = 'kzlabel';
+      td.textContent = z.label;
+      tr.appendChild(td);
+      z.werte.forEach(w => {
+        const c = document.createElement('td');
+        c.textContent = w == null || w === '' ? t('ber.keineDaten') : w;
         tr.appendChild(c);
       });
       tab.appendChild(tr);
@@ -618,6 +632,12 @@
   // Differenzanteile (0 % = nur Vorher, 100 % = nur Nachher).
   const MISCH_GRAU = { hell: [58, 58, 68], dunkel: [217, 217, 222] };
   const MISCH_WEG  = { hell: [245, 166, 35], dunkel: [255, 184, 77] };
+  function wegRgb() { return dunkel ? MISCH_WEG.dunkel : MISCH_WEG.hell; }
+  function rgbText(f, alpha) {
+    return 'rgba(' + f[0] + ',' + f[1] + ',' + f[2] + ',' + (alpha == null ? 1 : alpha) + ')';
+  }
+  // Auflösung der Rechenbilder: Pixel = echte Rasterung, Vektor feiner.
+  function bildAufl(N) { return darstellung === 'vektor' ? N * 8 : (retina ? N * 2 : N); }
   function alphaFeld(bild, R) {
     const c = document.createElement('canvas');
     c.width = R; c.height = R;
@@ -634,7 +654,7 @@
     // Auflösung: Pixelansicht zeigt die echte Rasterung (N), die Vektoransicht
     // rastert feiner (N × 8). Der Regler wirkt in 5-%-Stufen, damit das Ziehen
     // nicht jedes Bild neu rechnet.
-    const R = darstellung === 'vektor' ? e.N * 8 : e.N;
+    const R = bildAufl(e.N);
     const stufe = Math.round(blend / 5) * 5;
     const sig = darstellung + '|' + R + '|' + stufe + '|' + (dunkel ? 'd' : 'h');
     if (e.mischSig === sig && e.misch) return e.misch;
@@ -689,17 +709,57 @@
     g.restore();
   }
   function markenAn() { return markieren && vglModus !== 'ueberlagern'; }
-  function markenZeichnen(g, regionen, x, y, N, s, p) {
-    if (!markenAn() || !regionen || !regionen.length) return;
+  // Differenz-Layer über der Nachher-Kachel: entfernte Bereiche orange,
+  // hinzugekommene blau, je 70 % Deckung. In der Vektor-Darstellung aus den
+  // hochauflösenden SVG-Bitmaps gerechnet (glatte Konturen), sonst aus den
+  // PNGs. Gecacht je Zelle über eine Signatur.
+  function diffLayer(e) {
+    const R = bildAufl(e.N);
+    const sig = darstellung + '|' + R + '|' + (dunkel ? 'd' : 'h');
+    if (e.dlaySig === sig && e.dlay !== undefined) return e.dlay;
+    e.dlaySig = sig; e.dlay = null;
+    const qAlt = darstellung === 'vektor' ? (e.vekAlt || e.bildAlt) : e.bildAlt;
+    const qNeu = darstellung === 'vektor' ? (e.vekNeu || e.bildNeu) : e.bildNeu;
+    if (!qAlt || !qNeu) return null;
+    const A = alphaFeld(qAlt, R), B = alphaFeld(qNeu, R);
+    const c = document.createElement('canvas');
+    c.width = R; c.height = R;
+    const g = c.getContext('2d');
+    const bild = g.createImageData(R, R);
+    const d = bild.data;
+    const weg = wegRgb(), dazu = akzentRgb();
+    const schwelle = MARK_SCHWELLE / 255;
+    for (let i = 0; i < R * R; i++) {
+      const diff = (A[i] - B[i]) / 255;
+      if (Math.abs(diff) <= schwelle) continue;
+      const f = diff > 0 ? weg : dazu;
+      const k = i * 4;
+      d[k] = f[0]; d[k + 1] = f[1]; d[k + 2] = f[2];
+      d[k + 3] = Math.round(Math.min(1, Math.abs(diff)) * 0.7 * 255);
+    }
+    g.putImageData(bild, 0, 0);
+    e.dlay = c;
+    return c;
+  }
+  // Ein 1-px-Rahmen je veränderter Region, in der Farbe ihrer Richtung.
+  function markenZeichnen(g, ana, x, y, N, s, p) {
+    if (!markenAn() || !ana) return;
+    const lay = diffLayer(ana);
+    if (lay) {
+      g.save();
+      g.imageSmoothingEnabled = darstellung === 'vektor';
+      g.drawImage(lay, x, y, s, s);
+      g.restore();
+    }
+    const regionen = ana.regionen || [];
+    if (!regionen.length) return;
     const e = s / N;
-    const f = akzentRgb();
     g.save();
-    g.fillStyle = 'rgba(' + f[0] + ',' + f[1] + ',' + f[2] + ',0.12)';
-    g.strokeStyle = akzent();
     g.lineWidth = p;
     regionen.forEach(r => {
+      const rot = r.flAlt >= r.flNeu;
+      g.strokeStyle = rgbText(rot ? wegRgb() : akzentRgb());
       const rx = x + r.x * e, ry = y + r.y * e, rw = r.w * e, rh = r.h * e;
-      g.fillRect(rx, ry, rw, rh);
       g.strokeRect(rx + p / 2, ry + p / 2, Math.max(0, rw - p), Math.max(0, rh - p));
       if (HOVER && HOVER.region === r) {
         g.save();
@@ -709,6 +769,15 @@
       }
     });
     g.restore();
+  }
+  // Kleine Zahl-Pille oben rechts: wie viele Kanten gerastet wurden.
+  function kantenPille(g, k, x, y, s, p) {
+    const n = Number(k.e.zelle.gerastet) || 0;
+    if (!markenAn() || !n) return;
+    const txt = t('urt.gerastet', { n: n });
+    g.font = '700 ' + Math.round(9 * p) + 'px Inter, system-ui, sans-serif';
+    const b = g.measureText(txt).width + 8 * p;
+    pillZeichnen(g, txt, x + s - b - 4 * p, y + 20 * p, p);
   }
   function kachelZeichnen(g, k, kx, ky, welche, p) {
     const s = k.N * KAM.z;
@@ -733,7 +802,7 @@
       g.beginPath(); g.rect(x, y, w, s); g.clip();
       if (blend < 100) bildZeichnen(g, bildVon(e, 'alt'), x, y, s);
       bildZeichnen(g, bildVon(e, 'neu'), x, y, s, blend / 100);
-      markenZeichnen(g, e.regionen, x, y, k.N, s, p);
+      markenZeichnen(g, e, x, y, k.N, s, p);
       g.restore();
       // Griff
       g.save();
@@ -747,10 +816,11 @@
       pillZeichnen(g, t('pill.vorher'), x + 4 * p, y + 4 * p, p);
       const bb = g.measureText(t('pill.nachher')).width + 8 * p;
       pillZeichnen(g, t('pill.nachher'), x + s - bb - 4 * p, y + 4 * p, p);
+      kantenPille(g, k, x, y, s, p);
     } else {
       if (welche === 'neu' && blend < 100) bildZeichnen(g, bildVon(e, 'alt'), x, y, s);
       bildZeichnen(g, bildVon(e, welche), x, y, s, welche === 'neu' ? blend / 100 : 1);
-      if (welche === 'neu') markenZeichnen(g, e.regionen, x, y, k.N, s, p);
+      if (welche === 'neu') markenZeichnen(g, e, x, y, k.N, s, p);
       if (welche === 'alt' && !bildVon(e, 'alt')) {
         g.fillStyle = textFarbe2();
         g.font = Math.round(9 * p) + 'px Inter, system-ui, sans-serif';
@@ -759,6 +829,7 @@
         g.textAlign = 'left';
       }
       pillZeichnen(g, welche === 'alt' ? t('pill.vorher') : t('pill.nachher'), x + 4 * p, y + 4 * p, p);
+      if (welche === 'neu') kantenPille(g, k, x, y, s, p);
     }
     // Pixelraster ab 6 Gerätepixeln je Icon-Pixel, sehr dezent
     if (KAM.z >= 6) {
@@ -876,174 +947,13 @@
     const A = await analyseHolen();
     urteilZeichnen(A);
     kennzahlenZeichnen(A);
+    hintingZeichnen(A);
     layoutRechnen(A);
     leinwandMessen();
     if (fitQuelle !== letzterDiff) { fitQuelle = letzterDiff; zoomFit(false); }
     else { klemmen(ZIEL); kameraSetzen(ZIEL.x, ZIEL.y, ZIEL.z, false); }
     kopfZeichnen();
     anstossen(false);
-  }
-
-  // ---- Details: Vektor-Umriss (Onionskin in Grau/Schwarz) -----------------
-  function renderVektor() {
-    if (!letzterDiff) return;
-    const zz = domZoom();
-    const alt = dunkel ? '#7e7e8c' : '#a6a6b0', neu = umrissFarbe();
-    const z = $('zellen');
-    z.textContent = '';
-    letzterDiff.zellen.forEach(c => {
-      const px = c.N * zz;
-      const zelle = document.createElement('div');
-      zelle.className = 'zelle';
-      const schau = document.createElement('div');
-      schau.className = 'schau' + (zz >= 6 ? ' raster' : '');
-      schau.style.width = px + 'px'; schau.style.height = px + 'px';
-      schau.style.backgroundSize = zz + 'px ' + zz + 'px, ' + zz + 'px ' + zz + 'px, '
-        + (zz / 2) + 'px ' + (zz / 2) + 'px, ' + (zz / 2) + 'px ' + (zz / 2) + 'px, auto';
-      if (c.alt) schau.appendChild(svgLayer(c.alt, alt, 'alt'));
-      if (c.neu) schau.appendChild(svgLayer(c.neu, neu, 'neu'));
-      zelle.appendChild(schau);
-      const lbl = zellenLabel(c, c.alt ? '' : t('zelle.neu'));
-      lbl.style.width = px + 'px';
-      zelle.appendChild(lbl);
-      z.appendChild(zelle);
-    });
-  }
-
-  // ---- Details: Pixelansicht ----------------------------------------------
-  function pxGroessenSetzen() {
-    const zz = domZoom();
-    $('pxzellen').querySelectorAll('.pxzelle').forEach(el => {
-      const N = Number(el.dataset.n) || 0;
-      const b = (N * zz) || 0;
-      el.querySelectorAll('canvas').forEach(c => {
-        c.style.width = (b || c.width) + 'px';
-        c.style.height = (b || c.height) + 'px';
-      });
-      const l = el.querySelector('.label');
-      if (l) l.style.width = (b || '') + (b ? 'px' : '');
-    });
-  }
-  async function renderPixel() {
-    if (!letzterDiff) return;
-    const skala = rasterSkala();
-    const zz = domZoom();
-    const sig = skala + '|' + (dunkel ? 1 : 0) + '|' + (zz >= 8 ? 8 : 1);
-    // Gleiche Daten, gleiche Rasterung: nur skalieren, nicht neu analysieren.
-    if (pxQuelle === letzterDiff && pxSig === sig) { pxGroessenSetzen(); return; }
-    pxQuelle = letzterDiff; pxSig = sig;
-    const z = $('pxzellen'); z.textContent = '';
-    for (const c of letzterDiff.zellen) {
-      const bytesNeu = skala === 2 && c.pngNeu2 ? c.pngNeu2 : c.pngNeu;
-      const bytesAlt = skala === 2 ? c.pngAlt2 : c.pngAlt;
-      if (!bytesNeu) continue;
-      const zelle = document.createElement('div'); zelle.className = 'pxzelle';
-      zelle.dataset.n = String(c.N || 0);
-      const wrap = document.createElement('div'); wrap.className = 'wrap';
-      // Weiche Pixel werden immer auf der gewählten Rasterung gemessen;
-      // angezeigt wird ab Zoom 8 das 8×-PNG (schärfste Stufe).
-      const mess = await analysiere(bytesNeu, false, dunkel);
-      let bild = mess.c;
-      if (zz >= 8 && c.pngNeu8) bild = (await analysiere(c.pngNeu8, false, dunkel)).c;
-      wrap.appendChild(bild);
-      let text = t('pixel.aa', { aa: mess.aa });
-      if (bytesAlt) {
-        const alt = await analysiere(bytesAlt, false, false);
-        text += ' · ' + t('pixel.alt', { aa: alt.aa });
-      }
-      if (c.guete) {
-        const d = c.guete.plain.fehler > 1e-9
-          ? Math.round((1 - c.guete.snap.fehler / c.guete.plain.fehler) * 100) : 0;
-        text += ' · ' + t('pixel.hint', { v: c.guete.mitSnap
-          ? (d > 0 ? t('hint.fehler', { d: d }) : t('hint.gleich'))
-          : t('hint.ohne') });
-      }
-      zelle.appendChild(wrap);
-      zelle.appendChild(zellenLabel(c, text));
-      z.appendChild(zelle);
-    }
-    pxGroessenSetzen();
-  }
-
-  // ---- Details: Differenz --------------------------------------------------
-  function dfGroessenSetzen() {
-    const zz = domZoom();
-    $('dfzellen').querySelectorAll('.dfzelle').forEach(el => {
-      const N = Number(el.dataset.n) || 0;
-      const b = (N * zz) || 0;
-      el.querySelectorAll('canvas, .leer').forEach(c => {
-        c.style.width = b + 'px'; c.style.height = b + 'px';
-      });
-      const l = el.querySelector('.label');
-      if (l) l.style.width = b + 'px';
-    });
-  }
-  // |alt − neu| je Pixel bei der gewählten Rasterung, neutral eingefärbt:
-  // weg = Grau, dazu = Akzent, unverändert = sehr blasses Grau.
-  async function renderDifferenz() {
-    if (!letzterDiff) return;
-    const skala = rasterSkala();
-    const sig = skala + '|' + (dunkel ? 1 : 0);
-    if (dfQuelle === letzterDiff && dfSig === sig) { dfGroessenSetzen(); return; }
-    dfQuelle = letzterDiff; dfSig = sig;
-    const weg = dunkel ? [150, 150, 165] : [110, 110, 126];
-    const dazu = akzentRgb();
-    const beide = dunkel ? [90, 90, 102] : [190, 190, 200];
-    const z = $('dfzellen'); z.textContent = '';
-    for (const c of letzterDiff.zellen) {
-      const bytesNeu = skala === 2 && c.pngNeu2 ? c.pngNeu2 : c.pngNeu;
-      const bytesAlt = skala === 2 ? c.pngAlt2 : c.pngAlt;
-      if (!bytesNeu) continue;
-      const zelle = document.createElement('div'); zelle.className = 'dfzelle';
-      zelle.dataset.n = String(c.N || 0);
-      const wrap = document.createElement('div'); wrap.className = 'wrap';
-      let zusatz;
-      if (!bytesAlt) {
-        const leer = document.createElement('div');
-        leer.className = 'leer';
-        leer.textContent = t('diff.nuralt');
-        wrap.appendChild(leer);
-        zusatz = t('diff.nurNeu');
-      } else {
-        const A = await bitmapDaten(bytesAlt);
-        const B = await bitmapDaten(bytesNeu);
-        const w = Math.min(A.w, B.w), h = Math.min(A.h, B.h);
-        const cv = document.createElement('canvas');
-        cv.width = w; cv.height = h;
-        const g = cv.getContext('2d');
-        const bild = g.createImageData(w, h);
-        const d = bild.data;
-        let anders = 0;
-        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-          const a = A.data[((y * A.w) + x) * 4 + 3] / 255;
-          const b = B.data[((y * B.w) + x) * 4 + 3] / 255;
-          const i = ((y * w) + x) * 4;
-          const diff = a - b;
-          let farbe, alpha;
-          if (diff > 0.02) { farbe = weg; alpha = diff; anders++; }
-          else if (diff < -0.02) { farbe = dazu; alpha = -diff; anders++; }
-          else if (a > 0.02) { farbe = beide; alpha = a * 0.3; }
-          else { continue; }
-          d[i] = farbe[0]; d[i + 1] = farbe[1]; d[i + 2] = farbe[2];
-          d[i + 3] = Math.round(Math.max(0, Math.min(1, alpha)) * 255);
-        }
-        g.putImageData(bild, 0, 0);
-        wrap.appendChild(cv);
-        zusatz = anders + ' px';
-      }
-      zelle.appendChild(wrap);
-      zelle.appendChild(zellenLabel(c, zusatz));
-      z.appendChild(zelle);
-    }
-    dfGroessenSetzen();
-  }
-
-  function detailsOffen() { return $('grpDetails').hasAttribute('data-offen'); }
-  function renderDetails() {
-    if (!letzterDiff || !detailsOffen()) return;
-    renderVektor();
-    renderPixel();
-    renderDifferenz();
   }
 
   // ---- Kopf ----------------------------------------------------------------
@@ -1055,6 +965,7 @@
     try { $('segDarstellung').setAttribute('value', darstellung); } catch (e) {}
     $('vTitel').textContent = t('v.titel', { name: (letzterDiff && letzterDiff.name) || '' });
     $('scrubberZeile').hidden = !verbesserung;
+    $('retinaHalter').hidden = darstellung !== 'pixel';
     legendeZeichnen();
     zoomPilleSetzen();
   }
@@ -1062,9 +973,17 @@
     if (!letzterDiff) return;
     kopfZeichnen();
     renderKarten();
-    renderDetails();
   }
 
+  // Vektor ist der Standard; Pixel zeigt die echte Rasterung (mit Retina 2×).
+  function darstellungSetzen(v, melden) {
+    const neu = v === 'pixel' ? 'pixel' : 'vektor';
+    if (neu === darstellung) { kopfZeichnen(); return; }
+    darstellung = neu;
+    kopfZeichnen();
+    if (letzterDiff) renderKarten(); else anstossen(false);
+    if (melden) send({ type: 'merkerSetzen', schluessel: 'darstellung', wert: darstellung });
+  }
   function modusSetzen(m, melden) {
     if (MODI.indexOf(m) < 0 || m === vglModus) return;
     vglModus = m;
@@ -1082,9 +1001,19 @@
     if (m.schluessel === 'buehneHoehe' && Number(m.wert) > 0) {
       hoeheSetzen(Number(m.wert));
     }
+    if (m.schluessel === 'darstellung' && (m.wert === 'pixel' || m.wert === 'vektor')) {
+      darstellungSetzen(m.wert, false);
+    }
+    if (m.schluessel === 'retina') {
+      retina = !!m.wert;
+      anhaken($('chkRetina'), retina);
+      if (letzterDiff) renderKarten();
+    }
   });
   send({ type: 'merkerLaden', schluessel: 'vergleichsmodus' });
   send({ type: 'merkerLaden', schluessel: 'buehneHoehe' });
+  send({ type: 'merkerLaden', schluessel: 'darstellung' });
+  send({ type: 'merkerLaden', schluessel: 'retina' });
 
   function hoeheSetzen(h, melden) {
     buehneHoehe = Math.max(200, Math.min(600, Math.round(h)));
@@ -1109,16 +1038,20 @@
     modusSetzen(String((e && e.detail) || $('segModus').value || 'neben'), true);
   });
   $('segDarstellung').addEventListener('change', e => {
-    const v = String((e && e.detail) || $('segDarstellung').value || 'pixel');
+    const v = String((e && e.detail) || $('segDarstellung').value || 'vektor');
     if (v === darstellung) return;
-    darstellung = v === 'vektor' ? 'vektor' : 'pixel';
-    kopfZeichnen();
-    anstossen(false);
+    darstellungSetzen(v, true);
+  });
+  $('chkRetina').addEventListener('change', e => {
+    retina = !!e.target.checked;
+    send({ type: 'merkerSetzen', schluessel: 'retina', wert: retina });
+    if (letzterDiff) renderKarten();
   });
   $('chkMarkieren').addEventListener('change', e => { markieren = !!e.target.checked; anstossen(false); });
   $('chkVerbesserung').addEventListener('change', e => {
     verbesserung = !!e.target.checked;
     $('scrubberZeile').hidden = !verbesserung;
+    $('retinaHalter').hidden = darstellung !== 'pixel';
     legendeZeichnen();
     blend = verbesserung ? Number($('blendRegler').value || 100) : 100;
     anstossen(false);
@@ -1134,13 +1067,6 @@
   $('btnGrund').addEventListener('click', () => {
     dunkel = !dunkel;
     if (letzterDiff) renderDiff(); else kopfZeichnen();
-  });
-  $('segRaster').addEventListener('change', () => { renderPixel(); renderDifferenz(); });
-  $('segRaster').addEventListener('click', () => requestAnimationFrame(() => { renderPixel(); renderDifferenz(); }));
-  $('grpDetails').addEventListener('openchange', ev => {
-    const auf = !!(ev && ev.detail && ev.detail.open);
-    if (auf) { $('grpDetails').setAttribute('data-offen', ''); renderDetails(); }
-    else $('grpDetails').removeAttribute('data-offen');
   });
   $('zoomMinus').addEventListener('click', () => zoomMitte(stufeNehmen(-1), true));
   $('zoomPlus').addEventListener('click', () => zoomMitte(stufeNehmen(1), true));

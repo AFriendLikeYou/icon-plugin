@@ -81,10 +81,13 @@
         <fig-segment value="ueberlagern" data-t-title="tip.ueberlagern"><span data-t="modus.ueberlagern"></span></fig-segment>
       </fig-segmented-control>
       <fig-tooltip data-t-text="tip.darstellung" delay="500">
-        <fig-segmented-control id="segDarstellung" value="pixel">
-          <fig-segment value="pixel" selected="true"><span data-t="dar.pixel"></span></fig-segment>
-          <fig-segment value="vektor"><span data-t="dar.vektor"></span></fig-segment>
+        <fig-segmented-control id="segDarstellung" value="vektor">
+          <fig-segment value="pixel"><span data-t="dar.pixel"></span></fig-segment>
+          <fig-segment value="vektor" selected="true"><span data-t="dar.vektor"></span></fig-segment>
         </fig-segmented-control>
+      </fig-tooltip>
+      <fig-tooltip data-t-text="tip.retina" delay="400" id="retinaHalter">
+        <fig-switch id="chkRetina"><span data-t="v.retina"></span></fig-switch>
       </fig-tooltip>
       <span class="vfueller"></span>
       <fig-button id="zoomMinus" variant="ghost" class="iknopf" data-t-title="zoom.kleiner">−</fig-button>
@@ -130,33 +133,11 @@
     </div>
 
     <div class="kennzahlen" id="kennzahlen"></div>
-    <div class="vlegende" id="vLegende" data-t="v.legende"></div>
+    <div class="vlegende" id="vLegende"></div>
 
-    <fig-group collapsible open="false" id="grpDetails" class="diffgruppe">
-      <fig-header><h3 data-t="det.titel"></h3></fig-header>
-
-      <div class="sektion">
-        <span class="ctlLabel" data-t="det.vektor"></span>
-        <span class="klein" data-t="det.vektorHinweis"></span>
-      </div>
-      <div class="detailband"><div class="zeile" id="zellen"></div></div>
-
-      <div class="sektion">
-        <span class="ctlLabel" data-t="det.pixel"></span>
-        <fig-segmented-control id="segRaster" value="1">
-          <fig-segment value="1" selected="true">1×</fig-segment>
-          <fig-segment value="2">2×</fig-segment>
-        </fig-segmented-control>
-        <span class="klein" data-t="diff.schaerfe"></span>
-      </div>
-      <div class="detailband"><div class="zeile" id="pxzellen"></div></div>
-
-      <div class="sektion">
-        <span class="ctlLabel" data-t="det.differenz"></span>
-        <span class="ctlLabel"><span class="dot weg"></span><span data-t="diff.weg"></span></span>
-        <span class="ctlLabel"><span class="dot dazu"></span><span data-t="diff.dazu"></span></span>
-      </div>
-      <div class="detailband"><div class="zeile" id="dfzellen"></div></div>
+    <fig-group collapsible open="false" id="grpHinting" class="hintgruppe">
+      <fig-header><h3 data-t="hint.titel"></h3></fig-header>
+      <div class="hintband" id="hintTabelle"></div>
     </fig-group>
   </div>
 
