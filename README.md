@@ -1,26 +1,42 @@
-# ZDS Icon Pipeline — Figma-Plugin
+# Icon Pipeline — Figma-Plugin
 
-Hält die ZDS-Icons automatisch auf dem Grid: Fit auf die Keylines, proportionale
-Radien, optionales Pixel-Snapping (Stem-Hinting mit Mitte-Schutz und
-Spiegel-Kopplung, AA-Orakel wählt die schärfere Fassung), union→flatten,
-Inhaltstausch in die Library-Sets (Instanzen bleiben verbunden).
+Baut aus einer Master-Komponente (z. B. 72 px) gerasterte Icon-Varianten in
+beliebigen Zielgrößen: Fit auf Keylines, Radienregeln je Größe, optionales
+Pixel-Snapping (Stem-Hinting mit Mitte-Schutz, Spiegel-Kopplung, AA-Orakel),
+union→flatten, Inhaltstausch in bestehende Varianten-Sets (Instanzen bleiben verbunden).
+
+Läuft in jedem File (**Frei-Modus**) und auf dem ZDS-Icon-Board (**ZDS-Profil**,
+automatisch erkannt). Zweisprachig de/en.
 
 ## Installation
 Figma Desktop → Plugins → Development → Import plugin from manifest… → `manifest.json`
 
 ## Bedienung
-1. Auf der Seite **Source** eine `Karte · …` (oder deren Source) auswählen
-2. **Vorschau** — Onionskin (aktuell vs. neu) + Pixelansicht (echte 1×/2×-Rasterung), ändert nichts
-3. **Icon bauen** — baut die drei Größen und tauscht sie in das Library-Set
-- **Pixel-Snapping**: gerade Kanten/Scheitel aufs 0,5-px-Raster; Orakel behält die schärfere Fassung
-- **Stroke-Fassung ablegen**: zusätzlich ungeplättete Fassung (kantenidentisch) auf Source
+**Tab Icon**
+1. Komponente, Instanz, Varianten-Set oder (ZDS) Karte auswählen
+2. **Vorschau** — Onionskin aktuell/neu, Pixelansicht 1×/2×/8×, Differenz-Heatmap, dunkler Grund; ändert nichts
+3. **Icon bauen** — baut alle konfigurierten Größen und tauscht sie ins Set
+- **Audit** prüft alle Icons (Keyline, Raster, Struktur, veraltete Sources), **Alle neu bauen** mit Rückfrage
+- Schnellschalter: Pixel-Snapping, Stroke-Fassung zusätzlich ablegen
+
+**Tab Einstellungen** (gespeichert im File)
+- Adapter (auto/zds/frei), Sprache, Variantenproperty
+- Master: Größe, Kontur, Keylines je Formklasse
+- Größen-Tabelle: N, Kontur, Raster (1 / 0,5 / 0,25), grobes Raster, Radius-Regel
+  (proportional / fest / keine, Untergrenze), Keylines, Standardvariante
+- Farbe: aus der Source, Hex oder Variable (lokal und Team-Library)
+- Zurücksetzen auf Profil `zds` oder `generic`
 
 ## Dateien
-- `code.js` — Pipeline (Figma-Hauptthread)
-- `ui.html` — GENERIERT, nie von Hand editieren
-- `gen-ui.mjs` — der Bauplan: hier ändern, dann `node gen-ui.mjs`
-- `fig.css` / `fig.js` — vendored @rogieking/figui3 (wird in ui.html eingebettet)
+- `src/main/*.js` — Hauptthread, Module in Ladereihenfolge (siehe ARCHITEKTUR.md)
+- `gen-ui.mjs` — Bauplan der Oberfläche (figui3 eingebettet aus `fig.css`/`fig.js`)
+- `build.mjs` — `node build.mjs` schreibt `code.js` und `ui.html`
+- `code.js`, `ui.html` — GENERIERT, nie von Hand editieren
+- `code.v1.js` — Referenz des alten, ZDS-gebundenen Stands
+- `ARCHITEKTUR.md` — Spezifikation v2 (Konfigschema, Adapter, Protokoll)
 
-## Ausgeblendet, aber fertig
-`LIBRARY_MODUS` in gen-ui.mjs (Audit über alle Icons + „Alle neu bauen" mit
-Bestätigungsdialog und Auto-Audit). Auf `true` setzen und neu generieren.
+## Entwickeln
+```
+node build.mjs      # baut und prüft Syntax
+```
+Figma-API lässt sich nicht headless testen: nach dem Bau in Figma das Plugin neu starten.
