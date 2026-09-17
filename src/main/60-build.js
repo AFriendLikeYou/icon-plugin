@@ -366,6 +366,21 @@ async function vorschau(ziel, snap, ohneNormalisieren) {
         pngAlt8 = await v.exportAsync({ format: 'PNG', constraint: { type: 'SCALE', value: 8 } });
       }
     }
+    // Bei aktivem Snapping zusätzlich die UNGESNAPPTE Fassung exportieren — damit die UI
+    // die Wirkung des Snappings zeigen kann (Vergleichsbasis „ohne Snapping“).
+    let ohneSvg = null, pngOhne = null, pngOhne2 = null, pngOhne8 = null, gueteOhne = null;
+    if (snap) {
+      try {
+        const o = await baueGroesse(ziel, N, false, false);
+        o.box.clipsContent = true;
+        ohneSvg  = await o.box.exportAsync({ format: 'SVG_STRING' });
+        pngOhne  = await o.box.exportAsync({ format: 'PNG', constraint: { type: 'SCALE', value: 1 } });
+        pngOhne2 = await o.box.exportAsync({ format: 'PNG', constraint: { type: 'SCALE', value: 2 } });
+        pngOhne8 = await o.box.exportAsync({ format: 'PNG', constraint: { type: 'SCALE', value: 8 } });
+        o.box.remove();
+        if (b.aaInfo && b.aaInfo.plain) gueteOhne = { fehler: b.aaInfo.plain.fehler, aa: b.aaInfo.plain.aa };
+      } catch (e) {}
+    }
     b.box.remove();
     // Rasterfehler/AA der bestehenden Variante — damit die Urteil-Zeile „vorher → nachher“ zeigen kann.
     let gueteAlt = null;
@@ -375,6 +390,8 @@ async function vorschau(ziel, snap, ohneNormalisieren) {
     }
     zellen.push({
       gueteAlt: gueteAlt,
+      ohne: ohneSvg, pngOhne: pngOhne, pngOhne2: pngOhne2, pngOhne8: pngOhne8, gueteOhne: gueteOhne,
+      mitSnap: !!(snap && b.aaInfo && b.aaInfo.mitSnap),
       N: N, kontur: g.kontur, raster: g.raster, radius: g.radius,
       alt: altSvg, neu: neuSvg,
       pngNeu: pngNeu, pngNeu2: pngNeu2, pngNeu8: pngNeu8,
