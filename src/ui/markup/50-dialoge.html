@@ -1,0 +1,25 @@
+<dialog is="fig-dialog" modal class="breit" id="dlgPlan">
+  <fig-header dialog-header><h3 id="planTitel"></h3></fig-header>
+  <div class="dlg-text"><p id="planText"></p></div>
+  <div class="plan-liste" id="planListe"></div>
+  <div class="plan-summe" id="planSumme"></div>
+  <div class="dlg-schalter" id="planSchalterZeile" hidden>
+    <fig-switch id="chkTrockenEinzel"><span data-t="chk.trockenlaufEinzel"></span></fig-switch>
+  </div>
+  <div class="dlg-aktionen">
+    <fig-button id="planAbbruch" variant="secondary" data-t="btn.abbrechen"></fig-button>
+    <fig-button id="planOk" variant="destructive" data-t="btn.planBauen"></fig-button>
+  </div>
+</dialog>
+
+<dialog is="fig-dialog" modal id="dlgReset">
+  <fig-header dialog-header><h3 data-t="dlg.reset.titel"></h3></fig-header>
+  <div class="dlg-text"><p data-t="dlg.reset.text"></p></div>
+  <div class="profilliste" id="profilListe"></div>
+  <div class="dlg-aktionen">
+    <fig-button id="resetAbbruch" variant="secondary" data-t="btn.abbrechen"></fig-button>
+    <fig-button id="resetOk" variant="destructive" data-t="btn.resetOk"></fig-button>
+  </div>
+</dialog>
+
+<dialog is="fig-toast" id="toast" duration="2600"><span id="toastText"></span></dialog>

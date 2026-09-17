@@ -1,0 +1,103 @@
+<div class="panel" id="panelCfg" hidden>
+  <div class="fehlerbox" id="cfgFehler" hidden>
+    <div data-t="fehler.kopf"></div>
+    <ul id="cfgFehlerListe"></ul>
+  </div>
+
+  <div class="cfgblock">
+    <div class="gruppenkopf" data-t="cfg.allgemein"></div>
+    <div class="feld">
+      <span class="fname" data-t="cfg.adapter"></span>
+      <fig-dropdown id="selAdapter" data-pfad="adapter">
+        <option value="auto" data-t="opt.auto"></option>
+        <option value="zds" data-t="opt.zds"></option>
+        <option value="frei" data-t="opt.frei"></option>
+      </fig-dropdown>
+    </div>
+    <div class="feld">
+      <span class="fname" data-t="cfg.sprache"></span>
+      <fig-dropdown id="selSprache" data-pfad="sprache">
+        <option value="auto" data-t="opt.auto"></option>
+        <option value="de" data-t="opt.de"></option>
+        <option value="en" data-t="opt.en"></option>
+      </fig-dropdown>
+    </div>
+    <div class="feld">
+      <span class="fname" data-t="cfg.variantenProperty"></span>
+      <fig-input-text id="inpVarProp" data-pfad="variantenProperty"></fig-input-text>
+    </div>
+  </div>
+
+  <div class="cfgblock">
+    <div class="gruppenkopf" data-t="cfg.schreiben"></div>
+    <fig-tooltip data-t-text="tip.frameUmwandeln" delay="400">
+      <fig-switch id="chkFrameUmwandeln" data-pfad="schreiben.frameUmwandeln"><span data-t="chk.frameUmwandeln"></span></fig-switch>
+    </fig-tooltip>
+    <fig-tooltip data-t-text="tip.strokeHeimAnlegen" delay="400">
+      <fig-switch id="chkStrokeHeim" data-pfad="schreiben.strokeHeimAnlegen"><span data-t="chk.strokeHeimAnlegen"></span></fig-switch>
+    </fig-tooltip>
+  </div>
+
+  <div class="cfgblock">
+    <div class="gruppenkopf" data-t="cfg.master"></div>
+    <div class="vier">
+      <div class="feld">
+        <span class="fname" data-t="cfg.masterGroesse"></span>
+        <fig-input-number id="inpMasterGroesse" min="1" step="1" data-pfad="master.groesse"></fig-input-number>
+      </div>
+      <div class="feld">
+        <span class="fname" data-t="cfg.masterKontur"></span>
+        <fig-input-number id="inpMasterKontur" min="0.1" step="0.5" data-pfad="master.kontur"></fig-input-number>
+      </div>
+    </div>
+    <div class="gruppenkopf" data-t="cfg.keylines"></div>
+    <div id="masterKeyViz"></div>
+    <div class="vier" id="masterKeylines"></div>
+  </div>
+
+  <div class="cfgblock">
+    <div class="gruppenkopf" data-t="cfg.groessen"></div>
+    <div id="groessen" style="display:flex;flex-direction:column;gap:8px"></div>
+    <fig-button id="btnGroesseHinzu" variant="secondary" data-t="btn.groesseHinzu"></fig-button>
+  </div>
+
+  <div class="cfgblock">
+    <div class="gruppenkopf" data-t="cfg.farbe"></div>
+    <fig-segmented-control id="segFarbe" value="source" data-pfad="farbe.modus">
+      <fig-segment value="source" selected="true"><span data-t="farbe.source"></span></fig-segment>
+      <fig-segment value="hex"><span data-t="farbe.hex"></span></fig-segment>
+      <fig-segment value="variable"><span data-t="farbe.variable"></span></fig-segment>
+    </fig-segmented-control>
+    <div id="farbeHex" hidden>
+      <fig-input-color id="inpHex" alpha="false" data-pfad="farbe.hex"></fig-input-color>
+    </div>
+    <div id="farbeVariable" hidden>
+      <div class="reihe" style="align-items:center">
+        <fig-input-text id="varSuche" type="search" class="varsuche" data-t-ph="farbe.suche" style="flex:1"></fig-input-text>
+        <fig-button id="btnFarbenNeu" variant="ghost" data-t="farbe.aktualisieren" style="flex:none"></fig-button>
+      </div>
+      <div class="varliste" id="varListe"></div>
+      <div class="gewaehltzeile" id="varGewaehlt" hidden>
+        <span class="ctlLabel" data-t="farbe.gewaehlt"></span>
+        <span class="platte" id="varPlatte"></span>
+        <span id="varName"></span>
+      </div>
+    </div>
+    <fig-switch id="chkAngleichen" data-pfad="farbe.sourceAngleichen"><span data-t="farbe.angleichen"></span></fig-switch>
+  </div>
+
+  <div class="cfgblock">
+    <div class="gruppenkopf" data-t="cfg.datei"></div>
+    <div class="dateizeile">
+      <fig-button id="btnKonfigExport" variant="secondary" data-t="btn.exportKonfig" style="flex:none"></fig-button>
+      <fig-input-file id="fileKonfig" accepts=".json,application/json" data-t-label="file.importKonfig"></fig-input-file>
+    </div>
+    <fig-button id="btnVorschauMit" variant="secondary" disabled data-t="btn.vorschauMit"></fig-button>
+  </div>
+
+  <div class="cfgaktionen">
+    <fig-button id="btnZuruecksetzen" variant="secondary" data-t="btn.zuruecksetzen"></fig-button>
+    <fig-button id="btnSpeichern" data-t="btn.speichern"></fig-button>
+  </div>
+</div>
+

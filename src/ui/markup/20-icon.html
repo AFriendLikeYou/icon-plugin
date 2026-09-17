@@ -1,0 +1,116 @@
+<div class="panel" id="panelIcon">
+
+  <div class="gruppe">
+    <div class="gruppenkopf" data-t="gruppe.icon"></div>
+    <div class="auswahlzeile">
+      <fig-tooltip data-t-text="auswahl.tip" delay="600">
+        <fig-button variant="input" id="auswahl">
+          <fig-truncate class="hinweis" id="auswahlText"></fig-truncate>
+          <span class="fueller"></span>
+          <span class="chip grau" id="klasseChip"></span>
+          <span class="chip" id="auswahlStatus"></span>
+        </fig-button>
+      </fig-tooltip>
+      <div class="klassenzeile" id="klassenzeile" hidden>
+        <span class="ctlLabel" data-t="klasse.label"></span>
+        <fig-dropdown id="klasseSel">
+          <option value="Square">Square</option>
+          <option value="Circular">Circular</option>
+          <option value="Wide">Wide</option>
+          <option value="Tall">Tall</option>
+        </fig-dropdown>
+        <span class="chip geraten" id="klasseGeraten" hidden></span>
+      </div>
+    </div>
+    <div class="reihe">
+      <fig-button id="btnDiff" variant="secondary" disabled data-t="btn.vorschau"></fig-button>
+      <fig-button id="btnRun" disabled data-t="btn.bauen"></fig-button>
+    </div>
+    <div class="optzeile">
+      <fig-tooltip data-t-text="tip.snap" delay="400">
+        <fig-switch id="chkSnap"><span data-t="chk.snap"></span></fig-switch>
+      </fig-tooltip>
+      <fig-tooltip data-t-text="tip.stroke" delay="400">
+        <fig-switch id="chkStroke"><span data-t="chk.stroke"></span></fig-switch>
+      </fig-tooltip>
+    </div>
+  </div>
+
+  <div class="gruppe leerzustand" id="leerzustand" hidden>
+    <div class="gruppenkopf" data-t="leer.titel"></div>
+    <ul>
+      <li data-t="leer.master"></li>
+      <li data-t="leer.keyline"></li>
+      <li data-t="leer.raster"></li>
+    </ul>
+    <p class="ctlLabel" id="leerKarte" hidden data-t="leer.karte"></p>
+    <fig-button id="btnBeispiel" variant="secondary" data-t="btn.beispiel"></fig-button>
+  </div>
+
+  <div class="gruppe">
+    <div class="gruppenkopf" data-t="gruppe.library"></div>
+    <div class="reihe">
+      <fig-button id="btnAudit" variant="secondary" data-t="btn.audit"></fig-button>
+      <fig-button id="btnAlle" variant="destructiveSecondary" data-t="btn.alle"></fig-button>
+    </div>
+  </div>
+
+  <div class="fazit" id="fazit"></div>
+
+  <div class="fortschritt" id="fortschritt">
+    <fig-spinner aria-label="…"></fig-spinner>
+    <div class="balkenrahmen"><div class="balken" id="balken"></div></div>
+    <div class="zahl" id="zahl"></div>
+    <fig-button id="btnAbbrechen" variant="ghost" data-t="btn.abbrechen" style="flex:none"></fig-button>
+  </div>
+
+  <div id="diff">
+    <div class="diffkopf">
+      <span class="seklabel" data-t="diff.vektor"></span>
+      <div class="chips">
+        <fig-switch id="chkAlt" checked><span class="dot alt"></span><span data-t="diff.aktuell"></span></fig-switch>
+        <fig-switch id="chkNeu" checked><span class="dot neu"></span><span data-t="diff.neu"></span></fig-switch>
+        <fig-switch id="chkDunkel"><span data-t="diff.dunkel"></span></fig-switch>
+      </div>
+      <div class="zoom">
+        <fig-button id="zoomMinus" variant="ghost" data-t-title="zoom.kleiner">−</fig-button>
+        <fig-slider id="zoomRegler" min="3" max="32" step="1" value="6" text="false"></fig-slider>
+        <fig-button id="zoomPlus" variant="ghost" data-t-title="zoom.groesser">+</fig-button>
+        <span class="zwert" id="zoomWertAnzeige" data-t-title="zoom.zurueck">6×</span>
+      </div>
+    </div>
+    <div class="buehne" id="buehne">
+      <div class="zeile" id="zellen"></div>
+      <div class="trennlinie"></div>
+      <div class="sektion">
+        <span class="seklabel" style="margin-right:0" data-t="diff.pixel"></span>
+        <div class="chips">
+          <span class="ctlLabel" data-t="diff.rasterung"></span>
+          <fig-segmented-control id="segRaster" value="1">
+            <fig-segment value="1" selected="true">1×</fig-segment>
+            <fig-segment value="2">2×</fig-segment>
+          </fig-segmented-control>
+        </div>
+        <span class="klein" data-t="diff.schaerfe"></span>
+      </div>
+      <div class="zeile" id="pxzellen"></div>
+      <div class="trennlinie"></div>
+      <div class="sektion">
+        <span class="seklabel" style="margin-right:0" data-t="diff.differenz"></span>
+        <div class="chips">
+          <span class="ctlLabel"><span class="dot weg"></span><span data-t="diff.weg"></span></span>
+          <span class="ctlLabel"><span class="dot dazu"></span><span data-t="diff.dazu"></span></span>
+        </div>
+      </div>
+      <div class="zeile" id="dfzellen"></div>
+    </div>
+  </div>
+
+  <div class="logblock">
+    <div class="logkopf"><span data-t="log.titel"></span>
+      <fig-button id="btnLeeren" variant="ghost" data-t="btn.leeren"></fig-button>
+    </div>
+    <div class="log" id="log"></div>
+  </div>
+</div>
+

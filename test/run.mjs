@@ -60,7 +60,10 @@ const dateien = fs.readdirSync(SRC).filter(f => f.endsWith('.js')).sort();
 const quellen = new Map();
 for (const f of dateien) quellen.set(f, fs.readFileSync(path.join(SRC, f), 'utf8'));
 
-const uiQuelle = fs.readFileSync(path.join(WURZEL, 'gen-ui.mjs'), 'utf8');
+const uiLogikDir = path.join(WURZEL, 'src', 'ui', 'logik');
+const uiQuelle = fs.existsSync(uiLogikDir)
+  ? fs.readdirSync(uiLogikDir).filter(f => f.endsWith('.js')).sort().map(f => fs.readFileSync(path.join(uiLogikDir, f), 'utf8')).join('\n')
+  : fs.readFileSync(path.join(WURZEL, 'gen-ui.mjs'), 'utf8');
 const mainQuelle = quellen.get('70-main.js') || '';
 
 // Syntaxprüfung je Datei — so steht im Fehlerfall der DATEINAME im Protokoll.
@@ -508,7 +511,8 @@ const mainEmpfaengt = einmalig(treffer(/\bm\.type\s*===\s*'([^']+)'/g, mainQuell
 const mainSendet = einmalig(dateien.flatMap(f =>
   treffer(/\bui\(\s*(?:Object\.assign\(\s*)?\{\s*type:\s*'([^']+)'/g, quellen.get(f))));
 const uiSendet = einmalig(treffer(/\bsend\(\s*\{\s*type:\s*'([^']+)'/g, uiQuelle));
-const uiEmpfaengt = einmalig(treffer(/\bm\.type\s*===\s*'([^']+)'/g, uiQuelle));
+const uiEmpfaengt = einmalig(treffer(/\bm\.type\s*===\s*'([^']+)'/g, uiQuelle)
+  .concat(treffer(/\bbei\(\s*'([^']+)'/g, uiQuelle)));
 
 // Bewusst einseitig: `fertig` entsperrt nur die UI, es gibt keine Gegenrichtung.
 const EINSEITIG_MAIN = ['fertig'];
