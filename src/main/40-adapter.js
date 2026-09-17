@@ -143,17 +143,25 @@ const adapterZds = {
     return await zdsZiel(karte);
   },
 
-  zielSet(ziel) { return zdsLibrarySet(ziel.name); },
+  // Async wie im Frei-Adapter — das Interface ist fuer beide gleich.
+  async zielSet(ziel) { return zdsLibrarySet(ziel.name); },
 
   zielEltern(ziel) { return { node: CTX.zds.IC, x: 80, y: 120 }; },
 
   arbeitsFlaeche(ziel) { return CTX.zds.IC; },
 
+  // Gibt es die Ablage schon? (Trockenlauf — nichts anlegen.)
+  strokeHeimDa(ziel) {
+    return !!(CTX.zds && CTX.zds.SRC && CTX.zds.SRC.children.find(c => c.name === ZDS_STROKE_HEIM));
+  },
+
   // Ablage für ungeplättete, optimierte Fassungen — wird nie publiziert.
+  // Neu anlegen nur, wenn CFG.schreiben.strokeHeimAnlegen es erlaubt; sonst null.
   strokeHeim(ziel) {
     const SRC = CTX.zds.SRC;
     let h = SRC.children.find(c => c.name === ZDS_STROKE_HEIM);
     if (h) return h;
+    if (!(CFG.schreiben && CFG.schreiben.strokeHeimAnlegen)) return null;
     h = figma.createFrame(); SRC.appendChild(h);
     h.name = ZDS_STROKE_HEIM;
     const alt = SRC.children.find(c => /Arbeitsdateien \(versteckt\)/.test(c.name));
@@ -298,14 +306,17 @@ const adapterFrei = {
     return null;
   },
 
-  zielSet(ziel) {
+  // Async: erst die aktuelle Seite, dann — nach dem Laden — alle übrigen.
+  // (v2 suchte nur auf bereits geladenen Seiten und übersah Sets auf anderen.)
+  async zielSet(ziel) {
     const passt = n => n.type === 'COMPONENT_SET' && freiNameBereinigen(n.name) === ziel.name;
     const hier = figma.currentPage.findAll(passt)[0];
     if (hier) return hier;
+    try { await figma.loadAllPagesAsync(); } catch (e) {}
     for (const p of figma.root.children) {
       if (p === figma.currentPage) continue;
+      try { await p.loadAsync(); } catch (e) { continue; }
       let f = null;
-      // Nur bereits geladene Seiten — zielSet ist bewusst synchron.
       try { f = p.findAll(passt)[0]; } catch (e) { f = null; }
       if (f) return f;
     }
@@ -321,10 +332,16 @@ const adapterFrei = {
 
   arbeitsFlaeche(ziel) { return seiteVon(ziel.src) || figma.currentPage; },
 
+  strokeHeimDa(ziel) {
+    const seite = (ziel && ziel.src ? seiteVon(ziel.src) : null) || figma.currentPage;
+    return !!seite.children.find(c => c.type === 'FRAME' && c.name === FREI_STROKE_HEIM);
+  },
+
   strokeHeim(ziel) {
     const seite = seiteVon(ziel.src) || figma.currentPage;
     let h = seite.children.find(c => c.type === 'FRAME' && c.name === FREI_STROKE_HEIM);
     if (h) return h;
+    if (!(CFG.schreiben && CFG.schreiben.strokeHeimAnlegen)) return null;
     h = figma.createFrame(); seite.appendChild(h);
     h.name = FREI_STROKE_HEIM;
     h.x = ziel.src.x; h.y = ziel.src.y + ziel.src.height + 120;

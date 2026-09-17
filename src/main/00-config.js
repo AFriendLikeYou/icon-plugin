@@ -13,10 +13,33 @@ const KLASSEN = ['Square', 'Circular', 'Wide', 'Tall'];
 const RASTER_WERTE = [1, 0.5, 0.25];
 const RADIUS_MODI = ['proportional', 'fest', 'keine'];
 const FARB_MODI = ['source', 'hex', 'variable'];
-const PROFIL_NAMEN = ['zds', 'generic'];
+const PROFIL_NAMEN = ['zds', 'generic', 'material', 'lucide', 'apple'];
+
+// Standardwerte für den Block `schreiben` (Mutationen außerhalb des Ziel-Sets).
+// Konservativ: umwandeln nein, Ablage-Frame ja.
+const SCHREIBEN_STANDARD = { frameUmwandeln: false, strokeHeimAnlegen: true };
 
 // Die aktive Konfiguration. Wird in 70-main beim init gesetzt.
 let CFG = null;
+
+// --- kleine Bausteine für die Profil-Literale -------------------------------
+
+function pKey(sq, ci, wi, ta) { return { Square: sq, Circular: ci, Wide: wi, Tall: ta }; }
+function pKey1(v) { return pKey(v, v, v, v); }
+
+function pG(N, kontur, keylines, grob, standard) {
+  return {
+    N: N,
+    kontur: kontur,
+    keylines: keylines,
+    raster: 0.5,
+    rasterGrob: grob || null,
+    radius: { modus: 'proportional', wert: 1, min: 0 },
+    standard: !!standard
+  };
+}
+
+function pSchreiben() { return { frameUmwandeln: false, strokeHeimAnlegen: true }; }
 
 const PROFILE = {
   zds: {
@@ -44,6 +67,7 @@ const PROFILE = {
       variable: { key: 'c03b6366f45ff8c719530cff7a2150965e4200fd', name: 'Text/70', id: '' },
       sourceAngleichen: true
     },
+    schreiben: pSchreiben(),
     snapping: true,
     strokeFassung: false
   },
@@ -71,6 +95,66 @@ const PROFILE = {
       variable: null,
       sourceAngleichen: false
     },
+    schreiben: pSchreiben(),
+    snapping: true,
+    strokeFassung: false
+  },
+
+  // Material Design Icons: 24er-Master, Größenstaffel 18/24/36/48.
+  material: {
+    version: 1,
+    adapter: 'auto',
+    sprache: 'auto',
+    master: { groesse: 24, kontur: 2, keylines: pKey(18, 20, 20, 20) },
+    variantenProperty: 'Size',
+    groessen: [
+      pG(18, 1.5, pKey(13.5, 15, 15, 15), null, false),
+      pG(24, 2,   pKey(18, 20, 20, 20),   1,    true),
+      pG(36, 3,   pKey(27, 30, 30, 30),   1,    false),
+      pG(48, 4,   pKey(36, 40, 40, 40),   1,    false)
+    ],
+    farbe: { modus: 'source', hex: '#444444', variable: null, sourceAngleichen: false },
+    schreiben: pSchreiben(),
+    snapping: true,
+    strokeFassung: false
+  },
+
+  // Lucide / Feather: 24er-Master, randnahe Keyline, gleichmäßige 2-px-Kontur.
+  lucide: {
+    version: 1,
+    adapter: 'auto',
+    sprache: 'auto',
+    master: { groesse: 24, kontur: 2, keylines: pKey1(22) },
+    variantenProperty: 'Size',
+    groessen: [
+      pG(16, 1.5, pKey1(14.5), null, false),
+      pG(20, 1.5, pKey1(18.5), null, false),
+      pG(24, 2,   pKey1(22),   1,    true),
+      pG(32, 2.5, pKey1(29.5), 1,    false),
+      pG(48, 4,   pKey1(44),   1,    false)
+    ],
+    farbe: { modus: 'source', hex: '#444444', variable: null, sourceAngleichen: false },
+    schreiben: pSchreiben(),
+    snapping: true,
+    strokeFassung: false
+  },
+
+  // SF-Symbols-nahe Staffel: 28er-Master, Größen 16/20/24/28/32.
+  apple: {
+    version: 1,
+    adapter: 'auto',
+    sprache: 'auto',
+    master: { groesse: 28, kontur: 2, keylines: pKey(21, 22, 22, 22) },
+    variantenProperty: 'Size',
+    groessen: [
+      pG(16, 1.5, pKey(12, 12.5, 12.5, 12.5), null, false),
+      pG(20, 1.5, pKey(15, 15.5, 15.5, 15.5), null, false),
+      pG(24, 2,   pKey(18, 19, 19, 19),       1,    true),
+      pG(28, 2,   pKey(21, 22, 22, 22),       1,    false),
+      pG(32, 2.5, pKey(24, 25, 25, 25),       1,    false)
+    ],
+    farbe: { modus: 'source', hex: '#444444', variable: null, sourceAngleichen: false },
+    schreiben: pSchreiben(),
     snapping: true,
     strokeFassung: false
   }
@@ -80,6 +164,15 @@ function cfgKopie(o) { return JSON.parse(JSON.stringify(o)); }
 
 function konfigDefaults(profil) {
   return cfgKopie(PROFILE[profil] || PROFILE.generic);
+}
+
+// Titel/Beschreibung der Profile für den Profil-Chooser der UI.
+function konfigProfilInfo() {
+  return PROFIL_NAMEN.map(name => ({
+    name: name,
+    titel: t('profil.' + name + '.titel'),
+    beschreibung: t('profil.' + name + '.beschreibung')
+  }));
 }
 
 // --- Validierung -----------------------------------------------------------
@@ -98,11 +191,39 @@ function cfgHex(v) {
   return /^#[0-9a-fA-F]{6}$/.test(s) ? s.toLowerCase() : null;
 }
 
-function cfgKeylines(v, standard) {
+// Ein Eintrag der Fehlerliste: { pfad, text }. `pfad` entspricht dem
+// data-pfad-Attribut des zugehörigen Feldes in der UI.
+function cfgMeldung(liste, pfad, key, params) {
+  liste.push({ pfad: pfad, text: t(key, params) });
+}
+
+// Zahl hübsch für Meldungen (1.5 → „1.5“, 12 → „12“).
+function cfgZ(n) { return String(Math.round(n * 1000) / 1000); }
+
+// Keylines einer Ebene prüfen: nicht-numerisch → Fehler, außerhalb N/2…N → Warnung.
+// `pfadPrefix` ist z. B. 'master.' oder 'groessen.2.'.
+function cfgKeylines(v, standardWert, N, pfadPrefix, fehler) {
   const k = {};
+  const q = (v && typeof v === 'object') ? v : {};
   KLASSEN.forEach(kl => {
-    const n = cfgZahl(v && v[kl], null, 0.0001);
-    k[kl] = n == null ? standard : n;
+    const pfad = pfadPrefix + 'keylines.' + kl;
+    const roh = q[kl];
+    const n = cfgZahl(roh, null, 0.0001);
+    if (n == null) {
+      // Fehlt der Wert ganz, wird still der Standard gesetzt; ein gesetzter,
+      // aber unbrauchbarer Wert ist ein Fehler.
+      if (roh !== undefined && roh !== null && roh !== '') {
+        cfgMeldung(fehler, pfad, 'konfig.keyline', { klasse: kl });
+      }
+      k[kl] = standardWert;
+      return;
+    }
+    k[kl] = n;
+    const min = N / 2;
+    if (n < min || n > N) {
+      cfgMeldung(fehler, pfad, 'konfig.keylineUnplausibel', { wert: cfgZ(n), N: cfgZ(N), min: cfgZ(min) });
+      fehler[fehler.length - 1].art = 'warnung';
+    }
   });
   return k;
 }
@@ -116,6 +237,7 @@ function cfgRaster(v) {
 }
 
 // Repariert, was reparierbar ist, und sammelt die Meldungen für die UI.
+// Rückgabe: { ok, fehler: [{ pfad, text }], konfig }.
 function konfigValidieren(k) {
   const fehler = [];
   const d = konfigDefaults('generic');
@@ -124,59 +246,101 @@ function konfigValidieren(k) {
 
   o.version = 1;
 
-  if (['auto', 'zds', 'frei'].indexOf(o.adapter) < 0) { o.adapter = d.adapter; fehler.push(t('konfig.adapter')); }
-  if (['auto', 'de', 'en'].indexOf(o.sprache) < 0) { o.sprache = d.sprache; fehler.push(t('konfig.sprache')); }
+  if (['auto', 'zds', 'frei'].indexOf(o.adapter) < 0) { o.adapter = d.adapter; cfgMeldung(fehler, 'adapter', 'konfig.adapter'); }
+  if (['auto', 'de', 'en'].indexOf(o.sprache) < 0) { o.sprache = d.sprache; cfgMeldung(fehler, 'sprache', 'konfig.sprache'); }
 
   const vp = String(o.variantenProperty == null ? '' : o.variantenProperty).trim();
-  if (!vp) { o.variantenProperty = d.variantenProperty; fehler.push(t('konfig.variantenProperty')); }
+  if (!vp) { o.variantenProperty = d.variantenProperty; cfgMeldung(fehler, 'variantenProperty', 'konfig.variantenProperty'); }
   else o.variantenProperty = vp;
 
   // --- Master ---
   const m = (o.master && typeof o.master === 'object') ? o.master : {};
   const mg = cfgZahl(m.groesse, null, 1);
-  if (mg == null) { fehler.push(t('konfig.masterGroesse')); m.groesse = d.master.groesse; } else m.groesse = mg;
+  if (mg == null) { cfgMeldung(fehler, 'master.groesse', 'konfig.masterGroesse'); m.groesse = d.master.groesse; } else m.groesse = mg;
   const mk = cfgZahl(m.kontur, null, 0.0001);
-  if (mk == null) { fehler.push(t('konfig.masterKontur')); m.kontur = d.master.kontur; } else m.kontur = mk;
-  m.keylines = cfgKeylines(m.keylines, m.groesse);
+  if (mk == null) { cfgMeldung(fehler, 'master.kontur', 'konfig.masterKontur'); m.kontur = d.master.kontur; } else m.kontur = mk;
+  m.keylines = cfgKeylines(m.keylines, m.groesse, m.groesse, 'master.', fehler);
   o.master = m;
 
+  // --- Schreiben (Mutationen außerhalb des Ziel-Sets) ---
+  const w = (o.schreiben && typeof o.schreiben === 'object') ? o.schreiben : {};
+  o.schreiben = {
+    frameUmwandeln: typeof w.frameUmwandeln === 'boolean' ? w.frameUmwandeln : SCHREIBEN_STANDARD.frameUmwandeln,
+    strokeHeimAnlegen: typeof w.strokeHeimAnlegen === 'boolean' ? w.strokeHeimAnlegen : SCHREIBEN_STANDARD.strokeHeimAnlegen
+  };
+
   // --- Größen ---
+  // Meldungen je Zeile werden erst gesammelt und NACH dem Sortieren mit dem
+  // endgültigen Index ausgegeben — der Index in `pfad` ist immer der der
+  // sortierten Liste. Verworfene Zeilen haben keinen Index → pfad 'groessen'.
   let gs = Array.isArray(o.groessen) ? o.groessen : [];
   const gesehen = {};
+  const proZeile = new Map();
   gs = gs.map(g => (g && typeof g === 'object') ? g : {}).filter(g => {
     const N = cfgZahl(g.N, null, 1);
-    if (N == null || Math.round(N) !== N) { fehler.push(t('konfig.groesseN', { wert: String(g.N) })); return false; }
-    if (gesehen[N]) { fehler.push(t('konfig.groesseDoppelt', { N: N })); return false; }
-    gesehen[N] = true; g.N = N; return true;
+    if (N == null) { cfgMeldung(fehler, 'groessen', 'konfig.groesseN', { wert: String(g.N) }); return false; }
+    const ganz = Math.round(N);
+    if (ganz !== N) g.__gerundet = N;
+    g.N = ganz;
+    if (gesehen[ganz]) { cfgMeldung(fehler, 'groessen', 'konfig.groesseDoppelt', { N: ganz }); return false; }
+    gesehen[ganz] = true;
+    return true;
   });
-  if (!gs.length) { fehler.push(t('konfig.keineGroessen')); gs = cfgKopie(d.groessen); }
+  if (!gs.length) { cfgMeldung(fehler, 'groessen', 'konfig.keineGroessen'); gs = cfgKopie(d.groessen); }
 
   gs.forEach(g => {
+    const zeile = [];
+    proZeile.set(g, zeile);
+    if (g.__gerundet !== undefined) {
+      zeile.push({ feld: 'N', key: 'konfig.groesseNGerundet', params: { wert: cfgZ(g.__gerundet), N: g.N } });
+      delete g.__gerundet;
+    }
     const kt = cfgZahl(g.kontur, null, 0.0001);
-    if (kt == null) { fehler.push(t('konfig.kontur', { N: g.N })); g.kontur = 1.5; } else g.kontur = kt;
-    g.keylines = cfgKeylines(g.keylines, g.N);
+    if (kt == null) { zeile.push({ feld: 'kontur', key: 'konfig.kontur', params: { N: g.N } }); g.kontur = 1.5; } else g.kontur = kt;
+
     const r = cfgRaster(g.raster);
-    if (r == null) { fehler.push(t('konfig.raster', { N: g.N })); g.raster = 0.5; } else g.raster = r;
+    if (r == null) { zeile.push({ feld: 'raster', key: 'konfig.raster', params: { N: g.N } }); g.raster = 0.5; } else g.raster = r;
+
     if (g.rasterGrob == null || g.rasterGrob === '' || g.rasterGrob === false) g.rasterGrob = null;
     else {
       const rg = cfgRaster(g.rasterGrob);
-      if (rg == null || rg <= g.raster) { fehler.push(t('konfig.rasterGrob', { N: g.N })); g.rasterGrob = null; }
+      if (rg == null || rg <= g.raster) { zeile.push({ feld: 'rasterGrob', key: 'konfig.rasterGrob', params: { N: g.N } }); g.rasterGrob = null; }
       else g.rasterGrob = rg;
     }
+
     const rad = (g.radius && typeof g.radius === 'object') ? g.radius : {};
-    if (RADIUS_MODI.indexOf(rad.modus) < 0) { fehler.push(t('konfig.radiusModus', { N: g.N })); rad.modus = 'proportional'; }
-    const rw = cfgZahl(rad.wert, null, 0); rad.wert = rw == null ? 1 : rw;
-    const rm = cfgZahl(rad.min, null, 0);  rad.min  = rm == null ? 0 : rm;
+    if (RADIUS_MODI.indexOf(rad.modus) < 0) {
+      // Fehlt der Block ganz, gilt still der Standard; ein gesetzter, falscher Modus ist ein Fehler.
+      if (rad.modus !== undefined && rad.modus !== null && rad.modus !== '') {
+        zeile.push({ feld: 'radius.modus', key: 'konfig.radiusModus', params: { N: g.N } });
+      }
+      rad.modus = 'proportional';
+    }
+    const rw = cfgZahl(rad.wert, null, 0);
+    if (rw == null) { if (rad.wert !== undefined && rad.wert !== null && rad.wert !== '') zeile.push({ feld: 'radius.wert', key: 'konfig.radiusWert', params: { N: g.N } }); rad.wert = 1; }
+    else rad.wert = rw;
+    const rm = cfgZahl(rad.min, null, 0);
+    if (rm == null) { if (rad.min !== undefined && rad.min !== null && rad.min !== '') zeile.push({ feld: 'radius.min', key: 'konfig.radiusMin', params: { N: g.N } }); rad.min = 0; }
+    else rad.min = rm;
     g.radius = rad;
+
     g.standard = !!g.standard;
     g.keylinesManuell = !!g.keylinesManuell;   // UI-Merker: Keylines von Hand gesetzt → folgen N nicht mehr
   });
 
   gs.sort((a, b) => a.N - b.N);
+
+  // Jetzt steht der Index fest: Zeilenmeldungen und Keylines ausgeben.
+  gs.forEach((g, i) => {
+    const pfx = 'groessen.' + i + '.';
+    (proZeile.get(g) || []).forEach(e => cfgMeldung(fehler, pfx + e.feld, e.key, e.params));
+    g.keylines = cfgKeylines(g.keylines, g.N, g.N, pfx, fehler);
+  });
+
   const std = gs.filter(g => g.standard);
   if (std.length !== 1) {
-    if (std.length > 1) fehler.push(t('konfig.mehrereStandard'));
-    else fehler.push(t('konfig.keinStandard'));
+    if (std.length > 1) cfgMeldung(fehler, 'groessen', 'konfig.mehrereStandard');
+    else cfgMeldung(fehler, 'groessen', 'konfig.keinStandard');
     gs.forEach(g => { g.standard = false; });
     (std[0] || gs[gs.length - 1]).standard = true;
   }
@@ -184,9 +348,9 @@ function konfigValidieren(k) {
 
   // --- Farbe ---
   const f = (o.farbe && typeof o.farbe === 'object') ? o.farbe : {};
-  if (FARB_MODI.indexOf(f.modus) < 0) { fehler.push(t('konfig.farbModus')); f.modus = d.farbe.modus; }
+  if (FARB_MODI.indexOf(f.modus) < 0) { cfgMeldung(fehler, 'farbe.modus', 'konfig.farbModus'); f.modus = d.farbe.modus; }
   const hx = cfgHex(f.hex);
-  if (hx == null) { if (f.modus === 'hex') fehler.push(t('konfig.farbHex')); f.hex = '#444444'; } else f.hex = hx;
+  if (hx == null) { if (f.modus === 'hex') cfgMeldung(fehler, 'farbe.hex', 'konfig.farbHex'); f.hex = '#444444'; } else f.hex = hx;
   if (f.variable && typeof f.variable === 'object') {
     f.variable = {
       key:  String(f.variable.key  || ''),
@@ -195,20 +359,26 @@ function konfigValidieren(k) {
     };
     if (!f.variable.key && !f.variable.id && !f.variable.name) f.variable = null;
   } else f.variable = null;
-  if (f.modus === 'variable' && !f.variable) { fehler.push(t('konfig.farbVariable')); f.modus = 'source'; }
+  if (f.modus === 'variable' && !f.variable) { cfgMeldung(fehler, 'farbe.modus', 'konfig.farbVariable'); f.modus = 'source'; }
   f.sourceAngleichen = !!f.sourceAngleichen;
   o.farbe = f;
 
   o.snapping = o.snapping === undefined ? true : !!o.snapping;
   o.strokeFassung = !!o.strokeFassung;
 
-  return { ok: fehler.length === 0, fehler: fehler, konfig: o };
+  return { ok: fehler.every(f => f.art === 'warnung'), fehler: fehler, konfig: o };
 }
 
-// Platzhalter für spätere Schema-Versionen — heute gibt es nur v1.
+// Alte Konfigs auf das aktuelle Schema heben. Heute: Schema v1, aber ohne den
+// Block `schreiben` (vor Runde 3 gespeicherte Konfigs).
 function konfigMigrieren(k) {
   if (!k || typeof k !== 'object') return k;
   if (!k.version) k.version = 1;
+  if (!k.schreiben || typeof k.schreiben !== 'object') k.schreiben = { frameUmwandeln: false, strokeHeimAnlegen: true };
+  else {
+    if (typeof k.schreiben.frameUmwandeln !== 'boolean') k.schreiben.frameUmwandeln = SCHREIBEN_STANDARD.frameUmwandeln;
+    if (typeof k.schreiben.strokeHeimAnlegen !== 'boolean') k.schreiben.strokeHeimAnlegen = SCHREIBEN_STANDARD.strokeHeimAnlegen;
+  }
   return k;
 }
 
@@ -239,13 +409,15 @@ async function konfigSpeichern(k) {
 async function schalterLaden() {
   try {
     const e = await figma.clientStorage.getAsync(SCHALTER_SCHLUESSEL);
-    if (e) return { snap: !!e.snap, stroke: !!e.stroke };
+    if (e) return { snap: !!e.snap, stroke: !!e.stroke, trockenlaufEinzel: e.trockenlaufEinzel !== false };
   } catch (err) {}
-  return { snap: !!(CFG && CFG.snapping), stroke: !!(CFG && CFG.strokeFassung) };
+  return { snap: !!(CFG && CFG.snapping), stroke: !!(CFG && CFG.strokeFassung), trockenlaufEinzel: true };
 }
 
-async function schalterSpeichern(snap, stroke) {
-  try { await figma.clientStorage.setAsync(SCHALTER_SCHLUESSEL, { snap: !!snap, stroke: !!stroke }); }
+// trockenlaufEinzel: true = Dialog vor dem Einzelbau zeigen (Standard).
+async function schalterSpeichern(snap, stroke, trockenlaufEinzel) {
+  try { await figma.clientStorage.setAsync(SCHALTER_SCHLUESSEL,
+    { snap: !!snap, stroke: !!stroke, trockenlaufEinzel: trockenlaufEinzel !== false }); }
   catch (e) {}
 }
 
@@ -255,6 +427,12 @@ function groesseCfg(N) {
   const g = CFG && CFG.groessen.find(x => x.N === N);
   if (!g) throw new PipelineFehler('GROESSE_UNBEKANNT', { N: N });
   return g;
+}
+
+// Darf die Pipeline außerhalb des Ziel-Sets schreiben? (Abschnitt 17)
+function darfSchreiben(was) {
+  const s = (CFG && CFG.schreiben) || SCHREIBEN_STANDARD;
+  return !!s[was];
 }
 
 function variantenName(N) { return CFG.variantenProperty + '=' + N; }

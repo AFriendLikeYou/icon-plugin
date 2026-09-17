@@ -222,7 +222,9 @@ const css = `
   .keyhinweis { font-size: 9.5px; color: var(--figma-color-text-secondary, #6e6e76); margin: 2px 0 6px; line-height: 1.4; }
   .keyprop { font-size: 9.5px; align-self: flex-start; }
   fig-input-number.unplausibel { outline: 1px solid #c98a12; border-radius: 4px; }
-  .ungueltig { outline: 1px solid #c98a12; outline-offset: 1px; border-radius: 4px; }
+  .ungueltig { outline: 1px solid #c2402a; outline-offset: 1px; border-radius: 4px; }
+  .warnung { outline: 1px solid #c98a12; outline-offset: 1px; border-radius: 4px; }
+  li.warnung { color: #c98a12; }
   .fehlerbox { border-radius: 6px; padding: 7px 10px; font-size: 10px;
     background: rgba(201,138,18,.12); color: #8a6208; }
   .fehlerbox ul { margin: 4px 0 0; padding-left: 16px; }
@@ -242,6 +244,75 @@ const css = `
   .platte { width: 12px; height: 12px; border-radius: 3px; flex: none;
     border: 1px solid var(--figma-color-border, #e3e3e6); }
   fig-group.kollektion { margin-bottom: 0; }
+
+  /* ---- Trockenlauf-Dialog ------------------------------------------------ */
+  dialog[is="fig-dialog"].breit { max-width: 400px; }
+  .plan-liste { max-height: 232px; overflow-y: auto; display: flex; flex-direction: column;
+    gap: 4px; padding: 4px 12px 2px; }
+  .plan-zeile { display: flex; align-items: baseline; gap: 7px; padding: 4px 7px;
+    border-radius: 5px; background: var(--figma-color-bg-secondary, #f5f5f7); }
+  .plan-zeile .pname { font-weight: 600; flex: none; max-width: 45%;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .plan-zeile .pdetail { flex: 1; min-width: 0; font-size: 9.5px;
+    color: var(--figma-color-text-secondary, #6e6e76); }
+  .plan-zeile .pwarn { color: #8a6208; font-size: 9.5px; }
+  .plan-zeile .pschloss { flex: none; }
+  .plan-summe { padding: 7px 12px 0; font-size: 10px;
+    color: var(--figma-color-text-secondary, #6e6e76); line-height: 1.5; }
+  .dlg-schalter { padding: 8px 12px 0; }
+  .dlg-schalter[hidden] { display: none; }
+  .profilliste { display: flex; flex-direction: column; gap: 6px;
+    max-height: 230px; overflow-y: auto; padding: 4px 12px; }
+  .profilkarte { display: flex; flex-direction: column; gap: 2px; padding: 7px 9px;
+    border: 1px solid var(--figma-color-border, #e3e3e6); border-radius: 7px; cursor: pointer; }
+  .profilkarte:hover { background: var(--figma-color-bg-secondary, #f0f0f3); }
+  .profilkarte.gewaehlt { border-color: var(--figma-color-border-brand, #0d99ff);
+    background: var(--figma-color-bg-brand-tertiary, rgba(13,153,255,.12)); }
+  .profilkarte .ptitel { font-weight: 700; }
+  .profilkarte .pbeschr { font-size: 9.5px; color: var(--figma-color-text-secondary, #6e6e76); }
+
+  /* ---- Leerzustand ------------------------------------------------------- */
+  .leerzustand { gap: 9px; }
+  .leerzustand[hidden] { display: none; }
+  .leerzustand ul { margin: 0; padding-left: 15px; display: flex;
+    flex-direction: column; gap: 5px; }
+  .leerzustand li { color: var(--figma-color-text-secondary, #6e6e76); line-height: 1.5; }
+
+  /* ---- Bericht ----------------------------------------------------------- */
+  #panelBericht { overflow-y: auto; padding-right: 2px; gap: 10px; }
+  .kacheln { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+  .kacheln fig-card { cursor: default; }
+  .kachelzahl { font-size: 15px; font-weight: 700; padding: 3px 4px 0;
+    font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .trend { font-size: 10px; margin-left: 3px; }
+  .trend.gut { color: #12a76a; }
+  .trend.schlecht { color: #c2402a; }
+  .btabWrap { max-height: 330px; overflow: auto; flex: none;
+    border: 1px solid var(--figma-color-border, #e3e3e6); border-radius: 8px; }
+  .btabelle { width: 100%; border-collapse: collapse; font-size: 10px;
+    font-variant-numeric: tabular-nums; }
+  .btabelle th { position: sticky; top: 0; z-index: 1; text-align: left;
+    background: var(--figma-color-bg, #fff); cursor: pointer; white-space: nowrap;
+    font-size: 9px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--figma-color-text-secondary, #6e6e76); padding: 5px 6px;
+    border-bottom: 1px solid var(--figma-color-border, #e3e3e6); }
+  .btabelle td { padding: 3px 6px; vertical-align: middle;
+    border-bottom: 1px solid color-mix(in srgb, var(--figma-color-border, #e3e3e6) 45%, transparent); }
+  .btabelle td.gz { text-align: center; white-space: nowrap; }
+  .btabelle .iname { color: var(--figma-color-text-brand, #0d99ff);
+    cursor: pointer; text-decoration: underline; }
+  .btabelle .treuewert { display: inline-block; min-width: 34px; padding: 1px 4px;
+    border-radius: 3px; font-weight: 600; }
+  .btabelle .aawert { color: var(--figma-color-text-secondary, #6e6e76); margin-left: 4px; }
+  .btabelle .keyja { color: #12a76a; } .btabelle .keynein { color: #c2402a; }
+  .berichtleer { color: var(--figma-color-text-tertiary, #9a9aa0); font-style: italic; padding: 4px 2px; }
+  .berichtzeit { font-size: 9.5px; color: var(--figma-color-text-tertiary, #9a9aa0); }
+  .warnliste { border-radius: 6px; padding: 7px 10px; font-size: 10px;
+    background: rgba(201,138,18,.12); color: #8a6208; }
+  .warnliste ul { margin: 4px 0 0; padding-left: 16px; }
+  .exportzeile { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .dateizeile { display: flex; align-items: center; gap: 8px; }
+  .dateizeile fig-input-file { flex: 1; min-width: 0; }
 `;
 
 // ===========================================================================
@@ -252,6 +323,7 @@ const WOERTER = {
     'titel': 'Icon Pipeline',
     'tab.icon': 'Icon',
     'tab.cfg': 'Einstellungen',
+    'tab.bericht': 'Bericht',
     'adapter.zds': 'ZDS',
     'adapter.frei': 'Frei',
 
@@ -270,10 +342,32 @@ const WOERTER = {
     'gruppe.library': 'Library — alle Icons',
     'btn.audit': 'Audit',
     'btn.alle': 'Alle neu bauen',
-    'dlg.alle.titel': 'Alle Icons neu bauen?',
-    'dlg.alle.text': 'Jedes Icon wird neu durchgezogen. Bestehende Varianten werden überschrieben. Das kann eine Weile dauern.',
     'btn.abbrechen': 'Abbrechen',
-    'btn.alleOk': 'Alle neu bauen',
+    'btn.abbrechenLauf': 'Lauf abbrechen',
+
+    'dlg.plan.titelAlle': 'Alle Icons neu bauen?',
+    'dlg.plan.titelEins': 'Icon bauen?',
+    'dlg.plan.textAlle': 'Trockenlauf — noch wurde nichts verändert. Das steht an:',
+    'dlg.plan.textEins': 'Trockenlauf — noch wurde nichts verändert.',
+    'dlg.plan.leer': 'Nichts zu bauen.',
+    'plan.aendern': 'ändern',
+    'plan.neu': 'neu',
+    'plan.fehlen': 'fehlt: {liste}',
+    'plan.fremd': 'fremd: {liste}',
+    'plan.instanzen': '{n} Instanzen',
+    'plan.instanzenUnbekannt': 'Instanzen ?',
+    'plan.gesperrt': 'gesperrt',
+    'plan.summe': '{aendern} ändern · {neu} neu · {fehlen} Varianten fehlen · {gesperrt} gesperrt · {instanzen} Instanzen',
+    'plan.strokeHeim': 'Ein Frame für Stroke-Fassungen wird angelegt.',
+    'btn.planBauen': 'Bauen',
+    'chk.trockenlaufEinzel': 'Trockenlauf beim Einzelbau überspringen',
+
+    'leer.titel': 'So funktioniert es',
+    'leer.master': 'Master-Komponente: eine quadratische Komponente in der Master-Größe enthält die Vektoren des Icons.',
+    'leer.keyline': 'Keyline: das Sollmaß des Icon-Körpers je Formklasse. Daraus wird jede Zielgröße berechnet.',
+    'leer.raster': 'Raster & Snapping: Kanten werden aufs eingestellte Pixelraster gezogen, das AA-Orakel behält die schärfere Fassung.',
+    'leer.karte': 'Wähle eine Karte auf dem ZDS-Board aus.',
+    'btn.beispiel': 'Beispiel-Icon anlegen',
 
     'diff.vektor': 'Vektor',
     'diff.aktuell': 'aktuell',
@@ -356,21 +450,67 @@ const WOERTER = {
     'farbe.gewaehlt': 'Gewählt',
     'farbe.unaufloesbar': 'Variable nicht auflösbar.',
 
+    'cfg.schreiben': 'Schreiben',
+    'chk.frameUmwandeln': 'Frames in Komponenten umwandeln',
+    'tip.frameUmwandeln': 'Beim Bauen darf ein Frame im Master-Maß in eine Komponente umgewandelt werden. Aus ist konservativ: das Plugin meldet dann einen Fehler statt zu ändern.',
+    'chk.strokeHeimAnlegen': 'Frame für Stroke-Fassungen anlegen',
+    'tip.strokeHeimAnlegen': 'Legt bei Bedarf einen Frame „Icon Pipeline · Stroke“ neben der Source an. Aus: Stroke-Fassungen werden übersprungen.',
+
+    'cfg.datei': 'Konfigurationsdatei',
+    'btn.exportKonfig': 'Exportieren',
+    'file.importKonfig': 'Importieren',
+    'toast.exportiert': 'Konfiguration exportiert',
+    'toast.importiert': 'Konfiguration importiert',
+    'toast.importFehler': 'Datei ist keine gültige Konfiguration',
+    'btn.vorschauMit': 'Vorschau mit diesen Einstellungen',
+    'chip.ungespeichert': 'ungespeichert',
+
     'btn.speichern': 'Speichern',
     'btn.zuruecksetzen': 'Zurücksetzen',
     'dlg.reset.titel': 'Einstellungen zurücksetzen',
     'dlg.reset.text': 'Auf welches Profil soll zurückgesetzt werden? Die aktuelle Konfiguration wird ersetzt.',
-    'profil.zds': 'ZDS-Profil (72 px Source, 14/18/24)',
-    'profil.generic': 'Allgemein (24 px Source, 16/20/24)',
+    'profil.zds': 'ZDS',
+    'profil.generic': 'Allgemein',
+    'profil.material': 'Material',
+    'profil.lucide': 'Lucide',
+    'profil.apple': 'Apple',
     'btn.resetOk': 'Zurücksetzen',
     'fehler.kopf': 'Angepasst beim Prüfen:',
-    'hinweis.korrigiert': 'Wert wurde beim Prüfen korrigiert',
-    'toast.gespeichert': 'Einstellungen gespeichert'
+    'toast.gespeichert': 'Einstellungen gespeichert',
+
+    'ber.aktionen': 'Bericht',
+    'btn.bericht': 'Bericht erstellen',
+    'btn.csv': 'CSV',
+    'ber.leer': 'Noch kein Bericht. „Bericht erstellen“ misst alle Icons der Library.',
+    'ber.zeit': 'Stand {zeit}',
+    'ber.icons': 'Icons',
+    'ber.ohneSet': 'ohne Set',
+    'ber.veraltet': 'veraltet',
+    'ber.treueMittel': 'Treue ⌀',
+    'ber.keylineOk': 'Keyline ok',
+    'ber.spalteName': 'Icon',
+    'ber.tipTreue': 'Treue: RMS-Abweichung der 1×-Rasterung von der idealen Kante. Kleiner ist besser. Grün ab 0, rot ab 0,15.',
+    'ber.chipOhneSet': 'kein Set',
+    'ber.chipVeraltet': 'veraltet',
+    'ber.keineDaten': '—',
+    'ber.sortieren': 'Klick: nach dieser Spalte sortieren',
+    'ber.export': 'Export',
+    'ber.umfang': 'Umfang',
+    'ber.umfangAlle': 'Alle',
+    'ber.umfangAuswahl': 'Auswahl',
+    'chk.sprite': 'Sprite zusätzlich',
+    'tip.sprite': 'Legt zusätzlich eine sprite.svg mit einem <symbol> je Icon und Größe ins ZIP.',
+    'btn.svgExport': 'SVG-Export',
+    'ber.exportFehlt': 'Ohne Set — nicht exportiert:',
+    'ber.exportLeer': 'Nichts zu exportieren.',
+    'toast.csv': 'CSV heruntergeladen',
+    'toast.zip': 'ZIP heruntergeladen'
   },
   en: {
     'titel': 'Icon Pipeline',
     'tab.icon': 'Icon',
     'tab.cfg': 'Settings',
+    'tab.bericht': 'Report',
     'adapter.zds': 'ZDS',
     'adapter.frei': 'Free',
 
@@ -389,10 +529,32 @@ const WOERTER = {
     'gruppe.library': 'Library — all icons',
     'btn.audit': 'Audit',
     'btn.alle': 'Rebuild all',
-    'dlg.alle.titel': 'Rebuild all icons?',
-    'dlg.alle.text': 'Every icon is rebuilt. Existing variants are overwritten. This may take a while.',
     'btn.abbrechen': 'Cancel',
-    'btn.alleOk': 'Rebuild all',
+    'btn.abbrechenLauf': 'Cancel run',
+
+    'dlg.plan.titelAlle': 'Rebuild all icons?',
+    'dlg.plan.titelEins': 'Build icon?',
+    'dlg.plan.textAlle': 'Dry run — nothing has been changed yet. This is what will happen:',
+    'dlg.plan.textEins': 'Dry run — nothing has been changed yet.',
+    'dlg.plan.leer': 'Nothing to build.',
+    'plan.aendern': 'update',
+    'plan.neu': 'new',
+    'plan.fehlen': 'missing: {liste}',
+    'plan.fremd': 'foreign: {liste}',
+    'plan.instanzen': '{n} instances',
+    'plan.instanzenUnbekannt': 'instances ?',
+    'plan.gesperrt': 'locked',
+    'plan.summe': '{aendern} to update · {neu} new · {fehlen} variants missing · {gesperrt} locked · {instanzen} instances',
+    'plan.strokeHeim': 'A frame for stroke versions will be created.',
+    'btn.planBauen': 'Build',
+    'chk.trockenlaufEinzel': 'Skip dry run for single builds',
+
+    'leer.titel': 'How it works',
+    'leer.master': 'Master component: a square component at the master size holds the icon’s vectors.',
+    'leer.keyline': 'Keyline: the target size of the icon body per shape class. Every output size is derived from it.',
+    'leer.raster': 'Grid & snapping: edges are pulled onto the configured pixel grid, the AA oracle keeps whichever version is sharper.',
+    'leer.karte': 'Select a card on the ZDS board.',
+    'btn.beispiel': 'Create example icon',
 
     'diff.vektor': 'Vector',
     'diff.aktuell': 'current',
@@ -475,16 +637,61 @@ const WOERTER = {
     'farbe.gewaehlt': 'Selected',
     'farbe.unaufloesbar': 'Variable cannot be resolved.',
 
+    'cfg.schreiben': 'Writing',
+    'chk.frameUmwandeln': 'Convert frames into components',
+    'tip.frameUmwandeln': 'Allows a frame at master size to be converted into a component while building. Off is conservative: the plugin reports an error instead of changing anything.',
+    'chk.strokeHeimAnlegen': 'Create frame for stroke versions',
+    'tip.strokeHeimAnlegen': 'Creates a frame “Icon Pipeline · Stroke” next to the source when needed. Off: stroke versions are skipped.',
+
+    'cfg.datei': 'Configuration file',
+    'btn.exportKonfig': 'Export',
+    'file.importKonfig': 'Import',
+    'toast.exportiert': 'Configuration exported',
+    'toast.importiert': 'Configuration imported',
+    'toast.importFehler': 'File is not a valid configuration',
+    'btn.vorschauMit': 'Preview with these settings',
+    'chip.ungespeichert': 'unsaved',
+
     'btn.speichern': 'Save',
     'btn.zuruecksetzen': 'Reset',
     'dlg.reset.titel': 'Reset settings',
     'dlg.reset.text': 'Which profile should be restored? The current configuration is replaced.',
-    'profil.zds': 'ZDS profile (72 px source, 14/18/24)',
-    'profil.generic': 'Generic (24 px source, 16/20/24)',
+    'profil.zds': 'ZDS',
+    'profil.generic': 'Generic',
+    'profil.material': 'Material',
+    'profil.lucide': 'Lucide',
+    'profil.apple': 'Apple',
     'btn.resetOk': 'Reset',
     'fehler.kopf': 'Adjusted while checking:',
-    'hinweis.korrigiert': 'value was corrected while checking',
-    'toast.gespeichert': 'Settings saved'
+    'toast.gespeichert': 'Settings saved',
+
+    'ber.aktionen': 'Report',
+    'btn.bericht': 'Create report',
+    'btn.csv': 'CSV',
+    'ber.leer': 'No report yet. “Create report” measures every icon in the library.',
+    'ber.zeit': 'As of {zeit}',
+    'ber.icons': 'Icons',
+    'ber.ohneSet': 'without set',
+    'ber.veraltet': 'outdated',
+    'ber.treueMittel': 'Fidelity ⌀',
+    'ber.keylineOk': 'Keylines ok',
+    'ber.spalteName': 'Icon',
+    'ber.tipTreue': 'Fidelity: RMS deviation of the 1× rasterization from the ideal edge. Smaller is better. Green at 0, red from 0.15.',
+    'ber.chipOhneSet': 'no set',
+    'ber.chipVeraltet': 'outdated',
+    'ber.keineDaten': '—',
+    'ber.sortieren': 'Click: sort by this column',
+    'ber.export': 'Export',
+    'ber.umfang': 'Scope',
+    'ber.umfangAlle': 'All',
+    'ber.umfangAuswahl': 'Selection',
+    'chk.sprite': 'Include sprite',
+    'tip.sprite': 'Adds a sprite.svg with one <symbol> per icon and size to the ZIP.',
+    'btn.svgExport': 'SVG export',
+    'ber.exportFehlt': 'No set — not exported:',
+    'ber.exportLeer': 'Nothing to export.',
+    'toast.csv': 'CSV downloaded',
+    'toast.zip': 'ZIP downloaded'
   }
 };
 
@@ -497,6 +704,7 @@ const markup = `
 
 <fig-tabs id="tabs" value="icon">
   <fig-tab value="icon" selected="true"><span data-t="tab.icon"></span></fig-tab>
+  <fig-tab value="bericht"><span data-t="tab.bericht"></span></fig-tab>
   <fig-tab value="cfg"><span data-t="tab.cfg"></span></fig-tab>
 </fig-tabs>
 
@@ -538,6 +746,17 @@ const markup = `
     </div>
   </div>
 
+  <div class="gruppe leerzustand" id="leerzustand" hidden>
+    <div class="gruppenkopf" data-t="leer.titel"></div>
+    <ul>
+      <li data-t="leer.master"></li>
+      <li data-t="leer.keyline"></li>
+      <li data-t="leer.raster"></li>
+    </ul>
+    <p class="ctlLabel" id="leerKarte" hidden data-t="leer.karte"></p>
+    <fig-button id="btnBeispiel" variant="secondary" data-t="btn.beispiel"></fig-button>
+  </div>
+
   <div class="gruppe">
     <div class="gruppenkopf" data-t="gruppe.library"></div>
     <div class="reihe">
@@ -552,6 +771,7 @@ const markup = `
     <fig-spinner aria-label="…"></fig-spinner>
     <div class="balkenrahmen"><div class="balken" id="balken"></div></div>
     <div class="zahl" id="zahl"></div>
+    <fig-button id="btnAbbrechen" variant="ghost" data-t="btn.abbrechen" style="flex:none"></fig-button>
   </div>
 
   <div id="diff">
@@ -604,6 +824,49 @@ const markup = `
   </div>
 </div>
 
+<div class="panel" id="panelBericht" hidden>
+  <div class="gruppe">
+    <div class="gruppenkopf" data-t="ber.aktionen"></div>
+    <div class="reihe">
+      <fig-button id="btnBericht" data-t="btn.bericht"></fig-button>
+      <fig-button id="btnCsv" variant="secondary" disabled data-t="btn.csv"></fig-button>
+    </div>
+    <span class="berichtzeit" id="berichtZeit"></span>
+  </div>
+
+  <div class="kacheln" id="berichtKacheln" hidden>
+    <fig-card id="kachelIcons"><div class="kachelzahl" id="kachelIconsWert">–</div></fig-card>
+    <fig-card id="kachelOhneSet"><div class="kachelzahl" id="kachelOhneSetWert">–</div></fig-card>
+    <fig-card id="kachelVeraltet"><div class="kachelzahl" id="kachelVeraltetWert">–</div></fig-card>
+    <fig-card id="kachelTreue"><div class="kachelzahl" id="kachelTreueWert">–</div></fig-card>
+    <fig-card id="kachelKeyline"><div class="kachelzahl" id="kachelKeylineWert">–</div></fig-card>
+  </div>
+
+  <div class="berichtleer" id="berichtLeer" data-t="ber.leer"></div>
+  <div class="btabWrap" id="berichtTabWrap" hidden>
+    <table class="btabelle" id="berichtTab"></table>
+  </div>
+
+  <div class="gruppe">
+    <div class="gruppenkopf" data-t="ber.export"></div>
+    <div class="exportzeile">
+      <span class="ctlLabel" data-t="ber.umfang"></span>
+      <fig-segmented-control id="segUmfang" value="alle">
+        <fig-segment value="alle" selected="true"><span data-t="ber.umfangAlle"></span></fig-segment>
+        <fig-segment value="auswahl"><span data-t="ber.umfangAuswahl"></span></fig-segment>
+      </fig-segmented-control>
+      <fig-tooltip data-t-text="tip.sprite" delay="400">
+        <fig-switch id="chkSprite"><span data-t="chk.sprite"></span></fig-switch>
+      </fig-tooltip>
+    </div>
+    <fig-button id="btnExport" variant="secondary" data-t="btn.svgExport"></fig-button>
+    <div class="warnliste" id="exportFehlt" hidden>
+      <div data-t="ber.exportFehlt"></div>
+      <ul id="exportFehltListe"></ul>
+    </div>
+  </div>
+</div>
+
 <div class="panel" id="panelCfg" hidden>
   <div class="fehlerbox" id="cfgFehler" hidden>
     <div data-t="fehler.kopf"></div>
@@ -632,6 +895,16 @@ const markup = `
       <span class="fname" data-t="cfg.variantenProperty"></span>
       <fig-input-text id="inpVarProp" data-pfad="variantenProperty"></fig-input-text>
     </div>
+  </div>
+
+  <div class="cfgblock">
+    <div class="gruppenkopf" data-t="cfg.schreiben"></div>
+    <fig-tooltip data-t-text="tip.frameUmwandeln" delay="400">
+      <fig-switch id="chkFrameUmwandeln" data-pfad="schreiben.frameUmwandeln"><span data-t="chk.frameUmwandeln"></span></fig-switch>
+    </fig-tooltip>
+    <fig-tooltip data-t-text="tip.strokeHeimAnlegen" delay="400">
+      <fig-switch id="chkStrokeHeim" data-pfad="schreiben.strokeHeimAnlegen"><span data-t="chk.strokeHeimAnlegen"></span></fig-switch>
+    </fig-tooltip>
   </div>
 
   <div class="cfgblock">
@@ -682,28 +955,39 @@ const markup = `
     <fig-switch id="chkAngleichen" data-pfad="farbe.sourceAngleichen"><span data-t="farbe.angleichen"></span></fig-switch>
   </div>
 
+  <div class="cfgblock">
+    <div class="gruppenkopf" data-t="cfg.datei"></div>
+    <div class="dateizeile">
+      <fig-button id="btnKonfigExport" variant="secondary" data-t="btn.exportKonfig" style="flex:none"></fig-button>
+      <fig-input-file id="fileKonfig" accepts=".json,application/json" data-t-label="file.importKonfig"></fig-input-file>
+    </div>
+    <fig-button id="btnVorschauMit" variant="secondary" disabled data-t="btn.vorschauMit"></fig-button>
+  </div>
+
   <div class="cfgaktionen">
     <fig-button id="btnZuruecksetzen" variant="secondary" data-t="btn.zuruecksetzen"></fig-button>
     <fig-button id="btnSpeichern" data-t="btn.speichern"></fig-button>
   </div>
 </div>
 
-<dialog is="fig-dialog" modal id="dlgAlle">
-  <fig-header dialog-header><h3 data-t="dlg.alle.titel"></h3></fig-header>
-  <div class="dlg-text"><p data-t="dlg.alle.text"></p></div>
+<dialog is="fig-dialog" modal class="breit" id="dlgPlan">
+  <fig-header dialog-header><h3 id="planTitel"></h3></fig-header>
+  <div class="dlg-text"><p id="planText"></p></div>
+  <div class="plan-liste" id="planListe"></div>
+  <div class="plan-summe" id="planSumme"></div>
+  <div class="dlg-schalter" id="planSchalterZeile" hidden>
+    <fig-switch id="chkTrockenEinzel"><span data-t="chk.trockenlaufEinzel"></span></fig-switch>
+  </div>
   <div class="dlg-aktionen">
-    <fig-button id="dlgAbbruch" variant="secondary" data-t="btn.abbrechen"></fig-button>
-    <fig-button id="dlgOk" variant="destructive" data-t="btn.alleOk"></fig-button>
+    <fig-button id="planAbbruch" variant="secondary" data-t="btn.abbrechen"></fig-button>
+    <fig-button id="planOk" variant="destructive" data-t="btn.planBauen"></fig-button>
   </div>
 </dialog>
 
 <dialog is="fig-dialog" modal id="dlgReset">
   <fig-header dialog-header><h3 data-t="dlg.reset.titel"></h3></fig-header>
   <div class="dlg-text"><p data-t="dlg.reset.text"></p></div>
-  <div class="dlg-wahl">
-    <fig-radio name="profil" value="zds" id="profZds" checked><span data-t="profil.zds"></span></fig-radio>
-    <fig-radio name="profil" value="generic" id="profGeneric"><span data-t="profil.generic"></span></fig-radio>
-  </div>
+  <div class="profilliste" id="profilListe"></div>
   <div class="dlg-aktionen">
     <fig-button id="resetAbbruch" variant="secondary" data-t="btn.abbrechen"></fig-button>
     <fig-button id="resetOk" variant="destructive" data-t="btn.resetOk"></fig-button>
@@ -771,8 +1055,12 @@ const logik = `
   let logListe = [];
   let KONFIG = null, cfgLokal = null, adapterAktiv = '', konfigFehler = [];
   let farben = null, farbenAngefragt = false, farbSuche = '';
-  let gesendeteKonfig = null, korrigiert = {};
+  let wartetAufSpeichern = false;
   let keylinesOffen = {};
+  let profile = ['zds', 'generic'], profilInfo = null, profilWahl = 'generic';
+  let planDaten = null, planUmfang = 'alle', trockenlaufEinzel = false;
+  let bericht = null, berichtSort = { spalte: 'name', ab: false };
+  let exportFehlend = [];
 
   // =========================================================================
   // Sprache / Texte
@@ -795,6 +1083,9 @@ const logik = `
     document.querySelectorAll('[data-t-title]').forEach(el => {
       el.setAttribute('title', t(el.getAttribute('data-t-title')));
     });
+    document.querySelectorAll('[data-t-label]').forEach(el => {
+      el.setAttribute('label', t(el.getAttribute('data-t-label')));
+    });
     // Dropdowns spiegeln ihre <option>-Kinder in ein internes <select> —
     // nach Textwechsel neu einlesen lassen.
     document.querySelectorAll('fig-dropdown').forEach(d => {
@@ -803,8 +1094,11 @@ const logik = `
     auswahlZeichnen();
     protokollZeichnen();
     adapterChipSetzen();
-    if (cfgLokal) { masterZeichnen(); groessenZeichnen(); farbeZeichnen(); }
+    if (cfgLokal) { masterZeichnen(); groessenZeichnen(); farbeZeichnen(); schreibenZeichnen(); }
     fehlerZeichnen();
+    profilListeZeichnen();
+    planZeichnen();
+    berichtZeichnen();
     if (letzterDiff) renderDiff();
   }
   function spracheAbgleichen() {
@@ -818,14 +1112,27 @@ const logik = `
   // =========================================================================
   // Tabs
   // =========================================================================
-  $('tabs').addEventListener('change', e => {
-    const v = (e && e.detail) || $('tabs').value || 'icon';
+  function panelsSetzen(v) {
     $('panelIcon').hidden = v !== 'icon';
+    $('panelBericht').hidden = v !== 'bericht';
     $('panelCfg').hidden = v !== 'cfg';
     if (v === 'cfg') {
       if (!KONFIG) send({ type: 'konfigLaden' });
       if (cfgLokal && cfgLokal.farbe && cfgLokal.farbe.modus === 'variable') farbenAnfordern();
     }
+  }
+  // Tab von Hand umschalten (fig-tabs spiegelt das value-Attribut auf die Kinder).
+  function tabWechseln(v) {
+    const tabs = $('tabs');
+    if ((tabs.getAttribute('value') || '') !== v) tabs.setAttribute('value', v);
+    document.querySelectorAll('#tabs fig-tab').forEach(tb => {
+      const an = tb.getAttribute('value') === v;
+      if (an) tb.setAttribute('selected', 'true'); else tb.removeAttribute('selected');
+    });
+    panelsSetzen(v);
+  }
+  $('tabs').addEventListener('change', e => {
+    panelsSetzen((e && e.detail) || $('tabs').value || 'icon');
   });
 
   // =========================================================================
@@ -860,6 +1167,21 @@ const logik = `
       g.hidden = ziel.klasseQuelle !== 'heuristik';
       g.textContent = t('klasse.geraten');
     }
+    leerzustandZeichnen();
+  }
+
+  // Ohne Ziel: im Frei-Modus die drei Erklärzeilen + Beispiel-Button,
+  // im ZDS-Modus nur den Hinweis „Karte auswählen“.
+  function leerzustandZeichnen() {
+    const box = $('leerzustand');
+    const zds = adapterAktiv === 'zds';
+    box.hidden = hatAuswahl;
+    $('leerKarte').hidden = !zds;
+    box.querySelectorAll('ul').forEach(ul => { ul.hidden = zds; });
+    const kopf = box.querySelector('.gruppenkopf');
+    if (kopf) kopf.hidden = zds;
+    $('btnBeispiel').hidden = zds;
+    aus($('btnBeispiel'), beschaeftigt);
   }
 
   $('auswahl').addEventListener('click', () => {
@@ -882,12 +1204,113 @@ const logik = `
     aus($('btnDiff'), an || !hatAuswahl);
     aus($('btnAudit'), an);
     aus($('btnAlle'), an);
+    aus($('btnBeispiel'), an);
+    aus($('btnBericht'), an);
+    aus($('btnExport'), an);
+    aus($('btnVorschauMit'), an || !hatAuswahl || !cfgLokal);
+    // Abbrechen bleibt bis 'fertig' klickbar und verschwindet danach.
+    $('btnAbbrechen').hidden = !an;
+    aus($('btnAbbrechen'), false);
     $('fortschritt').classList.toggle('an', an);
     if (!an) { $('balken').style.width = '0%'; $('zahl').textContent = ''; }
   }
+  $('btnAbbrechen').addEventListener('click', () => {
+    if (!beschaeftigt) return;
+    send({ type: 'abbrechen' });
+    aus($('btnAbbrechen'), true);
+  });
+  $('btnBeispiel').addEventListener('click', () => {
+    if (beschaeftigt) return;
+    $('fazit').className = 'fazit';
+    sperren(true);
+    send({ type: 'beispielAnlegen' });
+  });
+
+  // ---- Trockenlauf ---------------------------------------------------------
+  function planAnfordern(umfang) {
+    planUmfang = umfang;
+    planDaten = null;
+    $('fazit').className = 'fazit';
+    sperren(true);
+    send({ type: 'planen', umfang: umfang,
+      snap: !!$('chkSnap').checked, stroke: !!$('chkStroke').checked });
+  }
+  function bauenSenden(umfang) {
+    $('fazit').className = 'fazit';
+    if (umfang === 'alle') logLeeren();
+    sperren(true);
+    if (umfang === 'alle') send({ type: 'alle', snap: !!$('chkSnap').checked, stroke: !!$('chkStroke').checked });
+    else send({ type: 'run', snap: !!$('chkSnap').checked, stroke: !!$('chkStroke').checked });
+  }
+  function planZeichnen() {
+    if (!planDaten) return;
+    const alle = planUmfang === 'alle';
+    $('planTitel').textContent = t(alle ? 'dlg.plan.titelAlle' : 'dlg.plan.titelEins');
+    $('planText').textContent = t(alle ? 'dlg.plan.textAlle' : 'dlg.plan.textEins');
+    $('planSchalterZeile').hidden = alle;
+    anhaken($('chkTrockenEinzel'), trockenlaufEinzel);
+    const liste = $('planListe');
+    liste.textContent = '';
+    const eintraege = planDaten.eintraege || [];
+    if (!eintraege.length) {
+      const d = document.createElement('div');
+      d.className = 'berichtleer';
+      d.textContent = t('dlg.plan.leer');
+      liste.appendChild(d);
+    }
+    eintraege.forEach(e => {
+      const z = document.createElement('div');
+      z.className = 'plan-zeile';
+      if (e.gesperrt) {
+        const s = document.createElement('span');
+        s.className = 'pschloss'; s.textContent = '🔒';
+        s.title = t('plan.gesperrt');
+        z.appendChild(s);
+      }
+      const n = document.createElement('span');
+      n.className = 'pname'; n.textContent = e.name || '';
+      z.appendChild(n);
+      const c = document.createElement('span');
+      c.className = 'chip ' + (e.aktion === 'neu' ? 'gruen' : 'grau');
+      c.textContent = t(e.aktion === 'neu' ? 'plan.neu' : 'plan.aendern');
+      z.appendChild(c);
+      const teile = [];
+      const v = e.varianten || {};
+      if (v.fehlen && v.fehlen.length) teile.push(t('plan.fehlen', { liste: v.fehlen.join(', ') }));
+      if (v.fremd && v.fremd.length) teile.push(t('plan.fremd', { liste: v.fremd.join(', ') }));
+      teile.push(e.instanzen == null ? t('plan.instanzenUnbekannt') : t('plan.instanzen', { n: e.instanzen }));
+      const d = document.createElement('span');
+      d.className = 'pdetail'; d.textContent = teile.join(' · ');
+      z.appendChild(d);
+      if (e.warnungen && e.warnungen.length) {
+        const w = document.createElement('span');
+        w.className = 'pwarn'; w.textContent = '△ ' + e.warnungen.join(' · ');
+        w.title = e.warnungen.join('\\n');
+        z.appendChild(w);
+      }
+      liste.appendChild(z);
+    });
+    const s = planDaten.zusammenfassung || {};
+    let summe = t('plan.summe', {
+      aendern: s.aendern || 0, neu: s.neu || 0, fehlen: s.fehlen || 0,
+      gesperrt: s.gesperrt || 0, instanzen: s.instanzen == null ? '?' : s.instanzen });
+    if (s.strokeHeim) summe += '\\n' + t('plan.strokeHeim');
+    $('planSumme').textContent = summe;
+    aus($('planOk'), !eintraege.length);
+  }
+  $('planAbbruch').addEventListener('click', () => dialogZu('dlgPlan'));
+  $('planOk').addEventListener('click', () => {
+    dialogZu('dlgPlan');
+    bauenSenden(planUmfang);
+  });
+  $('chkTrockenEinzel').addEventListener('change', e => {
+    trockenlaufEinzel = !!e.target.checked;
+    einstellungMelden();
+  });
+
   $('btnRun').addEventListener('click', () => { if (!beschaeftigt && hatAuswahl) {
-    $('fazit').className = 'fazit'; sperren(true);
-    send({ type: 'run', snap: !!$('chkSnap').checked, stroke: !!$('chkStroke').checked }); } });
+    if (trockenlaufEinzel) bauenSenden('auswahl');
+    else planAnfordern('auswahl'); } });
   $('btnDiff').addEventListener('click', () => { if (!beschaeftigt && hatAuswahl) {
     $('fazit').className = 'fazit'; sperren(true);
     send({ type: 'vorschau', snap: !!$('chkSnap').checked }); } });
@@ -897,7 +1320,8 @@ const logik = `
   $('btnLeeren').addEventListener('click', logLeeren);
 
   function einstellungMelden() {
-    send({ type: 'einstellung', snap: !!$('chkSnap').checked, stroke: !!$('chkStroke').checked });
+    send({ type: 'einstellung', snap: !!$('chkSnap').checked,
+      stroke: !!$('chkStroke').checked, trockenlaufEinzel: !!trockenlaufEinzel });
   }
   $('chkStroke').addEventListener('change', einstellungMelden);
   // Snapping-Schalter aktualisiert eine offene Vorschau sofort —
@@ -919,14 +1343,7 @@ const logik = `
     const d = $(id);
     try { d.close(); } catch (e) { d.removeAttribute('open'); }
   }
-  $('btnAlle').addEventListener('click', () => { if (!beschaeftigt) dialogAuf('dlgAlle'); });
-  $('dlgAbbruch').addEventListener('click', () => dialogZu('dlgAlle'));
-  $('dlgOk').addEventListener('click', () => {
-    dialogZu('dlgAlle');
-    $('fazit').className = 'fazit'; logLeeren();
-    sperren(true);
-    send({ type: 'alle', snap: !!$('chkSnap').checked, stroke: !!$('chkStroke').checked });
-  });
+  $('btnAlle').addEventListener('click', () => { if (!beschaeftigt) planAnfordern('alle'); });
 
   // =========================================================================
   // Protokoll
@@ -1235,31 +1652,25 @@ const logik = `
     try { el.showToast(); } catch (e) { try { el.setAttribute('open', ''); } catch (err) {} }
   }
 
-  // Pfade, die die Validierung im Hauptthread verändert hat, inline markieren.
-  function pfadeVergleichen(a, b, praefix, raus) {
-    if (a === b) return;
-    const beideObjekte = a && b && typeof a === 'object' && typeof b === 'object';
-    if (!beideObjekte) {
-      if (String(a) !== String(b)) raus[praefix] = true;
-      return;
-    }
-    if (Array.isArray(a) || Array.isArray(b)) {
-      const n = Math.max((a || []).length, (b || []).length);
-      for (let i = 0; i < n; i++) pfadeVergleichen((a || [])[i], (b || [])[i], praefix + '.' + i, raus);
-      return;
-    }
-    const keys = {};
-    Object.keys(a).forEach(k => { keys[k] = true; });
-    Object.keys(b).forEach(k => { keys[k] = true; });
-    Object.keys(keys).forEach(k => pfadeVergleichen(a[k], b[k], praefix ? praefix + '.' + k : k, raus));
-  }
+  // Strukturierte Fehler aus der Validierung: [{ pfad, text }].
+  // Der Pfad entspricht dem data-pfad-Attribut des zugehörigen Felds.
+  function fehlerText(f) { return (f && typeof f === 'object') ? (f.text || '') : String(f == null ? '' : f); }
+  function fehlerPfad(f) { return (f && typeof f === 'object') ? (f.pfad || '') : ''; }
   function korrekturenMarkieren() {
+    const nach = {}, warn = {};
+    (konfigFehler || []).forEach(f => {
+      const p = fehlerPfad(f);
+      if (!p) return;
+      const ziel = (f && f.art === 'warnung') ? warn : nach;
+      ziel[p] = ziel[p] ? ziel[p] + '\\n' + fehlerText(f) : fehlerText(f);
+    });
     document.querySelectorAll('[data-pfad]').forEach(el => {
       const p = el.getAttribute('data-pfad');
-      const an = !!korrigiert[p];
-      el.classList.toggle('ungueltig', an);
-      if (an) el.setAttribute('title', t('hinweis.korrigiert'));
-      else el.removeAttribute('title');
+      const txt = nach[p] || warn[p];
+      el.classList.toggle('ungueltig', !!nach[p]);
+      el.classList.toggle('warnung', !nach[p] && !!warn[p]);
+      if (txt) el.setAttribute('title', txt);
+      else if (!el.hasAttribute('data-title-fest')) el.removeAttribute('title');
     });
   }
   function fehlerZeichnen() {
@@ -1269,10 +1680,98 @@ const logik = `
     box.hidden = !f.length;
     f.forEach(s => {
       const li = document.createElement('li');
-      li.textContent = s;
+      li.textContent = fehlerText(s);
+      if (s && s.art === 'warnung') li.className = 'warnung';
       liste.appendChild(li);
     });
+    korrekturenMarkieren();
   }
+
+  // ---- Schreiben -----------------------------------------------------------
+  function schreibenZeichnen() {
+    const s = (cfgLokal && cfgLokal.schreiben) || {};
+    anhaken($('chkFrameUmwandeln'), !!s.frameUmwandeln);
+    anhaken($('chkStrokeHeim'), s.strokeHeimAnlegen !== false);
+  }
+  function schreibenFeld(name, an) {
+    if (!cfgLokal) return;
+    if (!cfgLokal.schreiben) cfgLokal.schreiben = {};
+    cfgLokal.schreiben[name] = !!an;
+  }
+  $('chkFrameUmwandeln').addEventListener('change', e => schreibenFeld('frameUmwandeln', e.target.checked));
+  $('chkStrokeHeim').addEventListener('change', e => schreibenFeld('strokeHeimAnlegen', e.target.checked));
+
+  // ---- Profil-Chooser ------------------------------------------------------
+  function profilListeZeichnen() {
+    const box = $('profilListe');
+    if (!box) return;
+    box.textContent = '';
+    const info = (profilInfo && profilInfo.length)
+      ? profilInfo
+      : (profile || []).map(n => ({ name: n, titel: t('profil.' + n), beschreibung: '' }));
+    if (!info.some(p => p.name === profilWahl)) profilWahl = info.length ? info[0].name : 'generic';
+    info.forEach(p => {
+      const k = document.createElement('div');
+      k.className = 'profilkarte' + (p.name === profilWahl ? ' gewaehlt' : '');
+      const ti = document.createElement('div');
+      ti.className = 'ptitel';
+      ti.textContent = p.titel || t('profil.' + p.name);
+      k.appendChild(ti);
+      if (p.beschreibung) {
+        const b = document.createElement('div');
+        b.className = 'pbeschr';
+        b.textContent = p.beschreibung;
+        k.appendChild(b);
+      }
+      k.addEventListener('click', () => { profilWahl = p.name; profilListeZeichnen(); });
+      box.appendChild(k);
+    });
+  }
+
+  // ---- Konfig-Datei: Export / Import ---------------------------------------
+  function dateiLaden(name, inhalt, typ) {
+    const blob = (inhalt instanceof Blob) ? inhalt : new Blob([inhalt], { type: typ || 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+  $('btnKonfigExport').addEventListener('click', () => {
+    if (!cfgLokal) return;
+    dateiLaden('icon-pipeline.konfig.json',
+      JSON.stringify(cfgLokal, null, 2), 'application/json');
+    toast(t('toast.exportiert'));
+  });
+  $('fileKonfig').addEventListener('change', () => {
+    const el = $('fileKonfig');
+    const datei = el.files && el.files[0];
+    if (!datei) return;
+    const leser = new FileReader();
+    leser.onload = () => {
+      let k = null;
+      try { k = JSON.parse(String(leser.result)); } catch (err) { k = null; }
+      if (!k || typeof k !== 'object' || Array.isArray(k) || !k.groessen) {
+        toast(t('toast.importFehler'));
+        return;
+      }
+      wartetAufSpeichern = true;
+      send({ type: 'konfigSpeichern', konfig: k });
+      toast(t('toast.importiert'));
+    };
+    leser.onerror = () => toast(t('toast.importFehler'));
+    leser.readAsText(datei);
+  });
+
+  // ---- Vorschau mit ungespeicherten Einstellungen --------------------------
+  $('btnVorschauMit').addEventListener('click', () => {
+    if (beschaeftigt || !cfgLokal || !hatAuswahl) return;
+    $('fazit').className = 'fazit';
+    sperren(true);
+    send({ type: 'vorschauMit', konfig: kopie(cfgLokal), snap: !!$('chkSnap').checked });
+  });
 
   function allgemeinZeichnen() {
     wert($('selAdapter'), cfgLokal.adapter);
@@ -1352,7 +1851,7 @@ const logik = `
         + '<div class="vier">'
         + KLASSEN.map(kl => '<div class="feld"><span class="fname">' + esc(kl) + '</span>'
             + '<fig-input-number class="fKey' + (keylinePlausibel(g, g.keylines[kl]) ? '' : ' unplausibel') + '" data-kl="' + kl + '" min="0.1" step="0.5" data-pfad="' + pf + '.keylines.' + kl + '"'
-            + (keylinePlausibel(g, g.keylines[kl]) ? '' : ' title="' + esc(t('cfg.keylineUnplausibel', { wert: zahl(g.keylines[kl]), N: zahl(g.N), min: zahl(g.N / 2) })) + '"')
+            + (keylinePlausibel(g, g.keylines[kl]) ? '' : ' data-title-fest title="' + esc(t('cfg.keylineUnplausibel', { wert: zahl(g.keylines[kl]), N: zahl(g.N), min: zahl(g.N / 2) })) + '"')
             + ' value="' + esc(g.keylines[kl]) + '"></fig-input-number></div>').join('')
         + '</div>'
         + '<fig-button class="keyprop" variant="ghost">' + esc(t('cfg.keylinesProp')) + '</fig-button>'
@@ -1662,34 +2161,25 @@ const logik = `
   $('btnSpeichern').addEventListener('click', () => {
     if (!cfgLokal) return;
     cfgLokal.groessen.sort((a, b) => a.N - b.N);
-    gesendeteKonfig = kopie(cfgLokal);
+    wartetAufSpeichern = true;
     send({ type: 'konfigSpeichern', konfig: kopie(cfgLokal) });
   });
-  $('btnZuruecksetzen').addEventListener('click', () => dialogAuf('dlgReset'));
+  $('btnZuruecksetzen').addEventListener('click', () => { profilListeZeichnen(); dialogAuf('dlgReset'); });
   $('resetAbbruch').addEventListener('click', () => dialogZu('dlgReset'));
   $('resetOk').addEventListener('click', () => {
     dialogZu('dlgReset');
-    const profil = $('profGeneric').checked ? 'generic' : 'zds';
-    gesendeteKonfig = null;
-    korrigiert = {};
-    send({ type: 'konfigZuruecksetzen', profil: profil });
+    wartetAufSpeichern = false;
+    send({ type: 'konfigZuruecksetzen', profil: profilWahl });
   });
-  // Genau ein Profil-Radio.
-  $('profZds').addEventListener('change', e => { if (e.target.checked) anhaken($('profGeneric'), false); });
-  $('profGeneric').addEventListener('change', e => { if (e.target.checked) anhaken($('profZds'), false); });
 
   function konfigUebernehmen(m) {
     KONFIG = m.konfig || {};
     konfigFehler = m.fehler || [];
     adapterAktiv = m.adapter || KONFIG.adapter || '';
-    korrigiert = {};
-    // Kam diese Konfig als Antwort auf ein Speichern, sind die geänderten
-    // Felder genau die, die die Validierung repariert hat.
-    const warSpeichern = !!gesendeteKonfig;
-    if (gesendeteKonfig) {
-      pfadeVergleichen(gesendeteKonfig, m.konfig, '', korrigiert);
-      gesendeteKonfig = null;
-    }
+    if (m.profile && m.profile.length) profile = m.profile;
+    profilInfo = m.profilInfo || null;
+    const warSpeichern = wartetAufSpeichern;
+    wartetAufSpeichern = false;
     cfgLokal = kopie(m.konfig || {});
     keylinesOffen = {};
     if (!spracheAbgleichen()) {
@@ -1698,7 +2188,9 @@ const logik = `
       masterZeichnen();
       groessenZeichnen();
       farbeZeichnen();
+      schreibenZeichnen();
       fehlerZeichnen();
+      profilListeZeichnen();
       auswahlZeichnen();
     } else {
       allgemeinZeichnen();
@@ -1706,6 +2198,330 @@ const logik = `
     korrekturenMarkieren();
     if (cfgLokal.farbe && cfgLokal.farbe.modus === 'variable') farbenAnfordern();
     if (warSpeichern) toast(t('toast.gespeichert'));
+  }
+
+  // =========================================================================
+  // Bericht
+  // =========================================================================
+  $('btnBericht').addEventListener('click', () => {
+    if (beschaeftigt) return;
+    $('fazit').className = 'fazit';
+    sperren(true);
+    send({ type: 'bericht' });
+  });
+
+  function berichtGroessen() {
+    if (!bericht) return [];
+    const set = {};
+    (bericht.zeilen || []).forEach(z => Object.keys(z.groessen || {}).forEach(n => { set[n] = true; }));
+    return Object.keys(set).map(Number).filter(n => isFinite(n)).sort((a, b) => a - b);
+  }
+  // Farbskala grün (0) → rot (ab 0,15) als Zellenhintergrund.
+  function treueFarbe(v) {
+    if (v == null || !isFinite(v)) return 'transparent';
+    const p = Math.max(0, Math.min(1, v / 0.15));
+    const r = Math.round(46 + p * (194 - 46));
+    const g = Math.round(167 - p * (167 - 64));
+    const b = Math.round(106 - p * (106 - 42));
+    return 'rgba(' + r + ',' + g + ',' + b + ',0.28)';
+  }
+  function zahl3(v) { return (v == null || !isFinite(v)) ? t('ber.keineDaten') : zahl(v.toFixed(3)); }
+
+  function berichtSortieren(zeilen) {
+    const z = zeilen.slice();
+    const sp = berichtSort.spalte, ab = berichtSort.ab;
+    z.sort((a, b) => {
+      let x, y;
+      if (sp === 'name') { x = String(a.name || '').toLowerCase(); y = String(b.name || '').toLowerCase(); }
+      else {
+        const ga = (a.groessen || {})[sp], gb = (b.groessen || {})[sp];
+        x = ga && ga.treue != null ? ga.treue : Infinity;
+        y = gb && gb.treue != null ? gb.treue : Infinity;
+      }
+      if (x < y) return ab ? 1 : -1;
+      if (x > y) return ab ? -1 : 1;
+      return 0;
+    });
+    return z;
+  }
+
+  function kachel(id, label, wert, trend) {
+    $(id).setAttribute('label', label);
+    const w = $(id + 'Wert');
+    w.textContent = '';
+    const s = document.createElement('span');
+    s.textContent = wert;
+    w.appendChild(s);
+    if (trend) {
+      const p = document.createElement('span');
+      p.className = 'trend ' + (trend.gut ? 'gut' : 'schlecht');
+      p.textContent = trend.gut ? '↓' : '↑';
+      p.title = trend.titel || '';
+      w.appendChild(p);
+    }
+  }
+
+  function berichtZeichnen() {
+    const leer = $('berichtLeer'), wrap = $('berichtTabWrap'), kach = $('berichtKacheln');
+    if (!bericht) { leer.hidden = false; wrap.hidden = true; kach.hidden = true;
+      $('berichtZeit').textContent = ''; aus($('btnCsv'), true); return; }
+    leer.hidden = true; wrap.hidden = false; kach.hidden = false;
+    aus($('btnCsv'), false);
+    const z = bericht.zusammenfassung || {};
+    $('berichtZeit').textContent = bericht.zeit
+      ? t('ber.zeit', { zeit: new Date(bericht.zeit).toLocaleString(SPR === 'de' ? 'de-DE' : 'en-US') }) : '';
+    kachel('kachelIcons', t('ber.icons'), String(z.icons == null ? '–' : z.icons));
+    kachel('kachelOhneSet', t('ber.ohneSet'), String(z.ohneSet == null ? '–' : z.ohneSet));
+    kachel('kachelVeraltet', t('ber.veraltet'), String(z.veraltet == null ? '–' : z.veraltet));
+    let trend = null;
+    if (z.treueMittel != null && z.treueMittelVorher != null && isFinite(z.treueMittelVorher)) {
+      const d = z.treueMittel - z.treueMittelVorher;
+      if (Math.abs(d) > 0.0005) trend = { gut: d < 0, titel: zahl3(z.treueMittelVorher) };
+    }
+    kachel('kachelTreue', t('ber.treueMittel'), zahl3(z.treueMittel), trend);
+    kachel('kachelKeyline', t('ber.keylineOk'),
+      (z.keylineOk == null ? '–' : z.keylineOk) + '/' + (z.keylineGesamt == null ? '–' : z.keylineGesamt));
+
+    const Ns = berichtGroessen();
+    const tab = $('berichtTab');
+    tab.textContent = '';
+    const kopf = document.createElement('tr');
+    const thName = document.createElement('th');
+    thName.textContent = t('ber.spalteName') + (berichtSort.spalte === 'name' ? (berichtSort.ab ? ' ↓' : ' ↑') : '');
+    thName.title = t('ber.sortieren');
+    thName.addEventListener('click', () => {
+      berichtSort = { spalte: 'name', ab: berichtSort.spalte === 'name' ? !berichtSort.ab : false };
+      berichtZeichnen();
+    });
+    kopf.appendChild(thName);
+    Ns.forEach(N => {
+      const th = document.createElement('th');
+      th.textContent = zahl(N) + ' px' + (berichtSort.spalte === String(N) ? (berichtSort.ab ? ' ↓' : ' ↑') : '');
+      th.title = t('ber.tipTreue') + '\\n' + t('ber.sortieren');
+      th.addEventListener('click', () => {
+        berichtSort = { spalte: String(N), ab: berichtSort.spalte === String(N) ? !berichtSort.ab : false };
+        berichtZeichnen();
+      });
+      kopf.appendChild(th);
+    });
+    tab.appendChild(kopf);
+
+    berichtSortieren(bericht.zeilen || []).forEach(zeile => {
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      const n = document.createElement('span');
+      n.className = 'iname';
+      n.textContent = zeile.name || '';
+      n.addEventListener('click', () => { if (zeile.nodeId) send({ type: 'fokus', nodeId: zeile.nodeId }); });
+      td.appendChild(n);
+      if (!zeile.hatSet) {
+        const c = document.createElement('span');
+        c.className = 'chip rot'; c.style.marginLeft = '5px';
+        c.textContent = t('ber.chipOhneSet');
+        td.appendChild(c);
+      } else if (zeile.veraltet) {
+        const c = document.createElement('span');
+        c.className = 'chip geraten'; c.style.marginLeft = '5px';
+        c.textContent = t('ber.chipVeraltet');
+        td.appendChild(c);
+      }
+      tr.appendChild(td);
+      Ns.forEach(N => {
+        const c = document.createElement('td');
+        c.className = 'gz';
+        const g = (zeile.groessen || {})[N];
+        if (!g) { c.textContent = t('ber.keineDaten'); tr.appendChild(c); return; }
+        const tw = document.createElement('span');
+        tw.className = 'treuewert';
+        tw.style.background = treueFarbe(g.treue);
+        tw.textContent = zahl3(g.treue);
+        c.appendChild(tw);
+        const aa = document.createElement('span');
+        aa.className = 'aawert';
+        aa.textContent = (g.aa == null ? t('ber.keineDaten') : g.aa + ' %');
+        c.appendChild(aa);
+        const k = document.createElement('span');
+        k.className = g.keylineOk ? 'keyja' : 'keynein';
+        k.style.marginLeft = '5px';
+        k.textContent = g.keylineOk ? '✓' : '✗';
+        c.appendChild(k);
+        const tip = [];
+        if (g.keylineIst != null || g.keylineSoll != null) {
+          tip.push(t('zelle.keyline', {
+            ist: g.keylineIst == null ? '?' : zahl(Number(g.keylineIst).toFixed(2)),
+            soll: g.keylineSoll == null ? '?' : zahl(g.keylineSoll) }));
+        }
+        if (g.raster) tip.push(t('zelle.gerastet', { n: g.raster.auf + '/' + g.raster.gesamt }));
+        (g.struktur || []).forEach(s => tip.push(s));
+        if (tip.length) c.title = tip.join('\\n');
+        tr.appendChild(c);
+      });
+      tab.appendChild(tr);
+    });
+  }
+
+  // ---- CSV -----------------------------------------------------------------
+  function csvFeld(v) {
+    const s = String(v == null ? '' : v);
+    return /[";\\n]/.test(s) ? '"' + s.split('"').join('""') + '"' : s;
+  }
+  $('btnCsv').addEventListener('click', () => {
+    if (!bericht) return;
+    const kopf = ['name', 'hatSet', 'veraltet', 'N', 'treue', 'treueVorher', 'aa',
+      'keylineIst', 'keylineSoll', 'keylineOk', 'rasterAuf', 'rasterGesamt'];
+    const zeilen = [kopf.join(';')];
+    (bericht.zeilen || []).forEach(z => {
+      const Ns = Object.keys(z.groessen || {}).map(Number).sort((a, b) => a - b);
+      if (!Ns.length) zeilen.push([z.name, z.hatSet ? 1 : 0, z.veraltet ? 1 : 0, '', '', '', '', '', '', '', '', ''].map(csvFeld).join(';'));
+      Ns.forEach(N => {
+        const g = z.groessen[N] || {};
+        const r = g.raster || {};
+        zeilen.push([z.name, z.hatSet ? 1 : 0, z.veraltet ? 1 : 0, N,
+          g.treue == null ? '' : g.treue, g.treueVorher == null ? '' : g.treueVorher,
+          g.aa == null ? '' : g.aa, g.keylineIst == null ? '' : g.keylineIst,
+          g.keylineSoll == null ? '' : g.keylineSoll, g.keylineOk ? 1 : 0,
+          r.auf == null ? '' : r.auf, r.gesamt == null ? '' : r.gesamt].map(csvFeld).join(';'));
+      });
+    });
+    dateiLaden('icon-bericht.csv', '\\ufeff' + zeilen.join('\\r\\n'), 'text/csv;charset=utf-8');
+    toast(t('toast.csv'));
+  });
+
+  // =========================================================================
+  // SVG-Export → ZIP (Store-Methode, CRC32, ohne Bibliothek)
+  // =========================================================================
+  $('btnExport').addEventListener('click', () => {
+    if (beschaeftigt) return;
+    const umfang = String($('segUmfang').value || 'alle') === 'auswahl' ? 'auswahl' : 'alle';
+    $('fazit').className = 'fazit';
+    sperren(true);
+    send({ type: 'exportieren', umfang: umfang });
+  });
+
+  let CRC_TAB = null;
+  function crcTabelle() {
+    if (CRC_TAB) return CRC_TAB;
+    const t8 = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      t8[n] = c >>> 0;
+    }
+    CRC_TAB = t8;
+    return t8;
+  }
+  function crc32(bytes) {
+    const tb = crcTabelle();
+    let c = 0xFFFFFFFF;
+    for (let i = 0; i < bytes.length; i++) c = tb[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+  // Minimales ZIP: lokale Dateiheader + zentrales Verzeichnis + End-Record.
+  // Nur Methode 0 (Store), Namen UTF-8 (Flag Bit 11), keine Zeitstempel.
+  function zipBauen(eintraege) {
+    const enc = new TextEncoder();
+    const teile = [], zentral = [];
+    let offset = 0;
+    eintraege.forEach(e => {
+      const name = enc.encode(e.name);
+      const daten = e.bytes;
+      const crc = crc32(daten);
+      const lh = new Uint8Array(30 + name.length);
+      const lv = new DataView(lh.buffer);
+      lv.setUint32(0, 0x04034B50, true);
+      lv.setUint16(4, 20, true);         // benötigte Version
+      lv.setUint16(6, 0x0800, true);     // Flags: Bit 11 = UTF-8
+      lv.setUint16(8, 0, true);          // Methode 0 = Store
+      lv.setUint16(10, 0, true);         // Zeit
+      lv.setUint16(12, 0x2821, true);    // Datum (2000-01-01)
+      lv.setUint32(14, crc, true);
+      lv.setUint32(18, daten.length, true);
+      lv.setUint32(22, daten.length, true);
+      lv.setUint16(26, name.length, true);
+      lv.setUint16(28, 0, true);
+      lh.set(name, 30);
+      teile.push(lh, daten);
+
+      const ch = new Uint8Array(46 + name.length);
+      const cv = new DataView(ch.buffer);
+      cv.setUint32(0, 0x02014B50, true);
+      cv.setUint16(4, 20, true);         // erstellt von
+      cv.setUint16(6, 20, true);         // benötigte Version
+      cv.setUint16(8, 0x0800, true);
+      cv.setUint16(10, 0, true);
+      cv.setUint16(12, 0, true);
+      cv.setUint16(14, 0x2821, true);
+      cv.setUint32(16, crc, true);
+      cv.setUint32(20, daten.length, true);
+      cv.setUint32(24, daten.length, true);
+      cv.setUint16(28, name.length, true);
+      cv.setUint16(30, 0, true);         // extra
+      cv.setUint16(32, 0, true);         // Kommentar
+      cv.setUint16(34, 0, true);         // Datenträger
+      cv.setUint16(36, 0, true);         // interne Attribute
+      cv.setUint32(38, 0, true);         // externe Attribute
+      cv.setUint32(42, offset, true);
+      ch.set(name, 46);
+      zentral.push(ch);
+      offset += lh.length + daten.length;
+    });
+    let zLaenge = 0;
+    zentral.forEach(c => { zLaenge += c.length; });
+    const ende = new Uint8Array(22);
+    const ev = new DataView(ende.buffer);
+    ev.setUint32(0, 0x06054B50, true);
+    ev.setUint16(4, 0, true);
+    ev.setUint16(6, 0, true);
+    ev.setUint16(8, eintraege.length, true);
+    ev.setUint16(10, eintraege.length, true);
+    ev.setUint32(12, zLaenge, true);
+    ev.setUint32(16, offset, true);
+    ev.setUint16(20, 0, true);
+    return new Blob(teile.concat(zentral, [ende]), { type: 'application/zip' });
+  }
+
+  // sprite.svg: je Icon-SVG ein <symbol id="name-N" viewBox="…">.
+  function spriteBauen(dateien) {
+    const teile = [];
+    dateien.forEach(d => {
+      const pfad = String(d.pfad || '');
+      if (!/\\.svg$/i.test(pfad)) return;
+      const inhalt = String(d.inhalt || '');
+      const auf = inhalt.match(/<svg\\b[^>]*>/i);
+      if (!auf) return;
+      const zu = inhalt.lastIndexOf('</svg>');
+      if (zu < 0) return;
+      const innen = inhalt.slice(auf.index + auf[0].length, zu);
+      const vb = auf[0].match(/viewBox="([^"]*)"/i);
+      const basis = pfad.split('/').pop().replace(/\\.svg$/i, '');
+      teile.push('<symbol id="' + esc(basis) + '"'
+        + (vb ? ' viewBox="' + esc(vb[1]) + '"' : '') + '>' + innen + '</symbol>');
+    });
+    if (!teile.length) return null;
+    return '<svg xmlns="http://www.w3.org/2000/svg" style="display:none">\\n'
+      + teile.join('\\n') + '\\n</svg>\\n';
+  }
+
+  function exportEmpfangen(m) {
+    exportFehlend = m.fehlend || [];
+    const box = $('exportFehlt'), liste = $('exportFehltListe');
+    liste.textContent = '';
+    box.hidden = !exportFehlend.length;
+    exportFehlend.forEach(n => {
+      const li = document.createElement('li');
+      li.textContent = n;
+      liste.appendChild(li);
+    });
+    const dateien = m.dateien || [];
+    if (!dateien.length) { toast(t('ber.exportLeer')); return; }
+    const enc = new TextEncoder();
+    const eintraege = dateien.map(d => ({ name: String(d.pfad), bytes: enc.encode(String(d.inhalt == null ? '' : d.inhalt)) }));
+    if ($('chkSprite').checked) {
+      const sp = spriteBauen(dateien);
+      if (sp) eintraege.push({ name: 'sprite.svg', bytes: enc.encode(sp) });
+    }
+    dateiLaden('icons.zip', zipBauen(eintraege));
+    toast(t('toast.zip'));
   }
 
   // =========================================================================
@@ -1720,7 +2536,8 @@ const logik = `
       hatAuswahl = !!ziel;
       if (!ziel || vorher !== ziel.name) chipLeeren();
       auswahlZeichnen();
-      if (!beschaeftigt) { aus($('btnRun'), !hatAuswahl); aus($('btnDiff'), !hatAuswahl); }
+      if (!beschaeftigt) { aus($('btnRun'), !hatAuswahl); aus($('btnDiff'), !hatAuswahl);
+        aus($('btnVorschauMit'), !hatAuswahl || !cfgLokal); }
     }
 
     if (m.type === 'log') {
@@ -1746,10 +2563,31 @@ const logik = `
 
     if (m.type === 'diff') {
       letzterDiff = m;
+      if (m.temporaer) tabWechseln('icon');
       renderDiff();
       const c = $('auswahlStatus');
-      c.className = 'chip blau';
-      c.textContent = t('btn.vorschau');
+      c.className = 'chip ' + (m.temporaer ? 'geraten' : 'blau');
+      c.textContent = m.temporaer ? t('chip.ungespeichert') : t('btn.vorschau');
+    }
+
+    if (m.type === 'plan') {
+      planDaten = m;
+      if (m.umfang) planUmfang = m.umfang;
+      planZeichnen();
+      dialogAuf('dlgPlan');
+    }
+
+    if (m.type === 'bericht') {
+      bericht = m;
+      berichtZeichnen();
+      tabWechseln('bericht');
+    }
+
+    if (m.type === 'exportDaten') {
+      try { exportEmpfangen(m); } catch (err) {
+        logListe.push({ art: 'err', text: String(err && err.message || err) });
+        protokollZeichnen();
+      }
     }
 
     if (m.type === 'mess') {
@@ -1769,6 +2607,9 @@ const logik = `
     if (m.type === 'einstellungen') {
       anhaken($('chkSnap'), m.snap);
       anhaken($('chkStroke'), m.stroke);
+      // Fehlt das Feld, bleibt es beim Standard: Trockenlauf anzeigen.
+      trockenlaufEinzel = m.trockenlaufEinzel === true;
+      anhaken($('chkTrockenEinzel'), trockenlaufEinzel);
     }
 
     if (m.type === 'konfig') konfigUebernehmen(m);
@@ -1788,6 +2629,7 @@ const logik = `
   // =========================================================================
   // Start
   // =========================================================================
+  $('btnAbbrechen').hidden = true;
   texteSetzen();
   send({ type: 'init', sprache: SPR });
 `;

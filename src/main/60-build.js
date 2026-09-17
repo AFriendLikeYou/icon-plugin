@@ -39,7 +39,10 @@ function setBeschreibung(name) {
 
 function quellePruefen(ziel) {
   // Frei-Modus: ein ausgewählter Frame wird erst jetzt zur Komponente (Undo-fähig, nur beim Bauen).
+  // Das ist eine Mutation außerhalb des Ziel-Sets — sie braucht die Erlaubnis aus CFG.schreiben.
   if (!ziel.src && ziel.frame && !ziel.frame.removed && ziel.frame.type === 'FRAME') {
+    if (!(CFG.schreiben && CFG.schreiben.frameUmwandeln))
+      throw new PipelineFehler('FRAME_NICHT_ERLAUBT', { name: ziel.name }, ziel.frame.id);
     const comp = figma.createComponentFromNode(ziel.frame);
     ziel.src = comp; ziel.fokusNode = comp; ziel.frame = null;
     melden('info', 'FRAME_ZU_KOMPONENTE', { name: ziel.name }, comp.id);
@@ -182,6 +185,16 @@ function bauZeile(b, N, soll, snap, vorher) {
 
 async function einIcon(ziel, snap, strokeAuch) {
   const name = ziel.name;
+  // Stroke-Fassungen brauchen eine Ablage; ohne Schreiberlaubnis gar nicht erst bauen.
+  if (strokeAuch && !(CFG.schreiben && CFG.schreiben.strokeHeimAnlegen) && !strokeHeimVorhanden(ziel)) {
+    melden('warn', 'STROKEHEIM_AUS', { name: name }, ziel.fokusNode ? ziel.fokusNode.id : null);
+    strokeAuch = false;
+  }
+  // Sperren VOR der ersten Mutation prüfen — quellePruefen wandelt Frames um
+  // und normalisieren() fasst die Source an.
+  let set = await ADAPTER.zielSet(ziel);
+  gesperrtPruefen(ziel, set);
+
   quellePruefen(ziel);
   const src = ziel.src;
 
@@ -198,24 +211,24 @@ async function einIcon(ziel, snap, strokeAuch) {
   const hinweis = (istMaster != null && Math.abs(istMaster - sollMaster) > 0.15)
     ? t('bau.sourceMisst', { ist: istMaster.toFixed(2), soll: sollMaster }) : '';
 
-  let set = ADAPTER.zielSet(ziel);
   const neu = !set;
   if (neu && ADAPTER.name === 'zds') melden('info', 'KARTE_OHNE_SET', { name: name }, ziel.fokusNode ? ziel.fokusNode.id : null);
 
-  let vorher = {};
-  try {
-    const pd = set ? JSON.parse(set.getPluginData(PD_SCHLUESSEL) || '{}') : {};
-    vorher = pd.fehler || {};
-  } catch (e) { vorher = {}; }
+  const pdAlt = set ? pdLesen(set) : {};
+  const vorher = pdAlt.fehler || {};
 
-  const fehlerNeu = {};
+  const fehlerNeu = {}, gueteNeu = {};
   const frisch = [], ergebnisse = [], strokeComps = [];
   let ergaenzt = false;
 
   for (const g of CFG.groessen) {
     const N = g.N;
     const b = await baueGroesse(ziel, N, snap, strokeAuch);
-    if (b.aaInfo) fehlerNeu[N] = (b.aaInfo.mitSnap ? b.aaInfo.snap : b.aaInfo.plain).fehler;
+    if (b.aaInfo) {
+      const w = b.aaInfo.mitSnap ? b.aaInfo.snap : b.aaInfo.plain;
+      fehlerNeu[N] = w.fehler;
+      gueteNeu[N] = { fehler: w.fehler, aa: w.aa };
+    }
     if (b.strokeComp) strokeComps.push(b.strokeComp);
     ergebnisse.push(bauZeile(b, N, keylineVon(g, kl), snap, vorher));
 
@@ -261,8 +274,14 @@ async function einIcon(ziel, snap, strokeAuch) {
   }
 
   // Stroke-Fassungen ablegen — kantenidentisch zur geflatteten Library.
-  if (strokeAuch && strokeComps.length === CFG.groessen.length) {
-    const heim = ADAPTER.strokeHeim(ziel);
+  const heim = (strokeAuch && strokeComps.length === CFG.groessen.length) ? ADAPTER.strokeHeim(ziel) : null;
+  if (!heim && strokeComps.length) {
+    // Keine Ablage (Schreiben verboten) — die gesicherten Fassungen wieder wegräumen.
+    strokeComps.forEach(q => { try { q.remove(); } catch (e) {} });
+    if (strokeAuch) melden('warn', 'STROKEHEIM_AUS', { name: name }, ziel.fokusNode ? ziel.fokusNode.id : null);
+    strokeAuch = false;
+  }
+  if (heim) {
     // Erst umziehen — combineAsVariants verlangt dieselbe Seite wie der Parent.
     strokeComps.forEach(q => heim.appendChild(q));
     const sName = '.' + name + ' · stroke';
@@ -291,9 +310,16 @@ async function einIcon(ziel, snap, strokeAuch) {
   // Zentrale Nachpflege: Export-Settings + Fingerabdruck fürs Audit.
   set.children.forEach(v => { try { v.exportSettings = [{ format: 'SVG' }]; } catch (e) {} });
   try {
+    // guete ergänzt fehler um die AA-Quote; verlauf trägt die letzten Bauten (max. VERLAUF_MAX).
+    const gueteGesamt = Object.assign({}, pdAlt.guete || {}, gueteNeu);
+    const verlauf = Array.isArray(pdAlt.verlauf) ? pdAlt.verlauf.slice() : [];
+    verlauf.push({ zeit: Date.now(), guete: gueteGesamt });
+    while (verlauf.length > VERLAUF_MAX) verlauf.shift();
     set.setPluginData(PD_SCHLUESSEL, JSON.stringify({
       quelle: fingerabdruck(src), snap: !!snap, zeit: Date.now(),
-      fehler: Object.assign({}, vorher, fehlerNeu)
+      fehler: Object.assign({}, vorher, fehlerNeu),   // Kompatibilität mit v1/v2
+      guete: gueteGesamt,
+      verlauf: verlauf
     }));
   } catch (e) {}
 
@@ -307,13 +333,16 @@ async function einIcon(ziel, snap, strokeAuch) {
 
 // --- Vorschau: baut ephemer, ändert nichts --------------------------------
 
-async function vorschau(ziel, snap) {
+// ohneNormalisieren: bei der Vorschau mit ungespeicherter Konfig darf die Source
+// nicht mit einer fremden master.kontur überschrieben werden.
+async function vorschau(ziel, snap, ohneNormalisieren) {
+  const set = await ADAPTER.zielSet(ziel);
+  gesperrtPruefen(ziel, set);
   quellePruefen(ziel);
   const src = ziel.src;
   await farbeVariableAufloesen(CFG.farbe);
-  normalisieren(src);
+  if (!ohneNormalisieren) normalisieren(src);
   const kl = ziel.klasse;
-  const set = ADAPTER.zielSet(ziel);
   const zellen = [];
 
   for (const g of CFG.groessen) {
@@ -346,65 +375,97 @@ async function vorschau(ziel, snap) {
   return { name: ziel.name, klasse: kl, kl: kl, zellen: zellen };
 }
 
+// --- Gemeinsame Messungen (Audit und Bericht) -----------------------------
+// Live gemessen wird an der gebauten Variante, nicht an der Source. Audit und
+// Bericht teilen sich diese drei Helfer, damit beide dasselbe Maß nehmen.
+
+// Ablage für Stroke-Fassungen bereits vorhanden? (ohne sie anzulegen)
+function strokeHeimVorhanden(ziel) {
+  try { return ADAPTER.strokeHeimDa ? !!ADAPTER.strokeHeimDa(ziel) : false; } catch (e) { return false; }
+}
+
+// Keyline: gemessenes Maß auf der Klassenachse gegen das Soll der Größe.
+function messKeyline(v, g, kl) {
+  const m = gb(v);
+  if (!m) return null;
+  const ist = massAuf(m, achseVon(kl));
+  const soll = keylineVon(g, kl);
+  return { ist: ist, soll: soll, ok: Math.abs(ist - soll) < 0.05 };
+}
+
+// Rasterlage der geraden Kanten — nur sinnvoll, wenn die Variante ein Vektor ist.
+function messRaster(v, g) {
+  const kind = v.children[0];
+  if (!kind || kind.type !== 'VECTOR') return null;
+  return rasterRate(kind, g.raster);
+}
+
+// Struktur: genau ein Vektor, keine Restkontur, Farbe gebunden, keine engen Lücken.
+// `kleinste` schaltet die Lückenprüfung zu (nur bei der kleinsten Größe aussagekräftig).
+function messStruktur(v, name, N, kleinste) {
+  const texte = [];
+  if (v.children.length !== 1) texte.push(t('audit.knoten', { name: name, N: N, n: v.children.length }));
+  const kind = v.children[0];
+  if (!kind) return texte;
+  if (kind.type !== 'VECTOR') texte.push(t('audit.typ', { name: name, N: N, typ: kind.type }));
+  if ((kind.strokes || []).length) texte.push(t('audit.restkontur', { name: name, N: N }));
+  if (CFG.farbe.modus === 'variable') {
+    const fb = kind.fills && kind.fills[0] && kind.fills[0].boundVariables;
+    if (!(fb && fb.color)) texte.push(t('audit.farbe', { name: name, N: N }));
+  }
+  if (kleinste && kind.type === 'VECTOR')
+    engeLuecken(kind).forEach(l => texte.push(t('audit.luecke', { name: name, N: N, wert: l.toFixed(2) })));
+  return texte;
+}
+
 // --- Audit -----------------------------------------------------------------
+// Abbrechbar: das Flag wird zwischen zwei Icons geprüft, Teilergebnisse bleiben gültig.
 
 async function audit() {
   let treffer = 0, gesamt = 0, rasterAuf = 0, rasterGesamt = 0, veraltet = 0;
   const abw = [];
   const ziele = await ADAPTER.alle();
   const kleinste = CFG.groessen.length ? CFG.groessen[0].N : null;
-  const farbeGebunden = CFG.farbe.modus === 'variable';
+  let geprueft = 0, abgebrochen = false;
 
   for (const ziel of ziele) {
+    if (abbruchAktiv()) { abgebrochen = true; break; }
+    geprueft++;
+    ui({ type: 'progress', i: geprueft, n: ziele.length, name: ziel.name });
     const name = ziel.name;
     const src = ziel.src;
     if (!src) { abw.push(t('audit.keineSource', { name: name })); continue; }
     const kl = ziel.klasse;
-    const achse = achseVon(kl);
 
     schiefeWinkel(src).forEach(w => abw.push(t('audit.schiefeKante', { name: name, wert: w })));
 
-    const set = ADAPTER.zielSet(ziel);
+    const set = await ADAPTER.zielSet(ziel);
     if (!set) { abw.push(t('audit.keinSet', { name: name })); continue; }
 
-    const pd = set.getPluginData ? set.getPluginData(PD_SCHLUESSEL) : '';
-    if (pd) {
-      try {
-        const d = JSON.parse(pd);
-        if (d.quelle && d.quelle !== fingerabdruck(src)) {
-          veraltet++; abw.push(t('audit.veraltet', { name: name }));
-        }
-      } catch (e) {}
-    }
+    if (istVeraltet(set, src)) { veraltet++; abw.push(t('audit.veraltet', { name: name })); }
 
     for (const g of CFG.groessen) {
       const N = g.N;
       const v = set.children.find(c => c.name === variantenName(N));
       if (!v) continue;
 
-      // Keyline
-      const m = gb(v); if (!m) continue;
-      const ist = massAuf(m, achse);
-      const soll = keylineVon(g, kl);
-      gesamt++;
-      if (Math.abs(ist - soll) < 0.05) treffer++;
-      else abw.push(t('audit.keyline', { name: name, klasse: kl, N: N, ist: ist.toFixed(3), soll: soll }));
-
-      // Struktur: genau ein Vektor, keine Kontur, Farbe gebunden
-      if (v.children.length !== 1) abw.push(t('audit.knoten', { name: name, N: N, n: v.children.length }));
-      const kind = v.children[0];
-      if (!kind) continue;
-      if (kind.type !== 'VECTOR') abw.push(t('audit.typ', { name: name, N: N, typ: kind.type }));
-      if ((kind.strokes || []).length) abw.push(t('audit.restkontur', { name: name, N: N }));
-      if (farbeGebunden) {
-        const fb = kind.fills && kind.fills[0] && kind.fills[0].boundVariables;
-        if (!(fb && fb.color)) abw.push(t('audit.farbe', { name: name, N: N }));
+      const k = messKeyline(v, g, kl);
+      if (k) {
+        gesamt++;
+        if (k.ok) treffer++;
+        else abw.push(t('audit.keyline', { name: name, klasse: kl, N: N, ist: k.ist.toFixed(3), soll: k.soll }));
       }
-      const rr = kind.type === 'VECTOR' ? rasterRate(kind, g.raster) : null;
+
+      messStruktur(v, name, N, N === kleinste).forEach(z => abw.push(z));
+
+      const rr = messRaster(v, g);
       if (rr) { rasterAuf += rr.auf; rasterGesamt += rr.gesamt; }
-      if (N === kleinste && kind.type === 'VECTOR')
-        engeLuecken(kind).forEach(l => abw.push(t('audit.luecke', { name: name, N: N, wert: l.toFixed(2) })));
     }
+    await tick();
   }
-  return { treffer: treffer, gesamt: gesamt, abw: abw, rasterAuf: rasterAuf, rasterGesamt: rasterGesamt, veraltet: veraltet };
+  return {
+    treffer: treffer, gesamt: gesamt, abw: abw,
+    rasterAuf: rasterAuf, rasterGesamt: rasterGesamt, veraltet: veraltet,
+    geprueft: geprueft, n: ziele.length, abgebrochen: abgebrochen
+  };
 }

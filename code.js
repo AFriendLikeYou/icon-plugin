@@ -16,10 +16,33 @@ const KLASSEN = ['Square', 'Circular', 'Wide', 'Tall'];
 const RASTER_WERTE = [1, 0.5, 0.25];
 const RADIUS_MODI = ['proportional', 'fest', 'keine'];
 const FARB_MODI = ['source', 'hex', 'variable'];
-const PROFIL_NAMEN = ['zds', 'generic'];
+const PROFIL_NAMEN = ['zds', 'generic', 'material', 'lucide', 'apple'];
+
+// Standardwerte für den Block `schreiben` (Mutationen außerhalb des Ziel-Sets).
+// Konservativ: umwandeln nein, Ablage-Frame ja.
+const SCHREIBEN_STANDARD = { frameUmwandeln: false, strokeHeimAnlegen: true };
 
 // Die aktive Konfiguration. Wird in 70-main beim init gesetzt.
 let CFG = null;
+
+// --- kleine Bausteine für die Profil-Literale -------------------------------
+
+function pKey(sq, ci, wi, ta) { return { Square: sq, Circular: ci, Wide: wi, Tall: ta }; }
+function pKey1(v) { return pKey(v, v, v, v); }
+
+function pG(N, kontur, keylines, grob, standard) {
+  return {
+    N: N,
+    kontur: kontur,
+    keylines: keylines,
+    raster: 0.5,
+    rasterGrob: grob || null,
+    radius: { modus: 'proportional', wert: 1, min: 0 },
+    standard: !!standard
+  };
+}
+
+function pSchreiben() { return { frameUmwandeln: false, strokeHeimAnlegen: true }; }
 
 const PROFILE = {
   zds: {
@@ -47,6 +70,7 @@ const PROFILE = {
       variable: { key: 'c03b6366f45ff8c719530cff7a2150965e4200fd', name: 'Text/70', id: '' },
       sourceAngleichen: true
     },
+    schreiben: pSchreiben(),
     snapping: true,
     strokeFassung: false
   },
@@ -74,6 +98,66 @@ const PROFILE = {
       variable: null,
       sourceAngleichen: false
     },
+    schreiben: pSchreiben(),
+    snapping: true,
+    strokeFassung: false
+  },
+
+  // Material Design Icons: 24er-Master, Größenstaffel 18/24/36/48.
+  material: {
+    version: 1,
+    adapter: 'auto',
+    sprache: 'auto',
+    master: { groesse: 24, kontur: 2, keylines: pKey(18, 20, 20, 20) },
+    variantenProperty: 'Size',
+    groessen: [
+      pG(18, 1.5, pKey(13.5, 15, 15, 15), null, false),
+      pG(24, 2,   pKey(18, 20, 20, 20),   1,    true),
+      pG(36, 3,   pKey(27, 30, 30, 30),   1,    false),
+      pG(48, 4,   pKey(36, 40, 40, 40),   1,    false)
+    ],
+    farbe: { modus: 'source', hex: '#444444', variable: null, sourceAngleichen: false },
+    schreiben: pSchreiben(),
+    snapping: true,
+    strokeFassung: false
+  },
+
+  // Lucide / Feather: 24er-Master, randnahe Keyline, gleichmäßige 2-px-Kontur.
+  lucide: {
+    version: 1,
+    adapter: 'auto',
+    sprache: 'auto',
+    master: { groesse: 24, kontur: 2, keylines: pKey1(22) },
+    variantenProperty: 'Size',
+    groessen: [
+      pG(16, 1.5, pKey1(14.5), null, false),
+      pG(20, 1.5, pKey1(18.5), null, false),
+      pG(24, 2,   pKey1(22),   1,    true),
+      pG(32, 2.5, pKey1(29.5), 1,    false),
+      pG(48, 4,   pKey1(44),   1,    false)
+    ],
+    farbe: { modus: 'source', hex: '#444444', variable: null, sourceAngleichen: false },
+    schreiben: pSchreiben(),
+    snapping: true,
+    strokeFassung: false
+  },
+
+  // SF-Symbols-nahe Staffel: 28er-Master, Größen 16/20/24/28/32.
+  apple: {
+    version: 1,
+    adapter: 'auto',
+    sprache: 'auto',
+    master: { groesse: 28, kontur: 2, keylines: pKey(21, 22, 22, 22) },
+    variantenProperty: 'Size',
+    groessen: [
+      pG(16, 1.5, pKey(12, 12.5, 12.5, 12.5), null, false),
+      pG(20, 1.5, pKey(15, 15.5, 15.5, 15.5), null, false),
+      pG(24, 2,   pKey(18, 19, 19, 19),       1,    true),
+      pG(28, 2,   pKey(21, 22, 22, 22),       1,    false),
+      pG(32, 2.5, pKey(24, 25, 25, 25),       1,    false)
+    ],
+    farbe: { modus: 'source', hex: '#444444', variable: null, sourceAngleichen: false },
+    schreiben: pSchreiben(),
     snapping: true,
     strokeFassung: false
   }
@@ -83,6 +167,15 @@ function cfgKopie(o) { return JSON.parse(JSON.stringify(o)); }
 
 function konfigDefaults(profil) {
   return cfgKopie(PROFILE[profil] || PROFILE.generic);
+}
+
+// Titel/Beschreibung der Profile für den Profil-Chooser der UI.
+function konfigProfilInfo() {
+  return PROFIL_NAMEN.map(name => ({
+    name: name,
+    titel: t('profil.' + name + '.titel'),
+    beschreibung: t('profil.' + name + '.beschreibung')
+  }));
 }
 
 // --- Validierung -----------------------------------------------------------
@@ -101,11 +194,39 @@ function cfgHex(v) {
   return /^#[0-9a-fA-F]{6}$/.test(s) ? s.toLowerCase() : null;
 }
 
-function cfgKeylines(v, standard) {
+// Ein Eintrag der Fehlerliste: { pfad, text }. `pfad` entspricht dem
+// data-pfad-Attribut des zugehörigen Feldes in der UI.
+function cfgMeldung(liste, pfad, key, params) {
+  liste.push({ pfad: pfad, text: t(key, params) });
+}
+
+// Zahl hübsch für Meldungen (1.5 → „1.5“, 12 → „12“).
+function cfgZ(n) { return String(Math.round(n * 1000) / 1000); }
+
+// Keylines einer Ebene prüfen: nicht-numerisch → Fehler, außerhalb N/2…N → Warnung.
+// `pfadPrefix` ist z. B. 'master.' oder 'groessen.2.'.
+function cfgKeylines(v, standardWert, N, pfadPrefix, fehler) {
   const k = {};
+  const q = (v && typeof v === 'object') ? v : {};
   KLASSEN.forEach(kl => {
-    const n = cfgZahl(v && v[kl], null, 0.0001);
-    k[kl] = n == null ? standard : n;
+    const pfad = pfadPrefix + 'keylines.' + kl;
+    const roh = q[kl];
+    const n = cfgZahl(roh, null, 0.0001);
+    if (n == null) {
+      // Fehlt der Wert ganz, wird still der Standard gesetzt; ein gesetzter,
+      // aber unbrauchbarer Wert ist ein Fehler.
+      if (roh !== undefined && roh !== null && roh !== '') {
+        cfgMeldung(fehler, pfad, 'konfig.keyline', { klasse: kl });
+      }
+      k[kl] = standardWert;
+      return;
+    }
+    k[kl] = n;
+    const min = N / 2;
+    if (n < min || n > N) {
+      cfgMeldung(fehler, pfad, 'konfig.keylineUnplausibel', { wert: cfgZ(n), N: cfgZ(N), min: cfgZ(min) });
+      fehler[fehler.length - 1].art = 'warnung';
+    }
   });
   return k;
 }
@@ -119,6 +240,7 @@ function cfgRaster(v) {
 }
 
 // Repariert, was reparierbar ist, und sammelt die Meldungen für die UI.
+// Rückgabe: { ok, fehler: [{ pfad, text }], konfig }.
 function konfigValidieren(k) {
   const fehler = [];
   const d = konfigDefaults('generic');
@@ -127,59 +249,101 @@ function konfigValidieren(k) {
 
   o.version = 1;
 
-  if (['auto', 'zds', 'frei'].indexOf(o.adapter) < 0) { o.adapter = d.adapter; fehler.push(t('konfig.adapter')); }
-  if (['auto', 'de', 'en'].indexOf(o.sprache) < 0) { o.sprache = d.sprache; fehler.push(t('konfig.sprache')); }
+  if (['auto', 'zds', 'frei'].indexOf(o.adapter) < 0) { o.adapter = d.adapter; cfgMeldung(fehler, 'adapter', 'konfig.adapter'); }
+  if (['auto', 'de', 'en'].indexOf(o.sprache) < 0) { o.sprache = d.sprache; cfgMeldung(fehler, 'sprache', 'konfig.sprache'); }
 
   const vp = String(o.variantenProperty == null ? '' : o.variantenProperty).trim();
-  if (!vp) { o.variantenProperty = d.variantenProperty; fehler.push(t('konfig.variantenProperty')); }
+  if (!vp) { o.variantenProperty = d.variantenProperty; cfgMeldung(fehler, 'variantenProperty', 'konfig.variantenProperty'); }
   else o.variantenProperty = vp;
 
   // --- Master ---
   const m = (o.master && typeof o.master === 'object') ? o.master : {};
   const mg = cfgZahl(m.groesse, null, 1);
-  if (mg == null) { fehler.push(t('konfig.masterGroesse')); m.groesse = d.master.groesse; } else m.groesse = mg;
+  if (mg == null) { cfgMeldung(fehler, 'master.groesse', 'konfig.masterGroesse'); m.groesse = d.master.groesse; } else m.groesse = mg;
   const mk = cfgZahl(m.kontur, null, 0.0001);
-  if (mk == null) { fehler.push(t('konfig.masterKontur')); m.kontur = d.master.kontur; } else m.kontur = mk;
-  m.keylines = cfgKeylines(m.keylines, m.groesse);
+  if (mk == null) { cfgMeldung(fehler, 'master.kontur', 'konfig.masterKontur'); m.kontur = d.master.kontur; } else m.kontur = mk;
+  m.keylines = cfgKeylines(m.keylines, m.groesse, m.groesse, 'master.', fehler);
   o.master = m;
 
+  // --- Schreiben (Mutationen außerhalb des Ziel-Sets) ---
+  const w = (o.schreiben && typeof o.schreiben === 'object') ? o.schreiben : {};
+  o.schreiben = {
+    frameUmwandeln: typeof w.frameUmwandeln === 'boolean' ? w.frameUmwandeln : SCHREIBEN_STANDARD.frameUmwandeln,
+    strokeHeimAnlegen: typeof w.strokeHeimAnlegen === 'boolean' ? w.strokeHeimAnlegen : SCHREIBEN_STANDARD.strokeHeimAnlegen
+  };
+
   // --- Größen ---
+  // Meldungen je Zeile werden erst gesammelt und NACH dem Sortieren mit dem
+  // endgültigen Index ausgegeben — der Index in `pfad` ist immer der der
+  // sortierten Liste. Verworfene Zeilen haben keinen Index → pfad 'groessen'.
   let gs = Array.isArray(o.groessen) ? o.groessen : [];
   const gesehen = {};
+  const proZeile = new Map();
   gs = gs.map(g => (g && typeof g === 'object') ? g : {}).filter(g => {
     const N = cfgZahl(g.N, null, 1);
-    if (N == null || Math.round(N) !== N) { fehler.push(t('konfig.groesseN', { wert: String(g.N) })); return false; }
-    if (gesehen[N]) { fehler.push(t('konfig.groesseDoppelt', { N: N })); return false; }
-    gesehen[N] = true; g.N = N; return true;
+    if (N == null) { cfgMeldung(fehler, 'groessen', 'konfig.groesseN', { wert: String(g.N) }); return false; }
+    const ganz = Math.round(N);
+    if (ganz !== N) g.__gerundet = N;
+    g.N = ganz;
+    if (gesehen[ganz]) { cfgMeldung(fehler, 'groessen', 'konfig.groesseDoppelt', { N: ganz }); return false; }
+    gesehen[ganz] = true;
+    return true;
   });
-  if (!gs.length) { fehler.push(t('konfig.keineGroessen')); gs = cfgKopie(d.groessen); }
+  if (!gs.length) { cfgMeldung(fehler, 'groessen', 'konfig.keineGroessen'); gs = cfgKopie(d.groessen); }
 
   gs.forEach(g => {
+    const zeile = [];
+    proZeile.set(g, zeile);
+    if (g.__gerundet !== undefined) {
+      zeile.push({ feld: 'N', key: 'konfig.groesseNGerundet', params: { wert: cfgZ(g.__gerundet), N: g.N } });
+      delete g.__gerundet;
+    }
     const kt = cfgZahl(g.kontur, null, 0.0001);
-    if (kt == null) { fehler.push(t('konfig.kontur', { N: g.N })); g.kontur = 1.5; } else g.kontur = kt;
-    g.keylines = cfgKeylines(g.keylines, g.N);
+    if (kt == null) { zeile.push({ feld: 'kontur', key: 'konfig.kontur', params: { N: g.N } }); g.kontur = 1.5; } else g.kontur = kt;
+
     const r = cfgRaster(g.raster);
-    if (r == null) { fehler.push(t('konfig.raster', { N: g.N })); g.raster = 0.5; } else g.raster = r;
+    if (r == null) { zeile.push({ feld: 'raster', key: 'konfig.raster', params: { N: g.N } }); g.raster = 0.5; } else g.raster = r;
+
     if (g.rasterGrob == null || g.rasterGrob === '' || g.rasterGrob === false) g.rasterGrob = null;
     else {
       const rg = cfgRaster(g.rasterGrob);
-      if (rg == null || rg <= g.raster) { fehler.push(t('konfig.rasterGrob', { N: g.N })); g.rasterGrob = null; }
+      if (rg == null || rg <= g.raster) { zeile.push({ feld: 'rasterGrob', key: 'konfig.rasterGrob', params: { N: g.N } }); g.rasterGrob = null; }
       else g.rasterGrob = rg;
     }
+
     const rad = (g.radius && typeof g.radius === 'object') ? g.radius : {};
-    if (RADIUS_MODI.indexOf(rad.modus) < 0) { fehler.push(t('konfig.radiusModus', { N: g.N })); rad.modus = 'proportional'; }
-    const rw = cfgZahl(rad.wert, null, 0); rad.wert = rw == null ? 1 : rw;
-    const rm = cfgZahl(rad.min, null, 0);  rad.min  = rm == null ? 0 : rm;
+    if (RADIUS_MODI.indexOf(rad.modus) < 0) {
+      // Fehlt der Block ganz, gilt still der Standard; ein gesetzter, falscher Modus ist ein Fehler.
+      if (rad.modus !== undefined && rad.modus !== null && rad.modus !== '') {
+        zeile.push({ feld: 'radius.modus', key: 'konfig.radiusModus', params: { N: g.N } });
+      }
+      rad.modus = 'proportional';
+    }
+    const rw = cfgZahl(rad.wert, null, 0);
+    if (rw == null) { if (rad.wert !== undefined && rad.wert !== null && rad.wert !== '') zeile.push({ feld: 'radius.wert', key: 'konfig.radiusWert', params: { N: g.N } }); rad.wert = 1; }
+    else rad.wert = rw;
+    const rm = cfgZahl(rad.min, null, 0);
+    if (rm == null) { if (rad.min !== undefined && rad.min !== null && rad.min !== '') zeile.push({ feld: 'radius.min', key: 'konfig.radiusMin', params: { N: g.N } }); rad.min = 0; }
+    else rad.min = rm;
     g.radius = rad;
+
     g.standard = !!g.standard;
     g.keylinesManuell = !!g.keylinesManuell;   // UI-Merker: Keylines von Hand gesetzt → folgen N nicht mehr
   });
 
   gs.sort((a, b) => a.N - b.N);
+
+  // Jetzt steht der Index fest: Zeilenmeldungen und Keylines ausgeben.
+  gs.forEach((g, i) => {
+    const pfx = 'groessen.' + i + '.';
+    (proZeile.get(g) || []).forEach(e => cfgMeldung(fehler, pfx + e.feld, e.key, e.params));
+    g.keylines = cfgKeylines(g.keylines, g.N, g.N, pfx, fehler);
+  });
+
   const std = gs.filter(g => g.standard);
   if (std.length !== 1) {
-    if (std.length > 1) fehler.push(t('konfig.mehrereStandard'));
-    else fehler.push(t('konfig.keinStandard'));
+    if (std.length > 1) cfgMeldung(fehler, 'groessen', 'konfig.mehrereStandard');
+    else cfgMeldung(fehler, 'groessen', 'konfig.keinStandard');
     gs.forEach(g => { g.standard = false; });
     (std[0] || gs[gs.length - 1]).standard = true;
   }
@@ -187,9 +351,9 @@ function konfigValidieren(k) {
 
   // --- Farbe ---
   const f = (o.farbe && typeof o.farbe === 'object') ? o.farbe : {};
-  if (FARB_MODI.indexOf(f.modus) < 0) { fehler.push(t('konfig.farbModus')); f.modus = d.farbe.modus; }
+  if (FARB_MODI.indexOf(f.modus) < 0) { cfgMeldung(fehler, 'farbe.modus', 'konfig.farbModus'); f.modus = d.farbe.modus; }
   const hx = cfgHex(f.hex);
-  if (hx == null) { if (f.modus === 'hex') fehler.push(t('konfig.farbHex')); f.hex = '#444444'; } else f.hex = hx;
+  if (hx == null) { if (f.modus === 'hex') cfgMeldung(fehler, 'farbe.hex', 'konfig.farbHex'); f.hex = '#444444'; } else f.hex = hx;
   if (f.variable && typeof f.variable === 'object') {
     f.variable = {
       key:  String(f.variable.key  || ''),
@@ -198,20 +362,26 @@ function konfigValidieren(k) {
     };
     if (!f.variable.key && !f.variable.id && !f.variable.name) f.variable = null;
   } else f.variable = null;
-  if (f.modus === 'variable' && !f.variable) { fehler.push(t('konfig.farbVariable')); f.modus = 'source'; }
+  if (f.modus === 'variable' && !f.variable) { cfgMeldung(fehler, 'farbe.modus', 'konfig.farbVariable'); f.modus = 'source'; }
   f.sourceAngleichen = !!f.sourceAngleichen;
   o.farbe = f;
 
   o.snapping = o.snapping === undefined ? true : !!o.snapping;
   o.strokeFassung = !!o.strokeFassung;
 
-  return { ok: fehler.length === 0, fehler: fehler, konfig: o };
+  return { ok: fehler.every(f => f.art === 'warnung'), fehler: fehler, konfig: o };
 }
 
-// Platzhalter für spätere Schema-Versionen — heute gibt es nur v1.
+// Alte Konfigs auf das aktuelle Schema heben. Heute: Schema v1, aber ohne den
+// Block `schreiben` (vor Runde 3 gespeicherte Konfigs).
 function konfigMigrieren(k) {
   if (!k || typeof k !== 'object') return k;
   if (!k.version) k.version = 1;
+  if (!k.schreiben || typeof k.schreiben !== 'object') k.schreiben = { frameUmwandeln: false, strokeHeimAnlegen: true };
+  else {
+    if (typeof k.schreiben.frameUmwandeln !== 'boolean') k.schreiben.frameUmwandeln = SCHREIBEN_STANDARD.frameUmwandeln;
+    if (typeof k.schreiben.strokeHeimAnlegen !== 'boolean') k.schreiben.strokeHeimAnlegen = SCHREIBEN_STANDARD.strokeHeimAnlegen;
+  }
   return k;
 }
 
@@ -242,13 +412,15 @@ async function konfigSpeichern(k) {
 async function schalterLaden() {
   try {
     const e = await figma.clientStorage.getAsync(SCHALTER_SCHLUESSEL);
-    if (e) return { snap: !!e.snap, stroke: !!e.stroke };
+    if (e) return { snap: !!e.snap, stroke: !!e.stroke, trockenlaufEinzel: e.trockenlaufEinzel !== false };
   } catch (err) {}
-  return { snap: !!(CFG && CFG.snapping), stroke: !!(CFG && CFG.strokeFassung) };
+  return { snap: !!(CFG && CFG.snapping), stroke: !!(CFG && CFG.strokeFassung), trockenlaufEinzel: true };
 }
 
-async function schalterSpeichern(snap, stroke) {
-  try { await figma.clientStorage.setAsync(SCHALTER_SCHLUESSEL, { snap: !!snap, stroke: !!stroke }); }
+// trockenlaufEinzel: true = Dialog vor dem Einzelbau zeigen (Standard).
+async function schalterSpeichern(snap, stroke, trockenlaufEinzel) {
+  try { await figma.clientStorage.setAsync(SCHALTER_SCHLUESSEL,
+    { snap: !!snap, stroke: !!stroke, trockenlaufEinzel: trockenlaufEinzel !== false }); }
   catch (e) {}
 }
 
@@ -258,6 +430,12 @@ function groesseCfg(N) {
   const g = CFG && CFG.groessen.find(x => x.N === N);
   if (!g) throw new PipelineFehler('GROESSE_UNBEKANNT', { N: N });
   return g;
+}
+
+// Darf die Pipeline außerhalb des Ziel-Sets schreiben? (Abschnitt 17)
+function darfSchreiben(was) {
+  const s = (CFG && CFG.schreiben) || SCHREIBEN_STANDARD;
+  return !!s[was];
 }
 
 function variantenName(N) { return CFG.variantenProperty + '=' + N; }
@@ -333,6 +511,16 @@ const SPRACHEN = {
     'fehler.KEINE_BIBLIOTHEKEN': 'Keine Variablen-Kollektionen aus Libraries gefunden ({lokal} lokale Farbvariablen).',
     'hinweis.KEINE_BIBLIOTHEKEN': 'Figma liefert nur Kollektionen aus Libraries, die in diesem File unter Assets → Libraries aktiviert sind. Library aktivieren, dann „Aktualisieren“.',
     'hinweis.KONFIG_UNGUELTIG': 'Prüfe die markierten Felder im Tab „Einstellungen“.',
+    'fehler.GESPERRT': '{name}: Source, Set oder Variante ist gesperrt.',
+    'hinweis.GESPERRT': 'Im Ebenen-Panel das Schloss entfernen (Schlosssymbol anklicken) und den Lauf wiederholen.',
+    'fehler.FRAME_NICHT_ERLAUBT': '{name}: Frame wird nicht automatisch in eine Komponente umgewandelt.',
+    'hinweis.FRAME_NICHT_ERLAUBT': 'Einstellungen → Schreiben → „Frame umwandeln“ einschalten oder den Frame selbst mit Cmd+Alt+K zur Komponente machen.',
+    'fehler.STROKEHEIM_AUS': '{name}: Stroke-Fassung übersprungen — es darf kein Ablage-Frame angelegt werden.',
+    'hinweis.STROKEHEIM_AUS': 'Einstellungen → Schreiben → „Stroke-Ablage anlegen“ einschalten.',
+    'fehler.ABGEBROCHEN': 'Lauf abgebrochen nach {i}/{n}.',
+    'hinweis.ABGEBROCHEN': 'Die Teilergebnisse stehen im Protokoll; Cmd+Z nimmt jeden gebauten Schritt einzeln zurück.',
+    'fehler.EXPORT_FEHLT': '{name} hat kein Set — nichts zu exportieren.',
+    'hinweis.EXPORT_FEHLT': 'Erst bauen, dann exportieren.',
 
     // --- Konfig-Prüfung ---
     'konfig.adapter': 'Adapter unbekannt — auf Standard zurückgesetzt.',
@@ -340,13 +528,18 @@ const SPRACHEN = {
     'konfig.variantenProperty': 'Variantenproperty darf nicht leer sein.',
     'konfig.masterGroesse': 'Master-Größe muss eine Zahl > 0 sein.',
     'konfig.masterKontur': 'Master-Kontur muss eine Zahl > 0 sein.',
-    'konfig.groesseN': 'Größe „{wert}“ ist keine ganze Zahl > 0 — Zeile verworfen.',
+    'konfig.groesseN': 'Größe „{wert}“ ist keine Zahl > 0 — Zeile verworfen.',
+    'konfig.groesseNGerundet': 'Größe „{wert}“ ist keine ganze Zahl — auf {N} gerundet.',
     'konfig.groesseDoppelt': 'Größe {N} kommt mehrfach vor — Dublette verworfen.',
     'konfig.keineGroessen': 'Keine gültige Größe übrig — Standardgrößen eingesetzt.',
     'konfig.kontur': 'Kontur für {N} muss > 0 sein.',
+    'konfig.keyline': 'Keyline für {klasse} muss eine Zahl > 0 sein — Standard gesetzt.',
+    'konfig.keylineUnplausibel': 'Keyline {wert} für {N} px liegt außerhalb von {min}…{N}.',
     'konfig.raster': 'Raster für {N} muss 1, 0,5 oder 0,25 sein.',
     'konfig.rasterGrob': 'Grobes Raster für {N} muss gröber als das Raster sein — abgeschaltet.',
     'konfig.radiusModus': 'Radius-Modus für {N} unbekannt — „proportional“ gesetzt.',
+    'konfig.radiusWert': 'Radius-Wert für {N} muss eine Zahl ≥ 0 sein — 1 gesetzt.',
+    'konfig.radiusMin': 'Radius-Minimum für {N} muss eine Zahl ≥ 0 sein — 0 gesetzt.',
     'konfig.mehrereStandard': 'Mehrere Standardgrößen — nur die erste bleibt.',
     'konfig.keinStandard': 'Keine Standardgröße gesetzt — die größte wurde gewählt.',
     'konfig.farbModus': 'Farbmodus unbekannt — auf Standard zurückgesetzt.',
@@ -392,10 +585,26 @@ const SPRACHEN = {
     'fazit.veraltet': ' · VERALTET: {n}',
     'fazit.alle': '{ok}/{n} gebaut · Keyline {treffer}/{gesamt} · Raster {rAuf}/{rGesamt}{veraltet}',
     'fazit.abgebrochen': 'Abgebrochen: {grund}',
+    'fazit.abgebrochen2': 'Abgebrochen nach {i}/{n} — Teilergebnisse stehen im Protokoll.',
     'log.fehler': 'Fehler: {grund}',
     'log.klasseGesetzt': '{name}: Klasse auf {klasse} gesetzt.',
     'log.konfigGespeichert': 'Konfiguration gespeichert.',
-    'log.konfigZurueck': 'Konfiguration auf Profil „{profil}“ zurückgesetzt.'
+    'log.konfigZurueck': 'Konfiguration auf Profil „{profil}“ zurückgesetzt.',
+    'log.undo': 'Cmd+Z nimmt „{name}“ zurück.',
+    'log.undoBatch': '{n} Icons gebaut — Cmd+Z nimmt je ein Icon zurück.',
+    'log.beispielAngelegt': 'Beispiel-Icon „{name}“ angelegt und gebaut.',
+
+    // --- Profile ---
+    'profil.zds.titel': 'ZEIT Design System',
+    'profil.zds.beschreibung': 'Das ZDS-Board: 72-px-Master, Größen 14/18/24, Farbe an die Variable Text/70 gebunden.',
+    'profil.generic.titel': 'Allgemein',
+    'profil.generic.beschreibung': 'Neutraler Start für ein beliebiges File: 24-px-Master, Größen 16/20/24, Farbe aus der Source.',
+    'profil.material.titel': 'Material Design',
+    'profil.material.beschreibung': 'Material Design Icons: 24-px-Master, Größen 18/24/36/48, Keyline 18 im Quadrat.',
+    'profil.lucide.titel': 'Lucide / Feather',
+    'profil.lucide.beschreibung': 'Lucide- und Feather-Stil: 24-px-Master, randnahe Keyline 22, Größen 16/20/24/32/48.',
+    'profil.apple.titel': 'Apple SF-nah',
+    'profil.apple.beschreibung': 'An SF Symbols angelehnte Staffel: 28-px-Master, Größen 16/20/24/28/32.'
   },
 
   en: {
@@ -433,19 +642,34 @@ const SPRACHEN = {
     'fehler.KEINE_BIBLIOTHEKEN': 'No variable collections from libraries found ({lokal} local color variables).',
     'hinweis.KEINE_BIBLIOTHEKEN': 'Figma only returns collections from libraries enabled in this file under Assets → Libraries. Enable the library, then “Refresh”.',
     'hinweis.KONFIG_UNGUELTIG': 'Check the highlighted fields in the “Settings” tab.',
+    'fehler.GESPERRT': '{name}: source, set or variant is locked.',
+    'hinweis.GESPERRT': 'Remove the lock in the layers panel (click the padlock) and run again.',
+    'fehler.FRAME_NICHT_ERLAUBT': '{name}: the frame is not converted into a component automatically.',
+    'hinweis.FRAME_NICHT_ERLAUBT': 'Enable Settings → Writing → “Convert frame”, or turn the frame into a component yourself with Cmd+Alt+K.',
+    'fehler.STROKEHEIM_AUS': '{name}: stroke version skipped — creating a storage frame is not allowed.',
+    'hinweis.STROKEHEIM_AUS': 'Enable Settings → Writing → “Create stroke storage”.',
+    'fehler.ABGEBROCHEN': 'Run aborted after {i}/{n}.',
+    'hinweis.ABGEBROCHEN': 'Partial results are in the log; Cmd+Z undoes each built step individually.',
+    'fehler.EXPORT_FEHLT': '{name} has no set — nothing to export.',
+    'hinweis.EXPORT_FEHLT': 'Build it first, then export.',
 
     'konfig.adapter': 'Unknown adapter — reset to default.',
     'konfig.sprache': 'Unknown language — reset to default.',
     'konfig.variantenProperty': 'The variant property must not be empty.',
     'konfig.masterGroesse': 'Master size must be a number > 0.',
     'konfig.masterKontur': 'Master stroke must be a number > 0.',
-    'konfig.groesseN': 'Size “{wert}” is not a whole number > 0 — row dropped.',
+    'konfig.groesseN': 'Size “{wert}” is not a number > 0 — row dropped.',
+    'konfig.groesseNGerundet': 'Size “{wert}” is not a whole number — rounded to {N}.',
     'konfig.groesseDoppelt': 'Size {N} appears more than once — duplicate dropped.',
     'konfig.keineGroessen': 'No valid size left — default sizes inserted.',
     'konfig.kontur': 'Stroke for {N} must be > 0.',
+    'konfig.keyline': 'Keyline for {klasse} must be a number > 0 — default used.',
+    'konfig.keylineUnplausibel': 'Keyline {wert} for {N} px is outside {min}…{N}.',
     'konfig.raster': 'Grid for {N} must be 1, 0.5 or 0.25.',
     'konfig.rasterGrob': 'Coarse grid for {N} must be coarser than the grid — disabled.',
     'konfig.radiusModus': 'Unknown radius mode for {N} — set to “proportional”.',
+    'konfig.radiusWert': 'Radius value for {N} must be a number ≥ 0 — set to 1.',
+    'konfig.radiusMin': 'Radius minimum for {N} must be a number ≥ 0 — set to 0.',
     'konfig.mehrereStandard': 'Several default sizes — only the first one kept.',
     'konfig.keinStandard': 'No default size set — the largest one was chosen.',
     'konfig.farbModus': 'Unknown colour mode — reset to default.',
@@ -487,10 +711,25 @@ const SPRACHEN = {
     'fazit.veraltet': ' · OUTDATED: {n}',
     'fazit.alle': '{ok}/{n} built · keyline {treffer}/{gesamt} · grid {rAuf}/{rGesamt}{veraltet}',
     'fazit.abgebrochen': 'Aborted: {grund}',
+    'fazit.abgebrochen2': 'Aborted after {i}/{n} — partial results are in the log.',
     'log.fehler': 'Error: {grund}',
     'log.klasseGesetzt': '{name}: class set to {klasse}.',
     'log.konfigGespeichert': 'Configuration saved.',
-    'log.konfigZurueck': 'Configuration reset to profile “{profil}”.'
+    'log.konfigZurueck': 'Configuration reset to profile “{profil}”.',
+    'log.undo': 'Cmd+Z undoes “{name}”.',
+    'log.undoBatch': 'Built {n} icons — Cmd+Z undoes one icon at a time.',
+    'log.beispielAngelegt': 'Example icon “{name}” created and built.',
+
+    'profil.zds.titel': 'ZEIT Design System',
+    'profil.zds.beschreibung': 'The ZDS board: 72 px master, sizes 14/18/24, colour bound to the Text/70 variable.',
+    'profil.generic.titel': 'Generic',
+    'profil.generic.beschreibung': 'A neutral start for any file: 24 px master, sizes 16/20/24, colour taken from the source.',
+    'profil.material.titel': 'Material Design',
+    'profil.material.beschreibung': 'Material Design Icons: 24 px master, sizes 18/24/36/48, square keyline of 18.',
+    'profil.lucide.titel': 'Lucide / Feather',
+    'profil.lucide.beschreibung': 'Lucide and Feather style: 24 px master, edge-to-edge keyline of 22, sizes 16/20/24/32/48.',
+    'profil.apple.titel': 'Apple SF-like',
+    'profil.apple.beschreibung': 'A scale close to SF Symbols: 28 px master, sizes 16/20/24/28/32.'
   }
 };
 
@@ -519,6 +758,81 @@ function listeUnd(werte) {
   return a.slice(0, -1).join(', ') + ' ' + t('und') + ' ' + a[a.length - 1];
 }
 
+// ===== 06-i18n-zusatz.js =====
+// ===========================================================================
+// 06-i18n-zusatz.js — Texte der Runde 3 (Trockenlauf, Abbruch, Bericht,
+// Export, Beispiel-Icon). Liegt bewusst in einer eigenen Datei: 05-i18n.js
+// gehört Paket A1. Beide Sprachen vollständig, gleiche Platzhalter.
+// ===========================================================================
+
+Object.assign(SPRACHEN.de, {
+  // --- Trockenlauf ---
+  'plan.keineSource': 'keine Source gefunden',
+  'plan.frameWandeln': 'Frame wird beim Bauen in eine Komponente umgewandelt',
+  'plan.frameNichtErlaubt': 'Frame wird nicht umgewandelt — Einstellungen → Schreiben',
+  'plan.gesperrt': 'gesperrt — Bauen nicht möglich',
+  'plan.neuesSet': 'Set wird neu angelegt',
+  'plan.fehlendeVarianten': '{n} Varianten werden ergänzt',
+  'plan.fremdeVarianten': '{n} fremde Varianten bleiben stehen',
+  'plan.sourceMass': 'Source misst {ist} statt {soll}',
+  'plan.strokeHeimAus': 'Stroke-Fassung wird übersprungen — Einstellungen → Schreiben',
+  'plan.strokeHeimNeu': 'Ablage für Stroke-Fassungen wird angelegt',
+  'plan.instanzenUnbekannt': 'Instanzen nicht gezählt — zu viele Knoten im File',
+  'log.planFertig': 'Trockenlauf: {n} Ziele geprüft, nichts geändert.',
+
+  // --- Abbruch ---
+  'log.abbruchAngefordert': 'Abbruch angefordert — der laufende Schritt wird noch beendet.',
+
+  // --- Bericht ---
+  'log.berichtLaeuft': 'Bericht wird erstellt …',
+  'fazit.bericht': 'Bericht: {icons} Icons · Treue Ø {treue} · Keyline {ok}/{gesamt}{ohneSet}',
+  'fazit.berichtOhneSet': ' · ohne Set: {n}',
+  'bericht.keinBau': 'noch nie gebaut',
+
+  // --- Export ---
+  'log.exportLaeuft': 'SVG-Export wird vorbereitet …',
+  'fazit.export': 'Export: {dateien} Dateien aus {icons} Icons{fehlend}',
+  'fazit.exportFehlend': ' · ohne Set: {n}',
+
+  // --- Beispiel-Icon ---
+  'beispiel.nurFrei': 'Ein Beispiel-Icon lässt sich nur im Frei-Modus anlegen.',
+  'beispiel.name': 'demo-icon'
+});
+
+Object.assign(SPRACHEN.en, {
+  // --- dry run ---
+  'plan.keineSource': 'no source found',
+  'plan.frameWandeln': 'frame will be converted to a component when building',
+  'plan.frameNichtErlaubt': 'frame will not be converted — Settings → Writing',
+  'plan.gesperrt': 'locked — cannot build',
+  'plan.neuesSet': 'set will be created',
+  'plan.fehlendeVarianten': '{n} variants will be added',
+  'plan.fremdeVarianten': '{n} foreign variants will be left untouched',
+  'plan.sourceMass': 'source measures {ist} instead of {soll}',
+  'plan.strokeHeimAus': 'stroke version will be skipped — Settings → Writing',
+  'plan.strokeHeimNeu': 'a frame for stroke versions will be created',
+  'plan.instanzenUnbekannt': 'instances not counted — too many nodes in this file',
+  'log.planFertig': 'Dry run: {n} targets checked, nothing changed.',
+
+  // --- abort ---
+  'log.abbruchAngefordert': 'Abort requested — the current step will still finish.',
+
+  // --- report ---
+  'log.berichtLaeuft': 'Building the report …',
+  'fazit.bericht': 'Report: {icons} icons · fidelity avg {treue} · keyline {ok}/{gesamt}{ohneSet}',
+  'fazit.berichtOhneSet': ' · without set: {n}',
+  'bericht.keinBau': 'never built',
+
+  // --- export ---
+  'log.exportLaeuft': 'Preparing the SVG export …',
+  'fazit.export': 'Export: {dateien} files from {icons} icons{fehlend}',
+  'fazit.exportFehlend': ' · without set: {n}',
+
+  // --- demo icon ---
+  'beispiel.nurFrei': 'A demo icon can only be created in free mode.',
+  'beispiel.name': 'demo-icon'
+});
+
 // ===== 10-errors.js =====
 // ===========================================================================
 // 10-errors.js — PipelineFehler + Protokoll-Kanal zur UI.
@@ -532,7 +846,9 @@ const FEHLER_CODES = [
   'VARIANTE_FEHLT', 'FARBE_UNAUFLOESBAR', 'UNION_FALLBACK', 'KLASSE_GERATEN',
   'SEITEN_FEHLEN', 'KARTE_OHNE_SET', 'GROESSE_UNBEKANNT',
   'SET_HAT_FREMDE_VARIANTE', 'FRAME_ZU_KOMPONENTE', 'KONFIG_UNGUELTIG',
-  'BIBLIOTHEK_UNZUGAENGLICH', 'KEINE_BIBLIOTHEKEN'
+  'BIBLIOTHEK_UNZUGAENGLICH', 'KEINE_BIBLIOTHEKEN',
+  // Runde 3
+  'GESPERRT', 'FRAME_NICHT_ERLAUBT', 'STROKEHEIM_AUS', 'ABGEBROCHEN', 'EXPORT_FEHLT'
 ];
 
 class PipelineFehler extends Error {
@@ -1356,17 +1672,25 @@ const adapterZds = {
     return await zdsZiel(karte);
   },
 
-  zielSet(ziel) { return zdsLibrarySet(ziel.name); },
+  // Async wie im Frei-Adapter — das Interface ist fuer beide gleich.
+  async zielSet(ziel) { return zdsLibrarySet(ziel.name); },
 
   zielEltern(ziel) { return { node: CTX.zds.IC, x: 80, y: 120 }; },
 
   arbeitsFlaeche(ziel) { return CTX.zds.IC; },
 
+  // Gibt es die Ablage schon? (Trockenlauf — nichts anlegen.)
+  strokeHeimDa(ziel) {
+    return !!(CTX.zds && CTX.zds.SRC && CTX.zds.SRC.children.find(c => c.name === ZDS_STROKE_HEIM));
+  },
+
   // Ablage für ungeplättete, optimierte Fassungen — wird nie publiziert.
+  // Neu anlegen nur, wenn CFG.schreiben.strokeHeimAnlegen es erlaubt; sonst null.
   strokeHeim(ziel) {
     const SRC = CTX.zds.SRC;
     let h = SRC.children.find(c => c.name === ZDS_STROKE_HEIM);
     if (h) return h;
+    if (!(CFG.schreiben && CFG.schreiben.strokeHeimAnlegen)) return null;
     h = figma.createFrame(); SRC.appendChild(h);
     h.name = ZDS_STROKE_HEIM;
     const alt = SRC.children.find(c => /Arbeitsdateien \(versteckt\)/.test(c.name));
@@ -1511,14 +1835,17 @@ const adapterFrei = {
     return null;
   },
 
-  zielSet(ziel) {
+  // Async: erst die aktuelle Seite, dann — nach dem Laden — alle übrigen.
+  // (v2 suchte nur auf bereits geladenen Seiten und übersah Sets auf anderen.)
+  async zielSet(ziel) {
     const passt = n => n.type === 'COMPONENT_SET' && freiNameBereinigen(n.name) === ziel.name;
     const hier = figma.currentPage.findAll(passt)[0];
     if (hier) return hier;
+    try { await figma.loadAllPagesAsync(); } catch (e) {}
     for (const p of figma.root.children) {
       if (p === figma.currentPage) continue;
+      try { await p.loadAsync(); } catch (e) { continue; }
       let f = null;
-      // Nur bereits geladene Seiten — zielSet ist bewusst synchron.
       try { f = p.findAll(passt)[0]; } catch (e) { f = null; }
       if (f) return f;
     }
@@ -1534,10 +1861,16 @@ const adapterFrei = {
 
   arbeitsFlaeche(ziel) { return seiteVon(ziel.src) || figma.currentPage; },
 
+  strokeHeimDa(ziel) {
+    const seite = (ziel && ziel.src ? seiteVon(ziel.src) : null) || figma.currentPage;
+    return !!seite.children.find(c => c.type === 'FRAME' && c.name === FREI_STROKE_HEIM);
+  },
+
   strokeHeim(ziel) {
     const seite = seiteVon(ziel.src) || figma.currentPage;
     let h = seite.children.find(c => c.type === 'FRAME' && c.name === FREI_STROKE_HEIM);
     if (h) return h;
+    if (!(CFG.schreiben && CFG.schreiben.strokeHeimAnlegen)) return null;
     h = figma.createFrame(); seite.appendChild(h);
     h.name = FREI_STROKE_HEIM;
     h.x = ziel.src.x; h.y = ziel.src.y + ziel.src.height + 120;
@@ -1782,7 +2115,10 @@ function setBeschreibung(name) {
 
 function quellePruefen(ziel) {
   // Frei-Modus: ein ausgewählter Frame wird erst jetzt zur Komponente (Undo-fähig, nur beim Bauen).
+  // Das ist eine Mutation außerhalb des Ziel-Sets — sie braucht die Erlaubnis aus CFG.schreiben.
   if (!ziel.src && ziel.frame && !ziel.frame.removed && ziel.frame.type === 'FRAME') {
+    if (!(CFG.schreiben && CFG.schreiben.frameUmwandeln))
+      throw new PipelineFehler('FRAME_NICHT_ERLAUBT', { name: ziel.name }, ziel.frame.id);
     const comp = figma.createComponentFromNode(ziel.frame);
     ziel.src = comp; ziel.fokusNode = comp; ziel.frame = null;
     melden('info', 'FRAME_ZU_KOMPONENTE', { name: ziel.name }, comp.id);
@@ -1925,6 +2261,16 @@ function bauZeile(b, N, soll, snap, vorher) {
 
 async function einIcon(ziel, snap, strokeAuch) {
   const name = ziel.name;
+  // Stroke-Fassungen brauchen eine Ablage; ohne Schreiberlaubnis gar nicht erst bauen.
+  if (strokeAuch && !(CFG.schreiben && CFG.schreiben.strokeHeimAnlegen) && !strokeHeimVorhanden(ziel)) {
+    melden('warn', 'STROKEHEIM_AUS', { name: name }, ziel.fokusNode ? ziel.fokusNode.id : null);
+    strokeAuch = false;
+  }
+  // Sperren VOR der ersten Mutation prüfen — quellePruefen wandelt Frames um
+  // und normalisieren() fasst die Source an.
+  let set = await ADAPTER.zielSet(ziel);
+  gesperrtPruefen(ziel, set);
+
   quellePruefen(ziel);
   const src = ziel.src;
 
@@ -1941,24 +2287,24 @@ async function einIcon(ziel, snap, strokeAuch) {
   const hinweis = (istMaster != null && Math.abs(istMaster - sollMaster) > 0.15)
     ? t('bau.sourceMisst', { ist: istMaster.toFixed(2), soll: sollMaster }) : '';
 
-  let set = ADAPTER.zielSet(ziel);
   const neu = !set;
   if (neu && ADAPTER.name === 'zds') melden('info', 'KARTE_OHNE_SET', { name: name }, ziel.fokusNode ? ziel.fokusNode.id : null);
 
-  let vorher = {};
-  try {
-    const pd = set ? JSON.parse(set.getPluginData(PD_SCHLUESSEL) || '{}') : {};
-    vorher = pd.fehler || {};
-  } catch (e) { vorher = {}; }
+  const pdAlt = set ? pdLesen(set) : {};
+  const vorher = pdAlt.fehler || {};
 
-  const fehlerNeu = {};
+  const fehlerNeu = {}, gueteNeu = {};
   const frisch = [], ergebnisse = [], strokeComps = [];
   let ergaenzt = false;
 
   for (const g of CFG.groessen) {
     const N = g.N;
     const b = await baueGroesse(ziel, N, snap, strokeAuch);
-    if (b.aaInfo) fehlerNeu[N] = (b.aaInfo.mitSnap ? b.aaInfo.snap : b.aaInfo.plain).fehler;
+    if (b.aaInfo) {
+      const w = b.aaInfo.mitSnap ? b.aaInfo.snap : b.aaInfo.plain;
+      fehlerNeu[N] = w.fehler;
+      gueteNeu[N] = { fehler: w.fehler, aa: w.aa };
+    }
     if (b.strokeComp) strokeComps.push(b.strokeComp);
     ergebnisse.push(bauZeile(b, N, keylineVon(g, kl), snap, vorher));
 
@@ -2004,8 +2350,14 @@ async function einIcon(ziel, snap, strokeAuch) {
   }
 
   // Stroke-Fassungen ablegen — kantenidentisch zur geflatteten Library.
-  if (strokeAuch && strokeComps.length === CFG.groessen.length) {
-    const heim = ADAPTER.strokeHeim(ziel);
+  const heim = (strokeAuch && strokeComps.length === CFG.groessen.length) ? ADAPTER.strokeHeim(ziel) : null;
+  if (!heim && strokeComps.length) {
+    // Keine Ablage (Schreiben verboten) — die gesicherten Fassungen wieder wegräumen.
+    strokeComps.forEach(q => { try { q.remove(); } catch (e) {} });
+    if (strokeAuch) melden('warn', 'STROKEHEIM_AUS', { name: name }, ziel.fokusNode ? ziel.fokusNode.id : null);
+    strokeAuch = false;
+  }
+  if (heim) {
     // Erst umziehen — combineAsVariants verlangt dieselbe Seite wie der Parent.
     strokeComps.forEach(q => heim.appendChild(q));
     const sName = '.' + name + ' · stroke';
@@ -2034,9 +2386,16 @@ async function einIcon(ziel, snap, strokeAuch) {
   // Zentrale Nachpflege: Export-Settings + Fingerabdruck fürs Audit.
   set.children.forEach(v => { try { v.exportSettings = [{ format: 'SVG' }]; } catch (e) {} });
   try {
+    // guete ergänzt fehler um die AA-Quote; verlauf trägt die letzten Bauten (max. VERLAUF_MAX).
+    const gueteGesamt = Object.assign({}, pdAlt.guete || {}, gueteNeu);
+    const verlauf = Array.isArray(pdAlt.verlauf) ? pdAlt.verlauf.slice() : [];
+    verlauf.push({ zeit: Date.now(), guete: gueteGesamt });
+    while (verlauf.length > VERLAUF_MAX) verlauf.shift();
     set.setPluginData(PD_SCHLUESSEL, JSON.stringify({
       quelle: fingerabdruck(src), snap: !!snap, zeit: Date.now(),
-      fehler: Object.assign({}, vorher, fehlerNeu)
+      fehler: Object.assign({}, vorher, fehlerNeu),   // Kompatibilität mit v1/v2
+      guete: gueteGesamt,
+      verlauf: verlauf
     }));
   } catch (e) {}
 
@@ -2050,13 +2409,16 @@ async function einIcon(ziel, snap, strokeAuch) {
 
 // --- Vorschau: baut ephemer, ändert nichts --------------------------------
 
-async function vorschau(ziel, snap) {
+// ohneNormalisieren: bei der Vorschau mit ungespeicherter Konfig darf die Source
+// nicht mit einer fremden master.kontur überschrieben werden.
+async function vorschau(ziel, snap, ohneNormalisieren) {
+  const set = await ADAPTER.zielSet(ziel);
+  gesperrtPruefen(ziel, set);
   quellePruefen(ziel);
   const src = ziel.src;
   await farbeVariableAufloesen(CFG.farbe);
-  normalisieren(src);
+  if (!ohneNormalisieren) normalisieren(src);
   const kl = ziel.klasse;
-  const set = ADAPTER.zielSet(ziel);
   const zellen = [];
 
   for (const g of CFG.groessen) {
@@ -2089,67 +2451,556 @@ async function vorschau(ziel, snap) {
   return { name: ziel.name, klasse: kl, kl: kl, zellen: zellen };
 }
 
+// --- Gemeinsame Messungen (Audit und Bericht) -----------------------------
+// Live gemessen wird an der gebauten Variante, nicht an der Source. Audit und
+// Bericht teilen sich diese drei Helfer, damit beide dasselbe Maß nehmen.
+
+// Ablage für Stroke-Fassungen bereits vorhanden? (ohne sie anzulegen)
+function strokeHeimVorhanden(ziel) {
+  try { return ADAPTER.strokeHeimDa ? !!ADAPTER.strokeHeimDa(ziel) : false; } catch (e) { return false; }
+}
+
+// Keyline: gemessenes Maß auf der Klassenachse gegen das Soll der Größe.
+function messKeyline(v, g, kl) {
+  const m = gb(v);
+  if (!m) return null;
+  const ist = massAuf(m, achseVon(kl));
+  const soll = keylineVon(g, kl);
+  return { ist: ist, soll: soll, ok: Math.abs(ist - soll) < 0.05 };
+}
+
+// Rasterlage der geraden Kanten — nur sinnvoll, wenn die Variante ein Vektor ist.
+function messRaster(v, g) {
+  const kind = v.children[0];
+  if (!kind || kind.type !== 'VECTOR') return null;
+  return rasterRate(kind, g.raster);
+}
+
+// Struktur: genau ein Vektor, keine Restkontur, Farbe gebunden, keine engen Lücken.
+// `kleinste` schaltet die Lückenprüfung zu (nur bei der kleinsten Größe aussagekräftig).
+function messStruktur(v, name, N, kleinste) {
+  const texte = [];
+  if (v.children.length !== 1) texte.push(t('audit.knoten', { name: name, N: N, n: v.children.length }));
+  const kind = v.children[0];
+  if (!kind) return texte;
+  if (kind.type !== 'VECTOR') texte.push(t('audit.typ', { name: name, N: N, typ: kind.type }));
+  if ((kind.strokes || []).length) texte.push(t('audit.restkontur', { name: name, N: N }));
+  if (CFG.farbe.modus === 'variable') {
+    const fb = kind.fills && kind.fills[0] && kind.fills[0].boundVariables;
+    if (!(fb && fb.color)) texte.push(t('audit.farbe', { name: name, N: N }));
+  }
+  if (kleinste && kind.type === 'VECTOR')
+    engeLuecken(kind).forEach(l => texte.push(t('audit.luecke', { name: name, N: N, wert: l.toFixed(2) })));
+  return texte;
+}
+
 // --- Audit -----------------------------------------------------------------
+// Abbrechbar: das Flag wird zwischen zwei Icons geprüft, Teilergebnisse bleiben gültig.
 
 async function audit() {
   let treffer = 0, gesamt = 0, rasterAuf = 0, rasterGesamt = 0, veraltet = 0;
   const abw = [];
   const ziele = await ADAPTER.alle();
   const kleinste = CFG.groessen.length ? CFG.groessen[0].N : null;
-  const farbeGebunden = CFG.farbe.modus === 'variable';
+  let geprueft = 0, abgebrochen = false;
 
   for (const ziel of ziele) {
+    if (abbruchAktiv()) { abgebrochen = true; break; }
+    geprueft++;
+    ui({ type: 'progress', i: geprueft, n: ziele.length, name: ziel.name });
     const name = ziel.name;
     const src = ziel.src;
     if (!src) { abw.push(t('audit.keineSource', { name: name })); continue; }
     const kl = ziel.klasse;
-    const achse = achseVon(kl);
 
     schiefeWinkel(src).forEach(w => abw.push(t('audit.schiefeKante', { name: name, wert: w })));
 
-    const set = ADAPTER.zielSet(ziel);
+    const set = await ADAPTER.zielSet(ziel);
     if (!set) { abw.push(t('audit.keinSet', { name: name })); continue; }
 
-    const pd = set.getPluginData ? set.getPluginData(PD_SCHLUESSEL) : '';
-    if (pd) {
-      try {
-        const d = JSON.parse(pd);
-        if (d.quelle && d.quelle !== fingerabdruck(src)) {
-          veraltet++; abw.push(t('audit.veraltet', { name: name }));
-        }
-      } catch (e) {}
-    }
+    if (istVeraltet(set, src)) { veraltet++; abw.push(t('audit.veraltet', { name: name })); }
 
     for (const g of CFG.groessen) {
       const N = g.N;
       const v = set.children.find(c => c.name === variantenName(N));
       if (!v) continue;
 
-      // Keyline
-      const m = gb(v); if (!m) continue;
-      const ist = massAuf(m, achse);
-      const soll = keylineVon(g, kl);
-      gesamt++;
-      if (Math.abs(ist - soll) < 0.05) treffer++;
-      else abw.push(t('audit.keyline', { name: name, klasse: kl, N: N, ist: ist.toFixed(3), soll: soll }));
-
-      // Struktur: genau ein Vektor, keine Kontur, Farbe gebunden
-      if (v.children.length !== 1) abw.push(t('audit.knoten', { name: name, N: N, n: v.children.length }));
-      const kind = v.children[0];
-      if (!kind) continue;
-      if (kind.type !== 'VECTOR') abw.push(t('audit.typ', { name: name, N: N, typ: kind.type }));
-      if ((kind.strokes || []).length) abw.push(t('audit.restkontur', { name: name, N: N }));
-      if (farbeGebunden) {
-        const fb = kind.fills && kind.fills[0] && kind.fills[0].boundVariables;
-        if (!(fb && fb.color)) abw.push(t('audit.farbe', { name: name, N: N }));
+      const k = messKeyline(v, g, kl);
+      if (k) {
+        gesamt++;
+        if (k.ok) treffer++;
+        else abw.push(t('audit.keyline', { name: name, klasse: kl, N: N, ist: k.ist.toFixed(3), soll: k.soll }));
       }
-      const rr = kind.type === 'VECTOR' ? rasterRate(kind, g.raster) : null;
+
+      messStruktur(v, name, N, N === kleinste).forEach(z => abw.push(z));
+
+      const rr = messRaster(v, g);
       if (rr) { rasterAuf += rr.auf; rasterGesamt += rr.gesamt; }
-      if (N === kleinste && kind.type === 'VECTOR')
-        engeLuecken(kind).forEach(l => abw.push(t('audit.luecke', { name: name, N: N, wert: l.toFixed(2) })));
+    }
+    await tick();
+  }
+  return {
+    treffer: treffer, gesamt: gesamt, abw: abw,
+    rasterAuf: rasterAuf, rasterGesamt: rasterGesamt, veraltet: veraltet,
+    geprueft: geprueft, n: ziele.length, abgebrochen: abgebrochen
+  };
+}
+
+// ===== 65-plan.js =====
+// ===========================================================================
+// 65-plan.js — Trockenlauf (Abschnitt 15) und Sperr-Prüfung.
+// `planen` fasst zusammen, was ein Bau ändern WÜRDE, und fasst dabei nichts an:
+// keine Komponente, kein Frame, kein pluginData. Alles, was 60-build mutiert,
+// steht hier nur als Aussage.
+// ===========================================================================
+
+// Ab dieser Knotenzahl im File wird nicht mehr nach Instanzen gesucht — das
+// Zählen kostet sonst mehr Zeit als der ganze Bau.
+const PLAN_KNOTEN_GRENZE = 50000;
+
+// --- Sperren ---------------------------------------------------------------
+// Gesperrt ist ein Ziel, wenn die Source, das Set oder eine Variante `locked` ist.
+// (Figma vererbt `locked` nicht nach unten; wir prüfen die drei Ebenen einzeln.)
+function gesperrtInfo(ziel, set) {
+  const kandidaten = [];
+  if (ziel && ziel.src) kandidaten.push(ziel.src);
+  if (ziel && ziel.frame) kandidaten.push(ziel.frame);
+  if (set) {
+    kandidaten.push(set);
+    try { set.children.forEach(c => kandidaten.push(c)); } catch (e) {}
+  }
+  for (const k of kandidaten) {
+    let l = false;
+    try { l = !!k.locked; } catch (e) { l = false; }
+    if (l) return { gesperrt: true, nodeId: k.id || null };
+  }
+  return { gesperrt: false, nodeId: null };
+}
+
+function gesperrtPruefen(ziel, set) {
+  const g = gesperrtInfo(ziel, set);
+  if (g.gesperrt) throw new PipelineFehler('GESPERRT', { name: ziel.name }, g.nodeId);
+}
+
+// --- Instanzen zählen ------------------------------------------------------
+// Ergebnis: Map(KomponentenId → Anzahl Instanzen) oder null, wenn das File zu
+// groß ist bzw. eine Seite sich nicht durchsuchen lässt.
+async function planInstanzenIndex() {
+  try { await figma.loadAllPagesAsync(); } catch (e) {}
+  const karte = new Map();
+  let knoten = 0;
+  for (const seite of figma.root.children) {
+    let alle;
+    try {
+      try { await seite.loadAsync(); } catch (e) {}
+      alle = seite.findAllWithCriteria ? seite.findAllWithCriteria({ types: ['INSTANCE'] })
+                                       : seite.findAll(n => n.type === 'INSTANCE');
+    } catch (e) { return null; }
+    knoten += alle.length;                       // hier: Instanzen, nicht alle Knoten
+    if (knoten > PLAN_KNOTEN_GRENZE) return null;
+    for (const n of alle) {
+      let mc = null;
+      try { mc = await n.getMainComponentAsync(); } catch (e) { mc = null; }
+      if (!mc) continue;
+      karte.set(mc.id, (karte.get(mc.id) || 0) + 1);
     }
   }
-  return { treffer: treffer, gesamt: gesamt, abw: abw, rasterAuf: rasterAuf, rasterGesamt: rasterGesamt, veraltet: veraltet };
+  return karte;
+}
+
+// Instanzen eines Sets = Summe über seine Varianten.
+function planInstanzenVon(karte, set) {
+  if (!karte) return null;
+  if (!set) return 0;
+  let n = 0;
+  try { set.children.forEach(c => { n += karte.get(c.id) || 0; }); } catch (e) {}
+  return n;
+}
+
+// --- Trockenlauf -----------------------------------------------------------
+
+async function planen(ziele, snap, stroke) {
+  const karte = await planInstanzenIndex();
+  const eintraege = [];
+  const zus = {
+    aendern: 0, neu: 0, fehlen: 0, gesperrt: 0,
+    instanzen: karte ? 0 : null, strokeHeim: false
+  };
+  const mg = CFG.master.groesse;
+  const darfHeim = !!(CFG.schreiben && CFG.schreiben.strokeHeimAnlegen);
+
+  for (const ziel of ziele) {
+    if (abbruchAktiv()) break;
+    const warnungen = [];
+
+    let set = null;
+    try { set = await ADAPTER.zielSet(ziel); } catch (e) { set = null; }
+
+    // Source-Lage
+    if (!ziel.src) {
+      if (ziel.frame) warnungen.push(t((CFG.schreiben && CFG.schreiben.frameUmwandeln)
+        ? 'plan.frameWandeln' : 'plan.frameNichtErlaubt'));
+      else warnungen.push(t('plan.keineSource'));
+    } else if (Math.abs(ziel.src.width - mg) > 0.5 || Math.abs(ziel.src.height - mg) > 0.5) {
+      warnungen.push(t('plan.sourceMass', {
+        ist: Math.round(ziel.src.width * 100) / 100 + ' × ' + Math.round(ziel.src.height * 100) / 100,
+        soll: mg + ' × ' + mg
+      }));
+    }
+
+    // Varianten
+    const vorhanden = [], fehlen = [], fremd = [];
+    if (set) {
+      CFG.groessen.forEach(g => {
+        const da = set.children.some(c => c.name === variantenName(g.N));
+        (da ? vorhanden : fehlen).push(g.N);
+      });
+      set.children.forEach(c => {
+        const n = variantenN(c.name);
+        if (n != null && !CFG.groessen.some(g => g.N === n)) fremd.push(n);
+      });
+    } else {
+      CFG.groessen.forEach(g => fehlen.push(g.N));
+    }
+
+    const aktion = set ? 'aendern' : 'neu';
+    if (set) {
+      if (fehlen.length) warnungen.push(t('plan.fehlendeVarianten', { n: fehlen.length }));
+      if (fremd.length) warnungen.push(t('plan.fremdeVarianten', { n: fremd.length }));
+    } else {
+      warnungen.push(t('plan.neuesSet'));
+    }
+
+    // Stroke-Fassungen
+    if (stroke) {
+      const heimDa = strokeHeimVorhanden(ziel);
+      if (!heimDa && !darfHeim) warnungen.push(t('plan.strokeHeimAus'));
+      if (!heimDa && darfHeim && !zus.strokeHeim) {
+        zus.strokeHeim = true;
+        warnungen.push(t('plan.strokeHeimNeu'));
+      }
+    }
+
+    const sp = gesperrtInfo(ziel, set);
+    if (sp.gesperrt) warnungen.push(t('plan.gesperrt'));
+
+    const instanzen = planInstanzenVon(karte, set);
+    if (instanzen == null) warnungen.push(t('plan.instanzenUnbekannt'));
+
+    eintraege.push({
+      name: ziel.name,
+      aktion: aktion,
+      klasse: ziel.klasse,
+      klasseQuelle: ziel.klasseQuelle,
+      varianten: { vorhanden: vorhanden, fehlen: fehlen, fremd: fremd },
+      instanzen: instanzen,
+      gesperrt: sp.gesperrt,
+      warnungen: warnungen,
+      nodeId: (ziel.fokusNode && ziel.fokusNode.id) || (ziel.src && ziel.src.id) || (set && set.id) || null
+    });
+
+    if (aktion === 'neu') zus.neu++; else { zus.aendern++; zus.fehlen += fehlen.length; }
+    if (sp.gesperrt) zus.gesperrt++;
+    if (zus.instanzen != null && instanzen != null) zus.instanzen += instanzen;
+  }
+
+  return { eintraege: eintraege, zusammenfassung: zus };
+}
+
+// ===== 66-bericht.js =====
+// ===========================================================================
+// 66-bericht.js — Qualitätsbericht (Abschnitt 19).
+// Zwei Quellen: was beim letzten Bau gemessen wurde (pluginData am Set) und
+// was sich JETZT am Set messen lässt (Keyline, Raster, Struktur — dieselben
+// Helfer wie im Audit). Der Bericht ändert nichts.
+// ===========================================================================
+
+// Mehr Verlaufseinträge braucht der Trendpfeil nicht; der älteste fällt raus.
+const VERLAUF_MAX = 12;
+
+// pluginData des Sets lesen — Schlüssel bleibt 'zds' (Kompatibilität).
+// Form: { quelle, snap, zeit, fehler: {N: f}, guete: {N: {fehler, aa}}, verlauf: [{zeit, guete}] }
+function pdLesen(set) {
+  try {
+    const s = (set && set.getPluginData) ? set.getPluginData(PD_SCHLUESSEL) : '';
+    const o = JSON.parse(s || '{}');
+    return (o && typeof o === 'object') ? o : {};
+  } catch (e) { return {}; }
+}
+
+// Hat sich die Source seit dem letzten Bau geändert?
+function istVeraltet(set, src) {
+  const d = pdLesen(set);
+  if (!d.quelle || !src) return false;
+  try { return d.quelle !== fingerabdruck(src); } catch (e) { return false; }
+}
+
+// Treue eines Verlaufseintrags für eine Größe (alt: Zahl, neu: {fehler, aa}).
+function berichtTreueVon(eintrag, N) {
+  if (!eintrag) return null;
+  const w = eintrag[N];
+  if (w == null) return null;
+  if (typeof w === 'number') return w;
+  return typeof w.fehler === 'number' ? w.fehler : null;
+}
+
+async function bericht(ziele) {
+  const zeilen = [];
+  const kleinste = CFG.groessen.length ? CFG.groessen[0].N : null;
+  let icons = 0, ohneSet = 0, veraltetN = 0, keylineOk = 0, keylineGesamt = 0;
+  let tSum = 0, tN = 0, tvSum = 0, tvN = 0;
+  let geprueft = 0, abgebrochen = false;
+
+  for (const ziel of ziele) {
+    if (abbruchAktiv()) { abgebrochen = true; break; }
+    geprueft++;
+    ui({ type: 'progress', i: geprueft, n: ziele.length, name: ziel.name });
+
+    const name = ziel.name;
+    const kl = ziel.klasse;
+    let set = null;
+    try { set = await ADAPTER.zielSet(ziel); } catch (e) { set = null; }
+
+    const zeile = {
+      name: name, hatSet: !!set, veraltet: false,
+      nodeId: (ziel.fokusNode && ziel.fokusNode.id) || (ziel.src && ziel.src.id) || null,
+      groessen: {}
+    };
+    icons++;
+    if (!set) { ohneSet++; zeilen.push(zeile); await tick(); continue; }
+
+    const pd = pdLesen(set);
+    zeile.veraltet = istVeraltet(set, ziel.src);
+    if (zeile.veraltet) veraltetN++;
+
+    // Vorletzter Verlaufseintrag = Stand vor dem letzten Bau.
+    const verlauf = Array.isArray(pd.verlauf) ? pd.verlauf : [];
+    const vorige = verlauf.length >= 2 ? (verlauf[verlauf.length - 2].guete || {}) : {};
+
+    for (const g of CFG.groessen) {
+      const N = g.N;
+      const v = set.children.find(c => c.name === variantenName(N));
+      if (!v) continue;
+
+      const gd = (pd.guete && pd.guete[N]) || null;
+      const treue = gd && typeof gd.fehler === 'number'
+        ? gd.fehler
+        : ((pd.fehler && typeof pd.fehler[N] === 'number') ? pd.fehler[N] : null);
+      const aa = gd && typeof gd.aa === 'number' ? gd.aa : null;
+      const treueVorher = berichtTreueVon(vorige, N);
+
+      const k = messKeyline(v, g, kl);
+      const rr = messRaster(v, g);
+      const struktur = messStruktur(v, name, N, N === kleinste);
+
+      zeile.groessen[N] = {
+        treue: treue, aa: aa, treueVorher: treueVorher,
+        keylineIst: k ? k.ist : null,
+        keylineSoll: k ? k.soll : keylineVon(g, kl),
+        keylineOk: k ? k.ok : false,
+        raster: rr || { auf: 0, gesamt: 0 },
+        struktur: struktur
+      };
+
+      if (k) { keylineGesamt++; if (k.ok) keylineOk++; }
+      if (typeof treue === 'number') { tSum += treue; tN++; }
+      if (typeof treueVorher === 'number') { tvSum += treueVorher; tvN++; }
+    }
+
+    zeilen.push(zeile);
+    await tick();
+  }
+
+  return {
+    zeilen: zeilen,
+    zusammenfassung: {
+      icons: icons, ohneSet: ohneSet, veraltet: veraltetN,
+      treueMittel: tN ? tSum / tN : null,
+      treueMittelVorher: tvN ? tvSum / tvN : null,
+      keylineOk: keylineOk, keylineGesamt: keylineGesamt
+    },
+    zeit: Date.now(),
+    geprueft: geprueft, n: ziele.length, abgebrochen: abgebrochen
+  };
+}
+
+// ===== 67-export.js =====
+// ===========================================================================
+// 67-export.js — Dev-Export (Abschnitt 20).
+// Liefert fertige Dateiinhalte an die UI; das ZIP baut die UI. Der Export
+// ändert nichts im File und exportiert nur, was schon gebaut ist.
+// ===========================================================================
+
+const EXPORT_UMLAUTE = { 'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'ß': 'ss', 'å': 'a', 'æ': 'ae', 'ø': 'o' };
+
+// 'Pfeil Links (24)' → 'pfeil-links-24'
+function exportDateiname(name) {
+  let s = String(name == null ? '' : name).toLowerCase().trim();
+  s = s.replace(/[äöüßåæø]/g, z => EXPORT_UMLAUTE[z] || z);
+  s = s.replace(/[\s/\\]+/g, '-').replace(/[^a-z0-9._-]/g, '-').replace(/-{2,}/g, '-');
+  s = s.replace(/^[-.]+/, '').replace(/[-.]+$/, '');
+  return s || 'icon';
+}
+
+// Hex-Farben zu currentColor, Maße am Wurzel-<svg> raus, viewBox bleibt.
+// Bewusst textuell: Figma liefert flaches, vorhersagbares SVG.
+function exportSvgAufbereiten(svg) {
+  let s = String(svg == null ? '' : svg);
+  s = s.replace(/(fill|stroke)="#[0-9a-fA-F]{3,8}"/g, '$1="currentColor"');
+  s = s.replace(/(fill|stroke)\s*:\s*#[0-9a-fA-F]{3,8}/g, '$1:currentColor');
+  // Nur das Wurzelelement anfassen — <use width> in Symbolen bleibt unberührt.
+  s = s.replace(/<svg\b[^>]*>/, tag => tag.replace(/\s(?:width|height)="[^"]*"/g, ''));
+  return s;
+}
+
+// Suchbegriffe und Beschreibung: im ZDS-Board steht die Wahrheit in der Zelle
+// 'meta · keywords' der Karte, sonst in der Set-Beschreibung.
+function exportMeta(ziel, set) {
+  let beschreibung = '';
+  try { beschreibung = String(set.description || ''); } catch (e) { beschreibung = ''; }
+
+  let roh = '';
+  const karte = ziel && ziel.karte;
+  if (karte && karte.children) {
+    const mk = karte.children.find(c => c.name === 'meta · keywords');
+    const txt = mk && mk.children && mk.children[1] ? mk.children[1].characters : null;
+    if (txt && !/\{keywords/.test(txt)) roh = txt;
+  }
+  if (!roh) {
+    const m = /(?:Suchbegriffe|Keywords):\s*([^\n]+)/.exec(beschreibung);
+    if (m) roh = m[1];
+  }
+  // Der Suchbegriff-Block gehört nicht in die Beschreibung.
+  beschreibung = beschreibung.replace(/\n*(?:Suchbegriffe|Keywords):[^\n]*/, '').trim();
+
+  const keywords = roh
+    ? roh.split(/[,;·|]/).map(x => x.trim()).filter(Boolean)
+    : [];
+  return { keywords: keywords, beschreibung: beschreibung };
+}
+
+async function exportieren(ziele) {
+  const dateien = [], fehlend = [], manifest = [];
+  let geprueft = 0, abgebrochen = false;
+
+  for (const ziel of ziele) {
+    if (abbruchAktiv()) { abgebrochen = true; break; }
+    geprueft++;
+    ui({ type: 'progress', i: geprueft, n: ziele.length, name: ziel.name });
+
+    let set = null;
+    try { set = await ADAPTER.zielSet(ziel); } catch (e) { set = null; }
+    if (!set) {
+      fehlend.push(ziel.name);
+      melden('warn', 'EXPORT_FEHLT', { name: ziel.name },
+        (ziel.fokusNode && ziel.fokusNode.id) || (ziel.src && ziel.src.id) || null);
+      await tick();
+      continue;
+    }
+
+    const basis = exportDateiname(ziel.name);
+    const groessen = [];
+    for (const g of CFG.groessen) {
+      const v = set.children.find(c => c.name === variantenName(g.N));
+      if (!v) continue;
+      let svg = null;
+      try {
+        svg = await v.exportAsync({ format: 'SVG_STRING', svgOutlineText: true, svgIdAttribute: false });
+      } catch (e) { svg = null; }
+      if (svg == null) continue;
+      dateien.push({ pfad: basis + '/' + basis + '-' + g.N + '.svg', inhalt: exportSvgAufbereiten(svg) });
+      groessen.push(g.N);
+    }
+
+    const meta = exportMeta(ziel, set);
+    manifest.push({
+      name: ziel.name, groessen: groessen,
+      keywords: meta.keywords, beschreibung: meta.beschreibung
+    });
+    await tick();
+  }
+
+  dateien.push({ pfad: 'manifest.json', inhalt: JSON.stringify(manifest, null, 2) });
+
+  return {
+    dateien: dateien, fehlend: fehlend, icons: manifest.length,
+    geprueft: geprueft, n: ziele.length, abgebrochen: abgebrochen
+  };
+}
+
+// ===== 68-beispiel.js =====
+// ===========================================================================
+// 68-beispiel.js — Beispiel-Icon für den Leerzustand (Abschnitt 21).
+// Ein Kreis plus Querbalken im Master-Maß: genug Geometrie, damit Keyline-Fit,
+// Snapping und Flatten sichtbar etwas tun. Nur im Frei-Modus — im ZDS-Board
+// gehören neue Icons auf eine Karte, nicht irgendwohin auf die Seite.
+// ===========================================================================
+
+const BEISPIEL_NAME = 'demo-icon';
+
+async function beispielAnlegen(snap) {
+  if (!ADAPTER || ADAPTER.name !== 'frei') {
+    logZeile('warn', t('beispiel.nurFrei'));
+    return null;
+  }
+
+  const g = CFG.master.groesse;
+  const w = CFG.master.kontur;
+  const seite = figma.currentPage;
+  const tinte = [{ type: 'SOLID', color: { r: 0.267, g: 0.267, b: 0.267 } }];
+
+  const comp = figma.createComponent();
+  comp.name = BEISPIEL_NAME;
+  comp.resize(g, g);
+  comp.fills = [];
+  comp.clipsContent = false;
+  seite.appendChild(comp);
+
+  // Rechts neben der Viewport-Mitte; auf einer leeren Seite schlicht bei (0,0).
+  if (seite.children.length > 1) {
+    let c = null;
+    try { c = figma.viewport.center; } catch (e) { c = null; }
+    comp.x = c ? Math.round(c.x + g * 0.75) : 0;
+    comp.y = c ? Math.round(c.y - g / 2) : 0;
+  } else { comp.x = 0; comp.y = 0; }
+
+  // Kreis auf der Circular-Keyline.
+  const d = Math.max(1, Math.min(CFG.master.keylines.Circular, g));
+  const ell = figma.createEllipse();
+  comp.appendChild(ell);
+  ell.name = 'Kreis';
+  ell.resize(d, d);
+  ell.x = (g - d) / 2; ell.y = (g - d) / 2;
+  ell.fills = [];
+  ell.strokes = tinte;
+  ell.strokeWeight = w;
+  try { ell.strokeAlign = 'CENTER'; } catch (e) {}
+
+  // Waagerechte Linie durch die Mitte, 60 % der Square-Keyline, runde Kappen.
+  const laenge = Math.max(1, CFG.master.keylines.Square * 0.6);
+  const linie = figma.createLine();
+  comp.appendChild(linie);
+  linie.name = 'Balken';
+  linie.resize(laenge, 0);
+  linie.x = (g - laenge) / 2; linie.y = g / 2;
+  linie.strokes = tinte;
+  linie.strokeWeight = w;
+  try { linie.strokeCap = 'ROUND'; } catch (e) {}
+
+  figma.currentPage.selection = [comp];
+  logZeile('info', t('log.beispielAngelegt', { name: BEISPIEL_NAME }), comp.id);
+
+  // Gleich das Set daneben bauen — dafür ist das Beispiel da.
+  let ziel = null;
+  try { ziel = await ADAPTER.aufloesen(comp); } catch (e) { ziel = null; }
+  if (ziel) {
+    const text = await einIcon(ziel, !!snap, false);
+    logZeile('ok', text, comp.id);
+  }
+
+  // Ein Undo-Schritt für Komponente und Set.
+  try { figma.commitUndo(); } catch (e) {}
+  return comp;
 }
 
 // ===== 70-main.js =====
@@ -2163,6 +3014,13 @@ let aktivesZiel = null;
 let bereit = false;
 let auswahlHaengt = false;
 let uiSprache = null;   // von der UI beim init gemeldet (navigator.language), für Sprache "auto"
+
+// Abbruch-Flag für die langen Schleifen (alle, audit, bericht, exportieren).
+// Es wird zwischen zwei Icons geprüft — ein laufendes Icon wird fertig gebaut,
+// damit kein halbes Set zurückbleibt.
+let ABBRUCH = false;
+
+function abbruchAktiv() { return ABBRUCH === true; }
 
 figma.showUI(__html__, { width: 440, height: 700, themeColors: true });
 
@@ -2184,7 +3042,9 @@ function konfigSenden(pruef) {
     konfig: CFG,
     fehler: pruef ? pruef.fehler : [],
     adapter: ADAPTER ? ADAPTER.name : null,
-    profile: PROFIL_NAMEN
+    profile: PROFIL_NAMEN,
+    // Defensiv: läuft das Plugin gegen eine ältere 00-config.js, fehlt die Funktion.
+    profilInfo: typeof konfigProfilInfo === 'function' ? konfigProfilInfo() : []
   });
 }
 
@@ -2196,7 +3056,7 @@ async function auswahlMelden() {
   try { ziel = sel ? await ADAPTER.aufloesen(sel) : null; } catch (e) { ziel = null; }
   aktivesZiel = ziel;
   let hatSet = false;
-  if (ziel) { try { hatSet = !!ADAPTER.zielSet(ziel); } catch (e) { hatSet = false; } }
+  if (ziel) { try { hatSet = !!(await ADAPTER.zielSet(ziel)); } catch (e) { hatSet = false; } }
   ui({
     type: 'auswahl',
     ziel: ziel ? {
@@ -2221,6 +3081,22 @@ async function zielVerlangen() {
   return ziel;
 }
 
+// Ziel ohne Nebenwirkung auflösen (für die temporäre Vorschau: die Auswahlzeile
+// soll nicht mit einer ungespeicherten Konfig überschrieben werden).
+async function zielStill() {
+  const sel = figma.currentPage.selection[0];
+  let ziel = null;
+  try { ziel = sel ? await ADAPTER.aufloesen(sel) : null; } catch (e) { ziel = null; }
+  if (!ziel) throw new PipelineFehler('KEIN_ZIEL');
+  return ziel;
+}
+
+// Umfang 'alle' → alle Ziele des Adapters, sonst das aktuell ausgewählte.
+async function zieleFuer(umfang) {
+  if (umfang === 'alle') return await ADAPTER.alle();
+  return [await zielVerlangen()];
+}
+
 async function fokussieren(node) {
   if (!node) return;
   try {
@@ -2231,9 +3107,22 @@ async function fokussieren(node) {
   } catch (e) {}
 }
 
+function fazitAbgebrochen(i, n) {
+  melden('warn', 'ABGEBROCHEN', { i: i, n: n });
+  ui({ type: 'fazit', gut: false, text: t('fazit.abgebrochen2', { i: i, n: n }) });
+}
+
 figma.ui.onmessage = async m => {
   // Messwerte kommen mitten im Bau zurück — nie durch den Try/Fertig-Block.
   if (m.type === 'messwert') { messwertEinloesen(m.id, m.werte); return; }
+
+  // Abbruch muss ankommen, WÄHREND eine Schleife läuft — also kein 'fertig'
+  // und keine Initialisierung, nur das Flag setzen.
+  if (m.type === 'abbrechen') {
+    ABBRUCH = true;
+    logZeile('info', t('log.abbruchAngefordert'));
+    return;
+  }
 
   try {
     if (m.type === 'init') {
@@ -2241,7 +3130,7 @@ figma.ui.onmessage = async m => {
       const pruef = await initialisieren(uiSprache);
       konfigSenden(pruef);
       const sch = await schalterLaden();
-      ui({ type: 'einstellungen', snap: sch.snap, stroke: sch.stroke });
+      ui({ type: 'einstellungen', snap: sch.snap, stroke: sch.stroke, trockenlaufEinzel: sch.trockenlaufEinzel });
       await auswahlMelden();
       figma.on('selectionchange', auswahlAnstossen);
       ui({ type: 'fertig' });
@@ -2251,7 +3140,7 @@ figma.ui.onmessage = async m => {
     if (!bereit) await initialisieren(null);
 
     if (m.type === 'einstellung') {
-      await schalterSpeichern(m.snap, m.stroke);
+      await schalterSpeichern(m.snap, m.stroke, m.trockenlaufEinzel);
       return; // kein 'fertig' — darf einen laufenden Batch nicht entsperren
     }
 
@@ -2327,10 +3216,23 @@ figma.ui.onmessage = async m => {
       return;
     }
 
+    // --- Trockenlauf: ändert nichts, beantwortet nur „was würde passieren“ ---
+    if (m.type === 'planen') {
+      ABBRUCH = false;
+      const umfang = m.umfang === 'alle' ? 'alle' : 'auswahl';
+      const ziele = await zieleFuer(umfang);
+      const p = await planen(ziele, !!m.snap, !!m.stroke);
+      ui({ type: 'plan', eintraege: p.eintraege, zusammenfassung: p.zusammenfassung, umfang: umfang });
+      logZeile('info', t('log.planFertig', { n: p.eintraege.length }));
+    }
+
     if (m.type === 'run') {
+      ABBRUCH = false;
       const ziel = await zielVerlangen();
       const text = await einIcon(ziel, !!m.snap, !!m.stroke);
       logZeile('ok', text, ziel.fokusNode ? ziel.fokusNode.id : null);
+      try { figma.commitUndo(); } catch (e) {}
+      logZeile('info', t('log.undo', { name: ziel.name }));
       ui({ type: 'fazit', gut: true, text: t('fazit.neuGebaut'), beiAuswahl: true });
     }
 
@@ -2340,10 +3242,30 @@ figma.ui.onmessage = async m => {
       ui(Object.assign({ type: 'diff', snap: !!m.snap }, d));
     }
 
+    // --- Vorschau mit ungespeicherter Konfig: CFG temporär, immer zurück ---
+    if (m.type === 'vorschauMit') {
+      const pruef = konfigValidieren(m.konfig);
+      const merkCfg = CFG;
+      try {
+        CFG = pruef.konfig;
+        CTX.farbVariable = null; CTX.farbSchluessel = null;
+        await farbeVariableAufloesen(CFG.farbe);
+        const ziel = await zielStill();
+        const d = await vorschau(ziel, !!m.snap, true);   // Source nicht normalisieren (ungespeicherte Konfig)
+        ui(Object.assign({ type: 'diff', snap: !!m.snap, temporaer: true }, d));
+      } finally {
+        CFG = merkCfg;
+        CTX.farbVariable = null; CTX.farbSchluessel = null;
+        await farbeVariableAufloesen(CFG.farbe);
+      }
+    }
+
     if (m.type === 'audit') {
+      ABBRUCH = false;
       const r = await audit();
       r.abw.forEach(z => logZeile('warn', z));
-      ui({
+      if (r.abgebrochen) fazitAbgebrochen(r.geprueft, r.n);
+      else ui({
         type: 'fazit', gut: r.abw.length === 0,
         text: t('fazit.audit', {
           treffer: r.treffer, gesamt: r.gesamt, rAuf: r.rasterAuf, rGesamt: r.rasterGesamt,
@@ -2353,9 +3275,11 @@ figma.ui.onmessage = async m => {
     }
 
     if (m.type === 'alle') {
+      ABBRUCH = false;
       const ziele = await ADAPTER.alle();
-      let ok = 0;
-      for (let i = 0; i < ziele.length; i++) {
+      let ok = 0, i = 0, abgebrochen = false;
+      for (; i < ziele.length; i++) {
+        if (abbruchAktiv()) { abgebrochen = true; break; }
         ui({ type: 'progress', i: i + 1, n: ziele.length, name: ziele[i].name });
         try {
           const text = await einIcon(ziele[i], !!m.snap, !!m.stroke);
@@ -2366,17 +3290,70 @@ figma.ui.onmessage = async m => {
         try { figma.commitUndo(); } catch (e) {}
         await tick();
       }
-      logZeile('info', t('audit.laeuft'));
-      const r = await audit();
-      r.abw.forEach(z => logZeile('warn', z));
-      ui({
-        type: 'fazit', gut: ok === ziele.length && r.abw.length === 0,
-        text: t('fazit.alle', {
-          ok: ok, n: ziele.length, treffer: r.treffer, gesamt: r.gesamt,
-          rAuf: r.rasterAuf, rGesamt: r.rasterGesamt,
-          veraltet: r.veraltet ? t('fazit.veraltet', { n: r.veraltet }) : ''
+      // Ein Undo-Schritt je Icon — das gehört ins Protokoll, sonst sucht man danach.
+      if (i) logZeile('info', t('log.undoBatch', { n: i }));
+
+      if (abgebrochen) {
+        fazitAbgebrochen(i, ziele.length);
+      } else {
+        logZeile('info', t('audit.laeuft'));
+        const r = await audit();
+        r.abw.forEach(z => logZeile('warn', z));
+        if (r.abgebrochen) fazitAbgebrochen(r.geprueft, r.n);
+        else ui({
+          type: 'fazit', gut: ok === ziele.length && r.abw.length === 0,
+          text: t('fazit.alle', {
+            ok: ok, n: ziele.length, treffer: r.treffer, gesamt: r.gesamt,
+            rAuf: r.rasterAuf, rGesamt: r.rasterGesamt,
+            veraltet: r.veraltet ? t('fazit.veraltet', { n: r.veraltet }) : ''
+          })
+        });
+      }
+    }
+
+    // --- Qualitätsbericht -------------------------------------------------
+    if (m.type === 'bericht') {
+      ABBRUCH = false;
+      logZeile('info', t('log.berichtLaeuft'));
+      const ziele = await ADAPTER.alle();
+      const b = await bericht(ziele);
+      ui({ type: 'bericht', zeilen: b.zeilen, zusammenfassung: b.zusammenfassung, zeit: b.zeit });
+      const z = b.zusammenfassung;
+      if (b.abgebrochen) fazitAbgebrochen(b.geprueft, b.n);
+      else ui({
+        type: 'fazit', gut: z.keylineOk === z.keylineGesamt && !z.ohneSet,
+        text: t('fazit.bericht', {
+          icons: z.icons,
+          treue: z.treueMittel == null ? '—' : z.treueMittel.toFixed(3),
+          ok: z.keylineOk, gesamt: z.keylineGesamt,
+          ohneSet: z.ohneSet ? t('fazit.berichtOhneSet', { n: z.ohneSet }) : ''
         })
       });
+    }
+
+    // --- SVG-Export (die UI packt daraus das ZIP) -------------------------
+    if (m.type === 'exportieren') {
+      ABBRUCH = false;
+      logZeile('info', t('log.exportLaeuft'));
+      const umfang = m.umfang === 'alle' ? 'alle' : 'auswahl';
+      const ziele = await zieleFuer(umfang);
+      const e = await exportieren(ziele);
+      ui({ type: 'exportDaten', dateien: e.dateien, fehlend: e.fehlend });
+      if (e.abgebrochen) fazitAbgebrochen(e.geprueft, e.n);
+      else ui({
+        type: 'fazit', gut: e.fehlend.length === 0,
+        text: t('fazit.export', {
+          dateien: e.dateien.length, icons: e.icons,
+          fehlend: e.fehlend.length ? t('fazit.exportFehlend', { n: e.fehlend.length }) : ''
+        })
+      });
+    }
+
+    // --- Beispiel-Icon für den Leerzustand --------------------------------
+    if (m.type === 'beispielAnlegen') {
+      ABBRUCH = false;
+      await beispielAnlegen(!!m.snap);
+      await auswahlMelden();
     }
   } catch (e) {
     ui(fehlerLog(e));

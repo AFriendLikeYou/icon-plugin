@@ -19,3 +19,13 @@ fs.writeFileSync(path.join(hier, 'code.js'), kopf + teile.join('\n'));
 execFileSync(process.execPath, ['--check', path.join(hier, 'code.js')], { stdio: 'inherit' });
 console.log('code.js gebaut aus', dateien.join(', '));
 execFileSync(process.execPath, [path.join(hier, 'gen-ui.mjs')], { stdio: 'inherit' });
+
+// Kopftest zum Schluss: prüft den Quellstand (Konfig, i18n, Snapping-Regression,
+// Nachrichtenvertrag UI ↔ Main). Fehler → Exit ≠ 0, damit der Bau auffällt.
+const testDatei = path.join(hier, 'test', 'run.mjs');
+if (fs.existsSync(testDatei)) {
+  try { execFileSync(process.execPath, [testDatei], { stdio: 'inherit' }); }
+  catch (e) { console.error('Tests fehlgeschlagen — siehe oben.'); process.exit(1); }
+} else {
+  console.warn('Hinweis: test/run.mjs fehlt — nicht getestet.');
+}
