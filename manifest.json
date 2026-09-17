@@ -1,8 +1,11 @@
 {
-  "name": "ZDS Icon Pipeline",
+  "name": "Icon Pipeline",
   "id": "zds-icon-pipeline-dev",
   "api": "1.0.0",
   "main": "code.js",
   "ui": "ui.html",
-  "editorType": ["figma"]
+  "editorType": ["figma"],
+  "permissions": ["teamlibrary"],
+  "documentAccess": "dynamic-page",
+  "networkAccess": { "allowedDomains": ["none"] }
 }
