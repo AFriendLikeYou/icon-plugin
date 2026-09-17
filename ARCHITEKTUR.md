@@ -290,3 +290,144 @@ keine Per-Ecke-Radiensteuerung, keine Speicherung der Konfig außerhalb des File
 `node build.mjs` → schreibt code.js und ui.html. Jedes Paket muss `node --check code.js` bestehen und darf
 keine `import`/`export`-Anweisungen in `src/main/*.js` enthalten. Figma-API kann nicht headless getestet werden;
 manuell testen im ZDS-File (Profil zds) und in einem leeren File mit einer 24er-Komponente (Profil generic).
+
+---
+
+# Runde 3 — „Bezahl-Qualität“ (2026-09-17)
+
+Ergänzt v2. Neue Dateien: `src/main/06-i18n-zusatz.js`, `src/main/65-plan.js`, `src/main/66-bericht.js`,
+`src/main/67-export.js`, `src/main/68-beispiel.js`, `test/`, `docs/`. Paketzuschnitt siehe Abschnitt 22.
+
+## 14. Konfig-Erweiterungen (`00-config.js`)
+
+```js
+schreiben: {                       // Mutationen außerhalb des Ziel-Sets — Standard konservativ
+  frameUmwandeln: false,           // FRAME im Master-Maß in Komponente wandeln (nur beim Bauen)
+  strokeHeimAnlegen: true,         // Frame für Stroke-Fassungen anlegen dürfen
+},
+```
+- `konfigValidieren` liefert `fehler` jetzt STRUKTURIERT: `[{ pfad: 'groessen.1.kontur', text }]`. `pfad` folgt den
+  `data-pfad`-Attributen der UI (`master.groesse`, `groessen.<index>.keylines.Square`, `farbe.hex`, `variantenProperty`,
+  `adapter`, `sprache`; Listen-Fehler wie „keine Größen“ mit `pfad: 'groessen'`). Index bezieht sich auf die
+  SORTIERTE Liste.
+- Neue Profile in `PROFILE`, `PROFIL_NAMEN = ['zds','generic','material','lucide','apple']`:
+  - **material**: master 24 / kontur 2 / keylines {Square 18, Circular 20, Wide 20, Tall 20}; groessen 18 (1.5, {13.5,15,15,15}),
+    24 (2, {18,20,20,20}, standard, grob 1), 36 (3, {27,30,30,30}, grob 1), 48 (4, {36,40,40,40}, grob 1); raster .5; radius proportional; farbe source.
+  - **lucide**: master 24 / 2 / {22,22,22,22}; groessen 16 (1.5, {14.5,…}), 20 (1.5, {18.5,…}), 24 (2, {22,…}, standard, grob 1),
+    32 (2.5, {29.5,…}, grob 1), 48 (4, {44,…}, grob 1); farbe source.
+  - **apple**: master 28 / 2 / {21,22,22,22}; groessen 16 (1.5, {12,12.5,12.5,12.5}), 20 (1.5, {15,15.5,15.5,15.5}),
+    24 (2, {18,19,19,19}, standard, grob 1), 28 (2, {21,22,22,22}, grob 1), 32 (2.5, {24,25,25,25}, grob 1); farbe source.
+- `konfigProfilInfo()` → `[{ name, titel, beschreibung }]` (Texte über t: `profil.<name>.titel/.beschreibung`).
+
+## 15. Trockenlauf (`65-plan.js`)
+
+`async planen(ziele, snap, stroke)` → ohne jede Mutation:
+```js
+{ eintraege: [{ name, aktion: 'aendern'|'neu', klasse, klasseQuelle,
+    varianten: { vorhanden: [N], fehlen: [N], fremd: [N] },   // fremd = im Set, nicht in Konfig (bleiben stehen)
+    instanzen: number|null,      // Instanzen des Sets in geladenen Seiten (findAll INSTANCE mit mainComponent im Set) — null wenn zu teuer (> 50k Knoten)
+    gesperrt: bool, warnungen: [text], nodeId }],
+  zusammenfassung: { aendern, neu, fehlen, gesperrt, instanzen, strokeHeim: bool /* würde angelegt */ } }
+```
+UI→Main `planen { umfang: 'auswahl'|'alle', snap, stroke }` → Main→UI `plan { … , umfang }`. Danach `fertig`.
+`alle` und `run` prüfen `gesperrt` (Source, Set oder Variante `locked`) → `PipelineFehler('GESPERRT', {name}, nodeId)`.
+
+## 16. Abbruch, Undo, Fortschritt
+
+- UI→Main `abbrechen` setzt `ABBRUCH = true`. Die Schleifen in `alle`, `audit`, `bericht`, `exportieren` prüfen das Flag
+  zwischen zwei Icons, beenden sauber, melden `fazit` „abgebrochen nach i/n“ mit den Teilergebnissen. Flag vor jedem Lauf zurücksetzen.
+- `progress` auch für `audit`, `bericht`, `exportieren`.
+- Nach `run`: `figma.commitUndo()` und `logZeile('info', t('log.undo', { name }))`. Nach `alle`: pro Icon commitUndo (wie bisher)
+  und eine Abschlusszeile `t('log.undoBatch', { n })` (Cmd+Z je Icon).
+
+## 17. Frame-Umwandlung, Stroke-Heim
+
+- `quellePruefen`: Frame nur wandeln, wenn `CFG.schreiben.frameUmwandeln`; sonst `PipelineFehler('FRAME_NICHT_ERLAUBT', {name}, frame.id)`
+  mit Hinweis auf Einstellungen → Schreiben.
+- `strokeHeim` nur anlegen, wenn `CFG.schreiben.strokeHeimAnlegen`; sonst Stroke-Fassung überspringen mit `melden('warn','STROKEHEIM_AUS')`.
+
+## 18. Vorschau mit ungespeicherter Konfig
+
+UI→Main `vorschauMit { konfig, snap }`: Main validiert `konfig` (nicht speichern!), setzt `CFG` temporär, löst Ziel auf,
+ruft `vorschau`, stellt `CFG` in `finally` zurück, antwortet `diff { …, temporaer: true }`. Farbvariable ggf. neu auflösen und danach Cache leeren.
+
+## 19. Qualitätsbericht (`66-bericht.js`)
+
+- pluginData `'zds'` am Set erweitern: `guete: { [N]: { fehler, aa } }` (statt nur `fehler`) und `verlauf: [{ zeit, guete }]`
+  (max. 12 Einträge, ältester fällt raus). `fehler` weiterhin schreiben (Kompatibilität).
+- `async bericht(ziele)` → `{ zeilen: [{ name, hatSet, veraltet, nodeId, groessen: { [N]: { treue, aa, treueVorher, keylineIst,
+  keylineSoll, keylineOk, raster: { auf, gesamt }, struktur: [text] } } }], zusammenfassung: { icons, ohneSet, veraltet,
+  treueMittel, treueMittelVorher, keylineOk, keylineGesamt }, zeit }`.
+  treue/aa aus pluginData (letzter Bau), keyline/raster/struktur live gemessen (wie audit). UI→Main `bericht` → Main→UI `bericht {…}`.
+
+## 20. Dev-Export (`67-export.js`)
+
+UI→Main `exportieren { umfang: 'auswahl'|'alle' }` → Main→UI `exportDaten { dateien: [{ pfad, inhalt }], fehlend: [name] }`.
+- Pro Set und Variante: `exportAsync({ format: 'SVG_STRING', svgOutlineText: true, svgIdAttribute: false })`, dann
+  `fill="#xxxxxx"` und `fill:#xxxxxx` → `currentColor`, `stroke="#…"` ebenso; `width`/`height`-Attribute am Wurzelelement entfernen, `viewBox` behalten.
+- `pfad` = `<name>/<name>-<N>.svg` (Name kleingeschrieben, Leerzeichen → `-`). Zusätzlich `manifest.json` mit
+  `[{ name, groessen: [N], keywords, beschreibung }]`.
+- Die UI packt das in ein ZIP (Store-Methode, CRC32, ohne Bibliothek) und bietet `<a download="icons.zip">` an;
+  optional `sprite.svg` (`<symbol id="<name>-<N>" viewBox…>`), Schalter in der UI.
+
+## 21. Beispiel-Icon (`68-beispiel.js`)
+
+UI→Main `beispielAnlegen` (nur Frei-Modus): legt auf der aktuellen Seite eine Komponente `demo-icon` im Master-Maß an
+(Ellipse zentriert, Durchmesser = keylines.Circular, Kontur = master.kontur, plus eine waagerechte Linie durch die Mitte
+mit Länge keylines.Square·0.6), wählt sie aus, baut per `einIcon` das Set daneben und meldet `log.beispielAngelegt`.
+Alles innerhalb eines Undo-Schritts.
+
+## 22. Protokoll-Ergänzungen (Übersicht)
+
+| UI → Main | Main → UI |
+|---|---|
+| `planen {umfang, snap, stroke}` | `plan {eintraege, zusammenfassung, umfang}` |
+| `abbrechen` | — (Fazit „abgebrochen“) |
+| `vorschauMit {konfig, snap}` | `diff {…, temporaer: true}` |
+| `bericht` | `bericht {zeilen, zusammenfassung, zeit}` |
+| `exportieren {umfang}` | `exportDaten {dateien, fehlend}` |
+| `beispielAnlegen` | `log`, `auswahl`, `fertig` |
+| `konfigSpeichern {konfig}` (unverändert; Import = dasselbe) | `konfig {konfig, fehler:[{pfad,text}], adapter, profile, profilInfo}` |
+
+Neue Fehlercodes: `GESPERRT`, `FRAME_NICHT_ERLAUBT`, `STROKEHEIM_AUS`, `ABGEBROCHEN`, `EXPORT_FEHLT`.
+
+## 23. UI (Runde 3)
+
+- **Trockenlauf-Dialog** vor „Alle neu bauen“ UND vor „Icon bauen“ (bei Einzelbau kompakt): Liste aus `plan` (Name, Aktion, fehlende/fremde
+  Varianten, Instanzen, Schloss-Symbol bei gesperrt), Zusammenfassung, Buttons Abbrechen / Bauen. Ein Schalter „Trockenlauf beim Einzelbau
+  überspringen“ (clientStorage über `einstellung`, Feld `trockenlaufEinzel`).
+- **Abbrechen**-Button in der Fortschrittszeile → `abbrechen`.
+- **Leerzustand** (Frei-Modus, keine Auswahl): drei kurze Erklärzeilen (Master, Keyline, Raster/Snapping) + Button „Beispiel-Icon anlegen“.
+- **Einstellungen**: Block „Schreiben“ (zwei Schalter), Profil-Chooser mit Titel/Beschreibung aus `profilInfo`, Konfig **Export** (JSON-Download
+  `icon-pipeline.konfig.json`) und **Import** (Datei wählen → `konfigSpeichern`), Button „Vorschau mit diesen Einstellungen“ → `vorschauMit`
+  (nur aktiv bei Auswahl; Ergebnis im Icon-Tab anzeigen und dorthin wechseln, Chip „ungespeichert“).
+  Strukturierte Fehler: `pfad` → Feld markieren (`data-pfad`), Text als Tooltip; Vorher/Nachher-Vergleich entfällt.
+- **Tab „Bericht“** (dritter Tab): Kennzahlen-Kacheln (Icons, ohne Set, veraltet, Treue-Mittel mit Trendpfeil, Keyline ok/gesamt),
+  Tabelle Icon × Größe mit Treue (3 Nachkommastellen, Farbskala grün→rot 0…0,15), AA %, Keyline-Häkchen; Klick auf Namen → `fokus`;
+  Sortierung nach Spalte; Buttons „Bericht erstellen“, „CSV“ (Download), „SVG-Export“ (Umfang alle/Auswahl, Sprite-Schalter).
+- **Sprache**: Englisch ist Standard, wenn `navigator.language` nicht mit `de` beginnt (bereits so). Alle neuen Strings de + en.
+
+## 24. Tests & Doku (`test/`, `docs/`)
+
+- `test/stub-figma.mjs`: minimaler `figma`-Stub (showUI, ui.postMessage sammelt, root.pluginData, currentPage, clientStorage, variables, loadAllPagesAsync).
+- `test/run.mjs` (Aufruf `node test/run.mjs`, kein npm): lädt `code.js` per `new Function` mit Stub und prüft:
+  Konfig-Validierung (gültig/kaputt/Profile alle valide), `fehler[].pfad` gesetzt, i18n-Vollständigkeit (jeder Schlüssel in de UND en,
+  gleiche Platzhalter; alle `FEHLER_CODES` haben fehler.+hinweis.), `rund`/`snapWert`-Regression (aus scratchpad-Test übernehmen),
+  Namensbereinigung, Hex/RGB, **Protokoll-Vertrag**: jeder `m.type === '…'` in `70-main.js` kommt als `type: '…'` in `gen-ui.mjs` vor und
+  jeder `type: '…'` den Main sendet wird in der UI-`onmessage` behandelt (Regex über beide Dateien).
+- `docs/SNAPPING.md`: die Rasterregeln (Stem-Paare, Phase, Mitte-Schutz, Spiegel-Kopplung, Gelenk-Schutz, Rhythmus, Fill-Stem, Extrema, Orakel)
+  in Englisch, danach Deutsch, aus den Codekommentaren von `30-snap.js` und `60-build.js`. `docs/KONFIG.md`: Schema mit jedem Feld.
+- `README.md`: Englisch zuerst, deutscher Abschnitt darunter. `CHANGELOG.md`: v1, v2, Runde 3.
+- `build.mjs` ruft am Ende `node test/run.mjs` auf (Fehler → Exit ≠ 0).
+
+## 25. Paketzuschnitt Runde 3 (disjunkte Dateien)
+
+| Paket | Dateien |
+|---|---|
+| A1 Konfig | `00-config.js`, `05-i18n.js` (Profile, schreiben, strukturierte Fehler, profilInfo, Texte für 14/17), `10-errors.js` (neue Codes) |
+| A2 Kern | `60-build.js`, `70-main.js`, `40-adapter.js`, NEU `06-i18n-zusatz.js` (eigene Texte via Object.assign auf SPRACHEN.de/en), `65-plan.js`, `66-bericht.js`, `67-export.js`, `68-beispiel.js` |
+| B UI | `gen-ui.mjs` |
+| C Tests+Doku | `test/`, `docs/`, `README.md`, `CHANGELOG.md`, `build.mjs` (nur Testaufruf anhängen) |
+
+A2 darf `00-config.js`/`05-i18n.js` NICHT anfassen und verlässt sich auf die in 14 spezifizierten Namen
+(`CFG.schreiben.frameUmwandeln`, `CFG.schreiben.strokeHeimAnlegen`, `konfigProfilInfo()`, `fehler[].pfad`).
