@@ -211,6 +211,13 @@ const css = `
   .keyblock[hidden] { display: none; }
   .keyblock { border-top: 1px dashed var(--figma-color-border, #e3e3e6); padding-top: 6px; }
   .keyzeile { display: flex; align-items: center; gap: 6px; }
+  .keyviz { display: flex; gap: 12px; align-items: flex-start; margin: 2px 0 8px; }
+  .keyviz svg { flex: none; border-radius: 4px; border: 1px solid var(--figma-color-border, #e3e3e6); background: #fff; }
+  .keyviz .legende { display: flex; flex-direction: column; gap: 3px; font-size: 9.5px;
+    color: var(--figma-color-text-secondary, #6e6e76); font-variant-numeric: tabular-nums; }
+  .keyviz .legende span { display: flex; align-items: center; gap: 6px; }
+  .keyviz .legende i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; flex: none; }
+  .keyviz .legende i.rund { border-radius: 50%; }
   .keyzeile .keykurz { font-size: 9.5px; color: var(--figma-color-text-secondary, #6e6e76); font-variant-numeric: tabular-nums; }
   .keyhinweis { font-size: 9.5px; color: var(--figma-color-text-secondary, #6e6e76); margin: 2px 0 6px; line-height: 1.4; }
   .keyprop { font-size: 9.5px; align-self: flex-start; }
@@ -327,6 +334,7 @@ const WOERTER = {
     'cfg.entfernen': 'Größe entfernen',
     'cfg.keylinesAuf': 'Keylines',
     'cfg.keylinesProp': 'proportional neu berechnen',
+    'cfg.keylinesLegende': 'Kasten {N} px · Pixelraster · Formklassen: Square, Circular, Wide, Tall',
     'cfg.keylinesHinweis': 'Die Keyline ist die Größe des Icon-Körpers im {N}-px-Kasten. Sie folgt N automatisch, bis du sie von Hand änderst.',
     'cfg.keylineUnplausibel': 'Keyline {wert} passt nicht zu N = {N} (erwartet zwischen {min} und {N}).',
     'btn.groesseHinzu': 'Größe hinzufügen',
@@ -444,6 +452,7 @@ const WOERTER = {
     'cfg.entfernen': 'Remove size',
     'cfg.keylinesAuf': 'Keylines',
     'cfg.keylinesProp': 'recompute proportionally',
+    'cfg.keylinesLegende': 'Box {N} px · pixel grid · shape classes: Square, Circular, Wide, Tall',
     'cfg.keylinesHinweis': 'The keyline is the size of the icon body inside the {N} px box. It follows N automatically until you edit it by hand.',
     'cfg.keylineUnplausibel': 'Keyline {wert} does not fit N = {N} (expected between {min} and {N}).',
     'btn.groesseHinzu': 'Add size',
@@ -636,6 +645,7 @@ const markup = `
       </div>
     </div>
     <div class="gruppenkopf" data-t="cfg.keylines"></div>
+    <div id="masterKeyViz"></div>
     <div class="vier" id="masterKeylines"></div>
   </div>
 
@@ -1269,6 +1279,7 @@ const logik = `
     wert($('inpMasterKontur'), cfgLokal.master.kontur);
     const box = $('masterKeylines');
     box.textContent = '';
+    $('masterKeyViz').innerHTML = keylineViz(cfgLokal.master.groesse, cfgLokal.master.keylines);
     KLASSEN.forEach(kl => {
       const feld = document.createElement('div');
       feld.className = 'feld';
@@ -1278,7 +1289,8 @@ const logik = `
       const inp = feld.querySelector('fig-input-number');
       inp.addEventListener('change', e => {
         const v = parseFloat(e.detail != null ? e.detail : inp.value);
-        if (isFinite(v)) cfgLokal.master.keylines[kl] = v;
+        if (isFinite(v)) { cfgLokal.master.keylines[kl] = v;
+          $('masterKeyViz').innerHTML = keylineViz(cfgLokal.master.groesse, cfgLokal.master.keylines); }
       });
       box.appendChild(feld);
     });
@@ -1331,6 +1343,7 @@ const logik = `
         + '<span class="keykurz">' + esc(keylinesKurz(g)) + '</span></div>'
         + '<div class="keyblock"' + (keylinesOffen[i] ? '' : ' hidden') + '>'
         + '<div class="keyhinweis">' + esc(t('cfg.keylinesHinweis', { N: zahl(g.N) })) + '</div>'
+        + '<div class="keyvizhalter">' + keylineViz(g.N, g.keylines) + '</div>'
         + '<div class="vier">'
         + KLASSEN.map(kl => '<div class="feld"><span class="fname">' + esc(kl) + '</span>'
             + '<fig-input-number class="fKey' + (keylinePlausibel(g, g.keylines[kl]) ? '' : ' unplausibel') + '" data-kl="' + kl + '" min="0.1" step="0.5" data-pfad="' + pf + '.keylines.' + kl + '"'
@@ -1362,7 +1375,9 @@ const logik = `
       karte.querySelectorAll('.fKey').forEach(el => {
         el.addEventListener('change', e => {
           const v = parseFloat(e.detail != null ? e.detail : el.value);
-          if (isFinite(v)) { g.keylines[el.getAttribute('data-kl')] = v; g.keylinesManuell = true; }
+          if (isFinite(v)) { g.keylines[el.getAttribute('data-kl')] = v; g.keylinesManuell = true;
+            const h = karte.querySelector('.keyvizhalter'); if (h) h.innerHTML = keylineViz(g.N, g.keylines);
+            const kz = karte.querySelector('.keykurz'); if (kz) kz.textContent = keylinesKurz(g); }
         });
       });
       karte.querySelector('.keyprop').addEventListener('click', () => {
@@ -1414,6 +1429,35 @@ const logik = `
     korrekturenMarkieren();
   }
 
+  const KEY_FARBEN = { Square: '#d3308f', Circular: '#0e8a9a', Wide: '#c98a12', Tall: '#5b5bd6' };
+  // Skizze: Kasten N×N mit Pixelraster, darüber die vier Keyline-Formen.
+  // Wide/Tall werden 3:2 bzw. 2:3 gezeichnet — nur die lange Seite ist die Keyline.
+  function keylineSvg(N, keylines, px) {
+    px = px || 132;
+    const S = px / N, c = px / 2;
+    const linie = (x1, y1, x2, y2, op) => '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="#8a8a96" stroke-opacity="' + op + '" stroke-width="1"/>';
+    let raster = '';
+    if (N <= 64) for (let i = 1; i < N; i++) raster += linie(i * S, 0, i * S, px, 0.16) + linie(0, i * S, px, i * S, 0.16);
+    else for (let i = 4; i < N; i += 4) raster += linie(i * S, 0, i * S, px, 0.16) + linie(0, i * S, px, i * S, 0.16);
+    const mitte = linie(c, 0, c, px, 0.35) + linie(0, c, px, c, 0.35);
+    const form = (kl, k) => {
+      if (!(k > 0)) return '';
+      const f = KEY_FARBEN[kl], a = 'fill="' + f + '" fill-opacity="0.08" stroke="' + f + '" stroke-width="1.25"';
+      const w = k * S;
+      if (kl === 'Circular') return '<circle cx="' + c + '" cy="' + c + '" r="' + (w / 2) + '" ' + a + '/>';
+      if (kl === 'Square')   return '<rect x="' + (c - w / 2) + '" y="' + (c - w / 2) + '" width="' + w + '" height="' + w + '" ' + a + '/>';
+      if (kl === 'Wide')     return '<rect x="' + (c - w / 2) + '" y="' + (c - w / 3) + '" width="' + w + '" height="' + (w * 2 / 3) + '" ' + a + ' stroke-dasharray="3 2"/>';
+      return '<rect x="' + (c - w / 3) + '" y="' + (c - w / 2) + '" width="' + (w * 2 / 3) + '" height="' + w + '" ' + a + ' stroke-dasharray="3 2"/>';
+    };
+    return '<svg width="' + px + '" height="' + px + '" viewBox="0 0 ' + px + ' ' + px + '">'
+      + raster + mitte + ['Wide', 'Tall', 'Square', 'Circular'].map(kl => form(kl, keylines[kl])).join('') + '</svg>';
+  }
+  function keylineViz(N, keylines) {
+    const leg = KLASSEN.map(kl => '<span><i class="' + (kl === 'Circular' ? 'rund' : '') + '" style="background:' + KEY_FARBEN[kl] + '"></i>'
+      + esc(kl) + ' ' + zahl(keylines[kl]) + '</span>').join('');
+    return '<div class="keyviz">' + keylineSvg(N, keylines) + '<div class="legende">' + leg
+      + '<span style="margin-top:4px">' + esc(t('cfg.keylinesLegende', { N: zahl(N) })) + '</span></div></div>';
+  }
   function keylinesSkalieren(g, f) {
     KLASSEN.forEach(kl => { g.keylines[kl] = Math.round(g.keylines[kl] * f * 2) / 2; });
   }
@@ -1469,7 +1513,8 @@ const logik = `
   });
   $('inpMasterGroesse').addEventListener('change', e => {
     const v = parseFloat(e.detail != null ? e.detail : $('inpMasterGroesse').value);
-    if (isFinite(v) && cfgLokal) cfgLokal.master.groesse = v;
+    if (isFinite(v) && cfgLokal) { cfgLokal.master.groesse = v;
+      $('masterKeyViz').innerHTML = keylineViz(cfgLokal.master.groesse, cfgLokal.master.keylines); }
   });
   $('inpMasterKontur').addEventListener('change', e => {
     const v = parseFloat(e.detail != null ? e.detail : $('inpMasterKontur').value);
