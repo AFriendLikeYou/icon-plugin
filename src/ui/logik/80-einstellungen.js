@@ -143,8 +143,9 @@
       const feld = document.createElement('div');
       feld.className = 'feld';
       feld.innerHTML = '<span class="fname">' + esc(kl) + '</span>'
+        + '<fig-tooltip text="' + esc(t('tip.masterKeyline')) + '" delay="400">'
         + '<fig-input-number min="0.1" step="0.5" data-pfad="master.keylines.' + kl + '"'
-        + ' value="' + esc(cfgLokal.master.keylines[kl]) + '"></fig-input-number>';
+        + ' value="' + esc(cfgLokal.master.keylines[kl]) + '"></fig-input-number></fig-tooltip>';
       const inp = feld.querySelector('fig-input-number');
       inp.addEventListener('change', e => {
         const v = parseFloat(e.detail != null ? e.detail : inp.value);
@@ -154,6 +155,22 @@
       box.appendChild(feld);
     });
     korrekturenMarkieren();
+  }
+
+  // Ein Feld der Größen-Karte: Beschriftung, Steuerung im Tooltip, Hilfezeile.
+  function gfeld(label, tipKey, hilfeKey, steuerung, attr) {
+    return '<div class="gfeld"' + (attr || '') + '>'
+      + '<span class="fname">' + esc(label) + '</span>'
+      + '<fig-tooltip text="' + esc(t(tipKey)) + '" delay="400">' + steuerung + '</fig-tooltip>'
+      + '<div class="fhilfe">' + esc(t(hilfeKey)) + '</div></div>';
+  }
+  // Sichtbarkeit nach Radius-Modus: „Radius (px)“ nur bei festem Wert,
+  // „Mindestradius“ nicht bei „keine Rundung“.
+  function radiusSicht(karte, g) {
+    const w = karte.querySelector('[data-rolle="radWert"]');
+    const m = karte.querySelector('[data-rolle="radMin"]');
+    if (w) w.hidden = g.radius.modus !== 'fest';
+    if (m) m.hidden = g.radius.modus === 'keine';
   }
 
   function optionen(werte, aktiv, beschriften) {
@@ -173,30 +190,34 @@
         '<div class="gkopf">'
         + '<span class="gtitel">' + esc(zahl(g.N)) + ' px</span>'
         + '<div class="rechts">'
+        + '<fig-tooltip text="' + esc(t('tip.standard')) + '" delay="400">'
         + '<fig-radio name="std" class="rStd" value="' + i + '" data-pfad="' + pf + '.standard"'
         + (g.standard ? ' checked' : '') + '><span>' + esc(t('cfg.standard')) + '</span></fig-radio>'
+        + '</fig-tooltip>'
         + '<fig-button class="bWeg" variant="ghost" title="' + esc(t('cfg.entfernen')) + '"'
         + (cfgLokal.groessen.length < 2 ? ' disabled' : '') + '>✕</fig-button>'
         + '</div></div>'
         + '<div class="gzeilen">'
-        + '<div class="feld"><span class="fname">' + esc(t('cfg.N')) + '</span>'
-        + '<fig-input-number class="fN" min="1" step="1" data-pfad="' + pf + '.N" value="' + esc(g.N) + '"></fig-input-number></div>'
-        + '<div class="feld"><span class="fname">' + esc(t('cfg.kontur')) + '</span>'
-        + '<fig-input-number class="fKontur" min="0.1" step="0.25" data-pfad="' + pf + '.kontur" value="' + esc(g.kontur) + '"></fig-input-number></div>'
-        + '<div class="feld"><span class="fname">' + esc(t('cfg.raster')) + '</span>'
-        + '<fig-dropdown class="fRaster" data-pfad="' + pf + '.raster" value="' + esc(g.raster) + '">'
-        + optionen(RASTER_WERTE, g.raster, v => zahl(v)) + '</fig-dropdown></div>'
-        + '<div class="feld"><span class="fname">' + esc(t('cfg.rasterGrob')) + '</span>'
-        + '<fig-dropdown class="fGrob" data-pfad="' + pf + '.rasterGrob" value="' + esc(g.rasterGrob == null ? '' : g.rasterGrob) + '">'
-        + '<option value=""' + (g.rasterGrob == null ? ' selected' : '') + '>' + esc(t('opt.aus')) + '</option>'
-        + optionen([1, 0.5], g.rasterGrob == null ? '' : g.rasterGrob, v => zahl(v)) + '</fig-dropdown></div>'
-        + '<div class="feld"><span class="fname">' + esc(t('cfg.radiusModus')) + '</span>'
-        + '<fig-dropdown class="fRadModus" data-pfad="' + pf + '.radius.modus" value="' + esc(g.radius.modus) + '">'
-        + optionen(['proportional', 'fest', 'keine'], g.radius.modus, v => t('radius.' + v)) + '</fig-dropdown></div>'
-        + '<div class="feld"><span class="fname">' + esc(t('cfg.radiusWert')) + '</span>'
-        + '<fig-input-number class="fRadWert" min="0" step="0.5" data-pfad="' + pf + '.radius.wert" value="' + esc(g.radius.wert) + '"></fig-input-number></div>'
-        + '<div class="feld"><span class="fname">' + esc(t('cfg.radiusMin')) + '</span>'
-        + '<fig-input-number class="fRadMin" min="0" step="0.5" data-pfad="' + pf + '.radius.min" value="' + esc(g.radius.min) + '"></fig-input-number></div>'
+        + gfeld(t('cfg.N'), 'tip.N', 'hilf.N',
+            '<fig-input-number class="fN" min="1" step="1" data-pfad="' + pf + '.N" value="' + esc(g.N) + '"></fig-input-number>')
+        + gfeld(t('cfg.kontur'), 'tip.kontur', 'hilf.kontur',
+            '<fig-input-number class="fKontur" min="0.1" step="0.25" data-pfad="' + pf + '.kontur" value="' + esc(g.kontur) + '"></fig-input-number>')
+        + gfeld(t('cfg.raster'), 'tip.raster', 'hilf.raster',
+            '<fig-dropdown class="fRaster" data-pfad="' + pf + '.raster" value="' + esc(g.raster) + '">'
+            + optionen(RASTER_WERTE, g.raster, v => zahl(v)) + '</fig-dropdown>')
+        + gfeld(t('cfg.rasterGrob'), 'tip.rasterGrob', 'hilf.rasterGrob',
+            '<fig-dropdown class="fGrob" data-pfad="' + pf + '.rasterGrob" value="' + esc(g.rasterGrob == null ? '' : g.rasterGrob) + '">'
+            + '<option value=""' + (g.rasterGrob == null ? ' selected' : '') + '>' + esc(t('opt.aus')) + '</option>'
+            + optionen([1, 0.5], g.rasterGrob == null ? '' : g.rasterGrob, v => zahl(v)) + '</fig-dropdown>')
+        + gfeld(t('cfg.radiusModus'), 'tip.radiusModus', 'hilf.radiusModus',
+            '<fig-dropdown class="fRadModus" data-pfad="' + pf + '.radius.modus" value="' + esc(g.radius.modus) + '">'
+            + optionen(['proportional', 'fest', 'keine'], g.radius.modus, v => t('radius.' + v)) + '</fig-dropdown>')
+        + gfeld(t('cfg.radiusWert'), 'tip.radiusWert', 'hilf.radiusWert',
+            '<fig-input-number class="fRadWert" min="0" step="0.5" data-pfad="' + pf + '.radius.wert" value="' + esc(g.radius.wert) + '"></fig-input-number>',
+            ' data-rolle="radWert"')
+        + gfeld(t('cfg.radiusMin'), 'tip.radiusMin', 'hilf.radiusMin',
+            '<fig-input-number class="fRadMin" min="0" step="0.5" data-pfad="' + pf + '.radius.min" value="' + esc(g.radius.min) + '"></fig-input-number>',
+            ' data-rolle="radMin"')
         + '</div>'
         + '<div class="keyzeile"><fig-button class="keyauf" variant="ghost">' + esc(t('cfg.keylinesAuf')) + ' ▾</fig-button>'
         + '<span class="keykurz">' + esc(keylinesKurz(g)) + '</span></div>'
@@ -205,9 +226,10 @@
         + '<div class="keyvizhalter">' + keylineViz(g.N, g.keylines) + '</div>'
         + '<div class="vier">'
         + KLASSEN.map(kl => '<div class="feld"><span class="fname">' + esc(kl) + '</span>'
+            + '<fig-tooltip text="' + esc(t('tip.keyline')) + '" delay="400">'
             + '<fig-input-number class="fKey' + (keylinePlausibel(g, g.keylines[kl]) ? '' : ' unplausibel') + '" data-kl="' + kl + '" min="0.1" step="0.5" data-pfad="' + pf + '.keylines.' + kl + '"'
             + (keylinePlausibel(g, g.keylines[kl]) ? '' : ' data-title-fest title="' + esc(t('cfg.keylineUnplausibel', { wert: zahl(g.keylines[kl]), N: zahl(g.N), min: zahl(g.N / 2) })) + '"')
-            + ' value="' + esc(g.keylines[kl]) + '"></fig-input-number></div>').join('')
+            + ' value="' + esc(g.keylines[kl]) + '"></fig-input-number></fig-tooltip></div>').join('')
         + '</div>'
         + '<fig-button class="keyprop" variant="ghost">' + esc(t('cfg.keylinesProp')) + '</fig-button>'
         + '</div>';
@@ -261,6 +283,7 @@
       karte.querySelector('.fRadModus').addEventListener('change', e => {
         const s = (e && e.detail) || karte.querySelector('.fRadModus').value;
         if (s) g.radius.modus = s;
+        radiusSicht(karte, g);          // live: Radius/Mindestradius ein- und ausblenden
       });
       karte.querySelector('.rStd').addEventListener('change', e => {
         if (!e.target.checked) return;
@@ -283,6 +306,7 @@
         keylinesOffen[i] = kb.hidden;
         kb.hidden = !kb.hidden;
       });
+      radiusSicht(karte, g);
       box.appendChild(karte);
     });
     korrekturenMarkieren();
@@ -392,6 +416,10 @@
     wert($('segFarbe'), f.modus);
     $('farbeHex').hidden = f.modus !== 'hex';
     $('farbeVariable').hidden = f.modus !== 'variable';
+    // Ein Satz Erklärung je Modus; „Vorlage an diese Farbe binden“ nicht bei „Wie Vorlage“.
+    $('farbeErkl').textContent = t(f.modus === 'hex' ? 'farbe.erklHex'
+      : f.modus === 'variable' ? 'farbe.erklVariable' : 'farbe.erklSource');
+    $('angleichenZeile').hidden = f.modus === 'source';
     wert($('inpHex'), f.hex || '#444444');
     anhaken($('chkAngleichen'), f.sourceAngleichen);
     varListeZeichnen();
@@ -410,10 +438,48 @@
     $('varName').textContent = name + (hex ? ' · ' + hex : '');
   }
   function variableHex(v) {
-    if (!farben || !v) return '';
-    const treffer = (farben.lokal || []).filter(x => (v.id && x.id === v.id) || (v.key && x.key === v.key));
-    return treffer.length ? treffer[0].hex : '';
+    if (!v) return '';
+    if (farben) {
+      const treffer = (farben.lokal || []).filter(x => (v.id && x.id === v.id) || (v.key && x.key === v.key));
+      if (treffer.length && treffer[0].hex) return treffer[0].hex;
+    }
+    return (v.key && TOKEN_HEX[v.key]) || '';
   }
+
+  // ---- Farbwerte von Library-Tokens nachladen ------------------------------
+  // Library-Variablen kommen ohne hex. Beim Aufklappen einer Kollektion holen
+  // wir die Werte in Paketen zu 40 (`farbenWerte`) und schreiben sie in die Zeilen.
+  const TOKEN_HEX = {};        // key → hex | null (null = nicht auflösbar)
+  const TOKEN_LAEUFT = {};     // key → true, solange eine Anfrage unterwegs ist
+  function farbenWerteAnfordern(keys) {
+    const offen = (keys || []).filter(k => k && !(k in TOKEN_HEX) && !TOKEN_LAEUFT[k]);
+    for (let i = 0; i < offen.length; i += 40) {
+      const paket = offen.slice(i, i + 40);
+      paket.forEach(k => { TOKEN_LAEUFT[k] = true; });
+      send({ type: 'farbenWerte', keys: paket });
+    }
+  }
+  function tokenSwatchSetzen(zeile, hex) {
+    const alt = zeile.querySelector('fig-skeleton, fig-swatch');
+    const s = document.createElement('fig-swatch');
+    s.setAttribute('background', hex || '#d9d9d9');
+    s.setAttribute('size', 'small');
+    if (alt) zeile.replaceChild(s, alt); else zeile.insertBefore(s, zeile.firstChild);
+  }
+  function tokenSwatchesAktualisieren() {
+    document.querySelectorAll('#varListe .varzeile[data-key]').forEach(z => {
+      const k = z.getAttribute('data-key');
+      if (!(k in TOKEN_HEX)) return;
+      if (z.querySelector('fig-swatch')) return;
+      tokenSwatchSetzen(z, TOKEN_HEX[k]);
+    });
+    gewaehlteVariableZeichnen(null);
+  }
+  bei('farbenWerteErgebnis', m => {
+    const w = (m && m.werte) || {};
+    Object.keys(w).forEach(k => { TOKEN_HEX[k] = w[k] || null; delete TOKEN_LAEUFT[k]; });
+    tokenSwatchesAktualisieren();
+  });
   function passt(name, koll) {
     if (!farbSuche) return true;
     const s = farbSuche.toLowerCase();
@@ -432,11 +498,14 @@
       && ((v.id && cfgLokal.farbe.variable.id === v.id) || (v.key && cfgLokal.farbe.variable.key === v.key));
     const d = document.createElement('div');
     d.className = 'varzeile' + (gew ? ' gewaehlt' : '');
-    if (mitSwatch) {
-      const s = document.createElement('fig-swatch');
-      s.setAttribute('background', v.hex || '#d9d9d9');
-      s.setAttribute('size', 'small');
-      d.appendChild(s);
+    if (v.key) d.setAttribute('data-key', v.key);
+    const hex = v.hex || (v.key ? TOKEN_HEX[v.key] : '');
+    if (mitSwatch || hex) {
+      tokenSwatchSetzen(d, hex);
+    } else if (v.key) {
+      // Wert noch nicht geladen: Skeleton-Swatch als Platzhalter.
+      const sk = document.createElement('fig-skeleton');
+      d.appendChild(sk);
     }
     const n = document.createElement('span');
     n.className = 'vname';
@@ -455,10 +524,16 @@
     const box = $('varListe');
     box.textContent = '';
     if (!farben) {
-      const d = document.createElement('div');
-      d.className = 'varleer';
-      d.textContent = t('farbe.laden');
-      box.appendChild(d);
+      // Ladezustand: Skeleton-Swatches plus Shimmer-Text.
+      for (let i = 0; i < 3; i++) {
+        const d = document.createElement('div');
+        d.className = 'varladen';
+        d.appendChild(document.createElement('fig-skeleton'));
+        const sh = document.createElement('fig-shimmer');
+        sh.textContent = t('farbe.laden');
+        d.appendChild(sh);
+        box.appendChild(d);
+      }
       return;
     }
     let etwas = false;
@@ -480,7 +555,12 @@
       g.className = 'kollektion';
       g.setAttribute('collapsible', '');
       g.setAttribute('name', (b.bibliothek ? b.bibliothek + ' · ' : '') + b.kollektion);
-      if (farbSuche) g.setAttribute('open', 'true');
+      const keys = vars.map(v => v.key).filter(Boolean);
+      if (farbSuche) { g.setAttribute('open', 'true'); farbenWerteAnfordern(keys); }
+      // Farbwerte erst beim Aufklappen holen (fig-group meldet `openchange`).
+      g.addEventListener('openchange', e => {
+        if (e && e.detail && e.detail.open) farbenWerteAnfordern(keys);
+      });
       vars.forEach(v => g.appendChild(varZeile(
         { key: v.key, name: v.name, id: '' }, false, '')));
       box.appendChild(g);

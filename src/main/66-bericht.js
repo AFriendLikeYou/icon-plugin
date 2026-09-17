@@ -36,6 +36,7 @@ function berichtTreueVon(eintrag, N) {
 
 async function bericht(ziele) {
   const zeilen = [];
+  const abw = [];   // strukturierte Befunde wie im Audit (Abschnitt 28.1)
   const kleinste = CFG.groessen.length ? CFG.groessen[0].N : null;
   let icons = 0, ohneSet = 0, veraltetN = 0, keylineOk = 0, keylineGesamt = 0;
   let tSum = 0, tN = 0, tvSum = 0, tvN = 0;
@@ -57,11 +58,19 @@ async function bericht(ziele) {
       groessen: {}
     };
     icons++;
-    if (!set) { ohneSet++; zeilen.push(zeile); await tick(); continue; }
+    if (!ziel.src) abw.push(abwEintrag('KEINE_SOURCE', name, null, { mass: CFG.master.groesse }, zeile.nodeId));
+    if (!set) {
+      ohneSet++;
+      abw.push(abwEintrag('KEIN_SET', name, null, null, zeile.nodeId));
+      zeilen.push(zeile); await tick(); continue;
+    }
 
     const pd = pdLesen(set);
     zeile.veraltet = istVeraltet(set, ziel.src);
-    if (zeile.veraltet) veraltetN++;
+    if (zeile.veraltet) {
+      veraltetN++;
+      abw.push(abwEintrag('VORLAGE_GEAENDERT', name, null, null, set.id));
+    }
 
     // Vorletzter Verlaufseintrag = Stand vor dem letzten Bau.
     const verlauf = Array.isArray(pd.verlauf) ? pd.verlauf : [];
@@ -81,7 +90,12 @@ async function bericht(ziele) {
 
       const k = messKeyline(v, g, kl);
       const rr = messRaster(v, g);
-      const struktur = messStruktur(v, name, N, N === kleinste);
+      const funde = messStruktur(v, name, N, N === kleinste);
+      funde.forEach(z => abw.push(z));
+      // Der Bericht zeigt je Zelle nur die Sätze; die Codes stehen in `abw`.
+      const struktur = funde.map(z => z.text);
+      if (k && !k.ok) abw.push(abwEintrag('KEYLINE_ABWEICHUNG', name, N,
+        { ist: k.ist.toFixed(3), soll: k.soll, klasse: kl }, v.id));
 
       zeile.groessen[N] = {
         treue: treue, aa: aa, treueVorher: treueVorher,
@@ -103,6 +117,7 @@ async function bericht(ziele) {
 
   return {
     zeilen: zeilen,
+    abw: abw,
     zusammenfassung: {
       icons: icons, ohneSet: ohneSet, veraltet: veraltetN,
       treueMittel: tN ? tSum / tN : null,
@@ -110,6 +125,57 @@ async function bericht(ziele) {
       keylineOk: keylineOk, keylineGesamt: keylineGesamt
     },
     zeit: Date.now(),
+    geprueft: geprueft, n: ziele.length, abgebrochen: abgebrochen
+  };
+}
+
+// --- Übersicht: Startseite der UI -----------------------------------------
+// Liste aller Icons im File, bewusst billig: keine PNG-Exporte, keine
+// Güte-Messung — nur was ADAPTER.alle() und das Set ohne Rendern hergeben.
+// Fortschritt melden wir erst ab UEBERSICHT_PROGRESS_AB Icons, sonst flackert
+// die Zeile bei kleinen Files sinnlos auf.
+const UEBERSICHT_PROGRESS_AB = 50;
+
+async function uebersicht(ziele) {
+  const eintraege = [];
+  let ohneSet = 0, veraltetN = 0;
+  let geprueft = 0, abgebrochen = false;
+  const melde = ziele.length > UEBERSICHT_PROGRESS_AB;
+
+  for (const ziel of ziele) {
+    if (abbruchAktiv()) { abgebrochen = true; break; }
+    geprueft++;
+    if (melde) ui({ type: 'progress', i: geprueft, n: ziele.length, name: ziel.name });
+
+    let set = null;
+    try { set = await ADAPTER.zielSet(ziel); } catch (e) { set = null; }
+
+    const groessen = [];
+    if (set) {
+      for (const g of CFG.groessen) {
+        if (set.children.some(c => c.name === variantenName(g.N))) groessen.push(g.N);
+      }
+    }
+
+    const veraltet = set ? istVeraltet(set, ziel.src) : false;
+    if (!set) ohneSet++;
+    if (veraltet) veraltetN++;
+
+    eintraege.push({
+      name: ziel.name,
+      hatSet: !!set,
+      veraltet: veraltet,
+      groessen: groessen,
+      klasse: ziel.klasse,
+      nodeId: (ziel.fokusNode && ziel.fokusNode.id) || (ziel.src && ziel.src.id) || null,
+      setNodeId: set ? set.id : null
+    });
+    await tick();
+  }
+
+  return {
+    eintraege: eintraege,
+    zusammenfassung: { icons: eintraege.length, ohneSet: ohneSet, veraltet: veraltetN },
     geprueft: geprueft, n: ziele.length, abgebrochen: abgebrochen
   };
 }

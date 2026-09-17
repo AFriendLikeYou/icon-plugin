@@ -1,11 +1,20 @@
   // =========================================================================
-  // Vorschau — Vektor, Pixel, Differenz
+  // Vorschau — Vektor (Überlagern/Wischen/Nebeneinander/Blinken), Pixel, Differenz
   // =========================================================================
   const FARBEN = {
     hell:  { alt: '#d3308f', neu: '#0e8a9a', weg: [211, 48, 143], dazu: [14, 138, 154], beide: [110, 110, 126] },
     dunk:  { alt: '#ff7ad0', neu: '#4fe3f0', weg: [255, 122, 208], dazu: [79, 227, 240], beide: [170, 170, 186] }
   };
   function palette() { return dunkel ? FARBEN.dunk : FARBEN.hell; }
+
+  const MODI = ['ueberlagern', 'wischen', 'neben', 'blinken'];
+  let vglModus = 'ueberlagern';
+  let wischPos = 0.5;                 // 0…1, Position des Wisch-Griffs
+  let blinkTimer = null, blinkPause = false;
+  // Cache-Marken: Filter-, Modus- und Zoomwechsel dürfen die PNGs NICHT neu
+  // analysieren — nur die vorhandenen Canvas neu skalieren.
+  let pxQuelle = null, pxSig = '';
+  let dfQuelle = null, dfSig = '';
 
   function svgLayer(svg, farbe, lage) {
     const gefaerbt = svg.replace(/fill="[^"]*"/g, 'fill="' + farbe + '"')
@@ -23,7 +32,7 @@
     const g = c.getContext('2d'); g.drawImage(bmp, 0, 0);
     return { w: c.width, h: c.height, data: g.getImageData(0, 0, c.width, c.height).data };
   }
-  // Treue: RMS-Abweichung der echten 1×-Rasterung von der idealen
+  // Rasterfehler: RMS-Abweichung der echten 1×-Rasterung von der idealen
   // (8×-Referenz flächengemittelt aufs Zielraster). 0 = perfekt.
   async function treue(px1, px8) {
     const a = await bitmapDaten(px1);
@@ -65,49 +74,274 @@
 
   function rasterSkala() { return String($('segRaster').value) === '2' ? 2 : 1; }
 
+  // ---- Beschriftung --------------------------------------------------------
+  function massStimmt(c) {
+    if (c.ist == null || c.soll == null) return null;
+    return Math.abs(Number(c.ist) - Number(c.soll)) <= 0.5;
+  }
+  function radiusText(c) {
+    if (c.radius == null) return null;
+    if (typeof c.radius !== 'object') return zahl(c.radius);
+    return t('radius.' + c.radius.modus) + (c.radius.modus === 'fest' ? ' ' + zahl(c.radius.wert) : '');
+  }
+  // Eine kompakte Zeile (mit Ellipsis) plus vollständiger Tooltip.
+  function zellenInfo(c) {
+    const kurz = [], voll = [];
+    if (c.soll != null) {
+      const k = t('zelle.keyline', {
+        ist: c.ist == null ? '?' : zahl(Number(c.ist).toFixed(2)), soll: zahl(c.soll) });
+      kurz.push(k); voll.push(k);
+    }
+    if (c.kontur != null) {
+      const s = t('zelle.kontur', { k: zahl(c.kontur) });
+      kurz.push(s); voll.push(s);
+    }
+    if (c.raster != null) {
+      const s = t('zelle.raster', { r: zahl(c.raster) });
+      kurz.push(s); voll.push(s);
+    }
+    const r = radiusText(c);
+    if (r) voll.push(t('zelle.radius', { v: r }));
+    if (c.gerastet) voll.push(t('zelle.gerastet', { n: c.gerastet }));
+    if (!c.alt) voll.push(t('zelle.neu'));
+    const ok = massStimmt(c);
+    if (ok != null) voll.push(ok ? t('zelle.massOk') : t('zelle.massAb'));
+    return { kurz: kurz.join(' · '), voll: voll.join('\n') };
+  }
+  function zellenLabel(c, zusatz) {
+    const info = zellenInfo(c);
+    const el = document.createElement('div');
+    el.className = 'label';
+    const z1 = document.createElement('div');
+    z1.className = 'l1';
+    const ok = massStimmt(c);
+    if (ok != null) {
+      const p = document.createElement('span');
+      p.className = 'statuspunkt ' + (ok ? 'gut' : 'ab');
+      p.title = ok ? t('zelle.massOk') : t('zelle.massAb');
+      z1.appendChild(p);
+    }
+    const gr = document.createElement('span');
+    gr.className = 'lgroesse';
+    gr.textContent = zahl(c.N) + ' px' + (zusatz ? ' · ' + zusatz : '');
+    z1.appendChild(gr);
+    el.appendChild(z1);
+    const z2 = document.createElement('div');
+    z2.className = 'l2';
+    z2.textContent = info.kurz;
+    z2.title = info.voll;
+    el.appendChild(z2);
+    el.title = info.voll;
+    return el;
+  }
+
+  // ---- Bühne: Zelle bauen --------------------------------------------------
+  function schauBasis(px) {
+    const schau = document.createElement('div');
+    schau.className = 'schau' + (zoom >= 4 ? ' raster' : '');
+    schau.style.width = px + 'px'; schau.style.height = px + 'px';
+    schau.style.backgroundSize = zoom + 'px ' + zoom + 'px, ' + zoom + 'px ' + zoom + 'px, '
+      + (zoom / 2) + 'px ' + (zoom / 2) + 'px, ' + (zoom / 2) + 'px ' + (zoom / 2) + 'px, auto';
+    return schau;
+  }
+  // Pixelkoordinate unter dem Zeiger — Badge folgt dem Cursor.
+  function koordenBinden(schau, N) {
+    schau.addEventListener('pointermove', e => {
+      const r = schau.getBoundingClientRect();
+      const x = Math.floor((e.clientX - r.left) / Math.max(1, r.width) * N);
+      const y = Math.floor((e.clientY - r.top) / Math.max(1, r.height) * N);
+      if (x < 0 || y < 0 || x >= N || y >= N) return;
+      const k = $('koordAnzeige');
+      k.hidden = false;
+      k.textContent = t('px.koord', { x: x, y: y });
+      k.style.left = (e.clientX + 14) + 'px';
+      k.style.top = (e.clientY + 16) + 'px';
+    });
+    schau.addEventListener('pointerleave', () => { $('koordAnzeige').hidden = true; });
+  }
+
+  function wischZelle(c, px, p) {
+    const schau = schauBasis(px);
+    schau.classList.add('wisch');
+    if (c.alt) schau.appendChild(svgLayer(c.alt, p.alt, 'alt'));
+    const klipp = document.createElement('div');
+    klipp.className = 'wischklipp';
+    klipp.style.width = Math.round(wischPos * 100) + '%';
+    if (c.neu) {
+      const img = svgLayer(c.neu, p.neu, 'neu');
+      img.style.width = px + 'px'; img.style.height = px + 'px';
+      klipp.appendChild(img);
+    }
+    schau.appendChild(klipp);
+    const griff = document.createElement('div');
+    griff.className = 'wischgriff';
+    griff.style.left = Math.round(wischPos * 100) + '%';
+    schau.appendChild(griff);
+    const li = document.createElement('span');
+    li.className = 'wischkante links'; li.textContent = t('wisch.links');
+    const re = document.createElement('span');
+    re.className = 'wischkante rechts'; re.textContent = t('wisch.rechts');
+    schau.appendChild(li); schau.appendChild(re);
+
+    let zieht = false;
+    const setzen = e => {
+      const r = schau.getBoundingClientRect();
+      wischPos = Math.max(0, Math.min(1, (e.clientX - r.left) / Math.max(1, r.width)));
+      wischAnwenden();
+    };
+    schau.addEventListener('pointerdown', e => {
+      zieht = true; schau.setPointerCapture(e.pointerId); setzen(e); e.preventDefault();
+    });
+    schau.addEventListener('pointermove', e => { if (zieht) setzen(e); });
+    const ende = e => { zieht = false; try { schau.releasePointerCapture(e.pointerId); } catch (err) {} };
+    schau.addEventListener('pointerup', ende);
+    schau.addEventListener('pointercancel', ende);
+    return schau;
+  }
+  // Nur die Griffposition nachziehen — kein Neuaufbau der Zellen.
+  function wischAnwenden() {
+    const pr = Math.round(wischPos * 1000) / 10 + '%';
+    $('zellen').querySelectorAll('.wischklipp').forEach(el => { el.style.width = pr; });
+    $('zellen').querySelectorAll('.wischgriff').forEach(el => { el.style.left = pr; });
+  }
+
+  function blinkStoppen() {
+    if (blinkTimer) { clearInterval(blinkTimer); blinkTimer = null; }
+    $('zellen').classList.remove('blinkNeu');
+  }
+  function blinkStarten() {
+    blinkStoppen();
+    if (vglModus !== 'blinken' || blinkPause) return;
+    $('zellen').classList.add('blinkNeu');
+    blinkTimer = setInterval(() => {
+      $('zellen').classList.toggle('blinkNeu');
+    }, 600);
+  }
+
+  function renderVektor() {
+    if (!letzterDiff) return;
+    const p = palette();
+    const z = $('zellen');
+    blinkStoppen();
+    z.textContent = '';
+    z.className = 'zeile' + (vglModus === 'blinken' ? ' blink' : '');
+    z.classList.toggle('ohneAlt', !$('chkAlt').checked && vglModus === 'ueberlagern');
+    z.classList.toggle('ohneNeu', !$('chkNeu').checked && vglModus === 'ueberlagern');
+    letzterDiff.zellen.forEach(c => {
+      const px = c.N * zoom;
+      if (vglModus === 'neben') {
+        [['alt', c.alt, p.alt, t('wisch.links')], ['neu', c.neu, p.neu, t('wisch.rechts')]].forEach(paar => {
+          const zelle = document.createElement('div');
+          zelle.className = 'zelle';
+          const schau = schauBasis(px);
+          if (paar[1]) schau.appendChild(svgLayer(paar[1], paar[2], paar[0]));
+          else {
+            const leer = document.createElement('div');
+            leer.className = 'leer';
+            leer.textContent = t('diff.nuralt');
+            schau.appendChild(leer);
+          }
+          koordenBinden(schau, c.N);
+          zelle.appendChild(schau);
+          const lbl = zellenLabel(c, paar[3]);
+          lbl.style.width = px + 'px';
+          zelle.appendChild(lbl);
+          z.appendChild(zelle);
+        });
+        return;
+      }
+      const zelle = document.createElement('div');
+      zelle.className = 'zelle';
+      let schau;
+      if (vglModus === 'wischen' && c.alt && c.neu) {
+        schau = wischZelle(c, px, p);
+      } else {
+        schau = schauBasis(px);
+        if (c.alt) schau.appendChild(svgLayer(c.alt, p.alt, 'alt'));
+        if (c.neu) schau.appendChild(svgLayer(c.neu, p.neu, 'neu'));
+        koordenBinden(schau, c.N);
+      }
+      zelle.appendChild(schau);
+      const lbl = zellenLabel(c, (!c.alt && vglModus !== 'ueberlagern') ? t('zelle.neu') : '');
+      lbl.style.width = px + 'px';
+      zelle.appendChild(lbl);
+      z.appendChild(zelle);
+    });
+    if (vglModus === 'blinken') blinkStarten();
+  }
+
+  // ---- Pixelansicht --------------------------------------------------------
+  function pxGroessenSetzen() {
+    $('pxzellen').querySelectorAll('.pxzelle').forEach(el => {
+      const N = Number(el.dataset.n) || 0;
+      const b = (N * zoom) || 0;
+      el.querySelectorAll('canvas').forEach(c => {
+        c.style.width = (b || c.width) + 'px';
+        c.style.height = (b || c.height) + 'px';
+      });
+      const l = el.querySelector('.label');
+      if (l) l.style.width = (b || '') + (b ? 'px' : '');
+    });
+  }
   async function renderPixel() {
     if (!letzterDiff) return;
     const skala = rasterSkala();
+    const sig = skala + '|' + (dunkel ? 1 : 0) + '|' + (zoom >= 8 ? 8 : 1);
+    // Gleiche Daten, gleiche Rasterung: nur skalieren, nicht neu analysieren.
+    if (pxQuelle === letzterDiff && pxSig === sig) { pxGroessenSetzen(); return; }
+    pxQuelle = letzterDiff; pxSig = sig;
     const z = $('pxzellen'); z.textContent = '';
     for (const c of letzterDiff.zellen) {
       const bytesNeu = skala === 2 && c.pngNeu2 ? c.pngNeu2 : c.pngNeu;
       const bytesAlt = skala === 2 ? c.pngAlt2 : c.pngAlt;
       if (!bytesNeu) continue;
       const zelle = document.createElement('div'); zelle.className = 'pxzelle';
+      zelle.dataset.n = String(c.N || 0);
       const wrap = document.createElement('div'); wrap.className = 'wrap';
-      // AA wird immer auf der gewählten Rasterung gemessen; angezeigt wird ab
-      // Zoom 8 das 8×-PNG (schärfste Stufe), sonst das hochskalierte Raster.
+      // Weiche Pixel werden immer auf der gewählten Rasterung gemessen;
+      // angezeigt wird ab Zoom 8 das 8×-PNG (schärfste Stufe).
       const mess = await analysiere(bytesNeu, false, dunkel);
       let bild = mess.c;
       if (zoom >= 8 && c.pngNeu8) bild = (await analysiere(c.pngNeu8, false, dunkel)).c;
-      const breite = (c.N || 0) * zoom;
-      bild.style.width = (breite || bild.width) + 'px';
-      bild.style.height = (breite || bild.height) + 'px';
       wrap.appendChild(bild);
-      const label = document.createElement('div'); label.className = 'label';
-      label.style.width = (breite || bild.width) + 'px';
-      let text = zahl(c.N) + ' px · ' + t('pixel.aa', { aa: mess.aa });
+      let text = t('pixel.aa', { aa: mess.aa });
       if (bytesAlt) {
         const alt = await analysiere(bytesAlt, false, false);
-        text += '\n' + t('pixel.alt', { aa: alt.aa });
+        text += ' · ' + t('pixel.alt', { aa: alt.aa });
       }
       if (c.guete) {
         const d = c.guete.plain.fehler > 1e-9
           ? Math.round((1 - c.guete.snap.fehler / c.guete.plain.fehler) * 100) : 0;
-        text += '\n' + t('pixel.hint', { v: c.guete.mitSnap
+        text += ' · ' + t('pixel.hint', { v: c.guete.mitSnap
           ? (d > 0 ? t('hint.fehler', { d: d }) : t('hint.gleich'))
           : t('hint.ohne') });
       }
-      label.textContent = text;
-      zelle.appendChild(wrap); zelle.appendChild(label);
+      zelle.appendChild(wrap);
+      zelle.appendChild(zellenLabel(c, text));
       z.appendChild(zelle);
     }
+    pxGroessenSetzen();
   }
 
+  // ---- Differenz -----------------------------------------------------------
+  function dfGroessenSetzen() {
+    $('dfzellen').querySelectorAll('.dfzelle').forEach(el => {
+      const N = Number(el.dataset.n) || 0;
+      const b = (N * zoom) || 0;
+      el.querySelectorAll('canvas, .leer').forEach(c => {
+        c.style.width = b + 'px'; c.style.height = b + 'px';
+      });
+      const l = el.querySelector('.label');
+      if (l) l.style.width = b + 'px';
+    });
+  }
   // |alt − neu| je Pixel bei der gewählten Rasterung.
   async function renderDifferenz() {
     if (!letzterDiff) return;
     const skala = rasterSkala();
+    const sig = skala + '|' + (dunkel ? 1 : 0);
+    if (dfQuelle === letzterDiff && dfSig === sig) { dfGroessenSetzen(); return; }
+    dfQuelle = letzterDiff; dfSig = sig;
     const p = palette();
     const z = $('dfzellen'); z.textContent = '';
     for (const c of letzterDiff.zellen) {
@@ -115,18 +349,15 @@
       const bytesAlt = skala === 2 ? c.pngAlt2 : c.pngAlt;
       if (!bytesNeu) continue;
       const zelle = document.createElement('div'); zelle.className = 'dfzelle';
+      zelle.dataset.n = String(c.N || 0);
       const wrap = document.createElement('div'); wrap.className = 'wrap';
-      const breite = (c.N || 0) * zoom;
-      const label = document.createElement('div'); label.className = 'label';
-      label.style.width = breite + 'px';
+      let zusatz;
       if (!bytesAlt) {
         const leer = document.createElement('div');
         leer.className = 'leer';
-        leer.style.width = breite + 'px';
-        leer.style.height = breite + 'px';
         leer.textContent = t('diff.nuralt');
         wrap.appendChild(leer);
-        label.textContent = zahl(c.N) + ' px · ' + t('zelle.neu');
+        zusatz = t('diff.nurNeu');
       } else {
         const A = await bitmapDaten(bytesAlt);
         const B = await bitmapDaten(bytesNeu);
@@ -151,66 +382,76 @@
           d[i + 3] = Math.round(Math.max(0, Math.min(1, alpha)) * 255);
         }
         g.putImageData(bild, 0, 0);
-        cv.style.width = (breite || w) + 'px';
-        cv.style.height = (breite || h) + 'px';
         wrap.appendChild(cv);
-        label.textContent = zahl(c.N) + ' px · ' + anders + ' px';
+        zusatz = anders + ' px';
       }
-      zelle.appendChild(wrap); zelle.appendChild(label);
+      zelle.appendChild(wrap);
+      zelle.appendChild(zellenLabel(c, zusatz));
       z.appendChild(zelle);
     }
+    dfGroessenSetzen();
   }
 
-  function zellenLabel(c) {
-    const teile = [];
-    teile.push(zahl(c.N) + ' px');
-    if (c.soll != null) teile.push(t('zelle.keyline', {
-      ist: c.ist == null ? '?' : zahl(c.ist.toFixed(2)), soll: zahl(c.soll) }));
-    const zwei = [];
-    if (c.kontur != null || c.raster != null) zwei.push(t('zelle.masse', {
-      k: zahl(c.kontur == null ? '?' : c.kontur), r: zahl(c.raster == null ? '?' : c.raster) }));
-    if (c.radius != null) zwei.push(t('zelle.radius', {
-      v: (typeof c.radius === 'object')
-        ? (t('radius.' + c.radius.modus) + (c.radius.modus === 'fest' ? ' ' + zahl(c.radius.wert) : ''))
-        : zahl(c.radius) }));
-    const drei = [];
-    if (c.gerastet) drei.push(t('zelle.gerastet', { n: c.gerastet }));
-    if (!c.alt) drei.push(t('zelle.neu'));
-    let s = teile.join(' · ');
-    if (zwei.length) s += '\n' + zwei.join(' · ');
-    if (drei.length) s += '\n' + drei.join(' · ');
-    return s;
+  function kopfZeichnen() {
+    $('diff').classList.add('an');
+    $('diff').classList.toggle('dunkel', dunkel);
+    MODI.forEach(m => $('diff').classList.toggle('modus-' + m, vglModus === m));
+    $('lagenSchalter').hidden = vglModus !== 'ueberlagern';
+    $('blinkHinweis').hidden = vglModus !== 'blinken';
+    try { $('segModus').setAttribute('value', vglModus); } catch (e) {}
+    $('zoomWertAnzeige').textContent = zoom + '×';
+    try { $('zoomRegler').value = zoom; } catch (e) {}
   }
 
   function renderDiff() {
     if (!letzterDiff) return;
-    const m = letzterDiff;
-    const p = palette();
-    $('diff').classList.add('an');
-    $('diff').classList.toggle('dunkel', dunkel);
-    $('zoomWertAnzeige').textContent = zoom + '×';
-    try { $('zoomRegler').value = zoom; } catch (e) {}
-    const z = $('zellen'); z.textContent = '';
-    m.zellen.forEach(c => {
-      const zelle = document.createElement('div'); zelle.className = 'zelle';
-      const schau = document.createElement('div'); schau.className = 'schau';
-      const px = c.N * zoom;
-      schau.style.width = px + 'px'; schau.style.height = px + 'px';
-      schau.style.backgroundSize = zoom + 'px ' + zoom + 'px, ' + zoom + 'px ' + zoom + 'px, '
-        + (zoom / 2) + 'px ' + (zoom / 2) + 'px, ' + (zoom / 2) + 'px ' + (zoom / 2) + 'px, auto';
-      if (c.alt) schau.appendChild(svgLayer(c.alt, p.alt, 'alt'));
-      if (c.neu) schau.appendChild(svgLayer(c.neu, p.neu, 'neu'));
-      const label = document.createElement('div'); label.className = 'label';
-      label.style.width = px + 'px';
-      label.textContent = zellenLabel(c);
-      zelle.appendChild(schau); zelle.appendChild(label);
-      z.appendChild(zelle);
-    });
+    kopfZeichnen();
+    renderVektor();
     renderPixel();
     renderDifferenz();
   }
-  function zoomSetzen(w) { zoom = Math.max(3, Math.min(32, w)); renderDiff(); }
+  function zoomSetzen(w) {
+    const neu = Math.max(3, Math.min(32, Math.round(w)));
+    if (neu === zoom) return;
+    zoom = neu;
+    kopfZeichnen();
+    renderVektor();
+    // renderPixel/renderDifferenz bauen nur neu, wenn sich die Signatur
+    // ändert (z. B. der Sprung auf das 8×-PNG ab Zoom 8) — sonst skalieren
+    // sie die vorhandenen Canvas bloß neu.
+    renderPixel();
+    renderDifferenz();
+  }
+  // Fit: alle Größen passen nebeneinander in die Bühne (Lücke 16 px).
+  function zoomFit() {
+    if (!letzterDiff || !letzterDiff.zellen.length) return;
+    const faktor = vglModus === 'neben' ? 2 : 1;
+    const anzahl = letzterDiff.zellen.length * faktor;
+    const summeN = letzterDiff.zellen.reduce((s, c) => s + (c.N || 0), 0) * faktor;
+    const platz = Math.max(60, $('buehne').clientWidth - 6 - 16 * Math.max(0, anzahl - 1));
+    zoomSetzen(Math.floor(platz / Math.max(1, summeN)));
+  }
 
+  function modusSetzen(m, melden) {
+    if (MODI.indexOf(m) < 0 || m === vglModus) return;
+    vglModus = m;
+    blinkStoppen();
+    kopfZeichnen();
+    if (letzterDiff) renderVektor();
+    if (melden) send({ type: 'merkerSetzen', schluessel: 'vergleichsmodus', wert: vglModus });
+  }
+  bei('merker', m => {
+    if (!m || m.schluessel !== 'vergleichsmodus') return;
+    if (MODI.indexOf(m.wert) < 0) return;
+    vglModus = m.wert;
+    kopfZeichnen();
+    if (letzterDiff) renderVektor();
+  });
+  send({ type: 'merkerLaden', schluessel: 'vergleichsmodus' });
+
+  $('segModus').addEventListener('change', e => {
+    modusSetzen(String((e && e.detail) || $('segModus').value || 'ueberlagern'), true);
+  });
   $('chkAlt').addEventListener('change', e => $('zellen').classList.toggle('ohneAlt', !e.target.checked));
   $('chkNeu').addEventListener('change', e => $('zellen').classList.toggle('ohneNeu', !e.target.checked));
   $('chkDunkel').addEventListener('change', e => { dunkel = !!e.target.checked; renderDiff(); });
@@ -220,7 +461,37 @@
   $('zoomRegler').addEventListener('change', e => { const v = +e.target.value; if (v) zoomSetzen(v); });
   $('zoomMinus').addEventListener('click', () => zoomSetzen(zoom - 1));
   $('zoomPlus').addEventListener('click', () => zoomSetzen(zoom + 1));
+  $('zoomFit').addEventListener('click', zoomFit);
   $('zoomWertAnzeige').addEventListener('dblclick', () => zoomSetzen(6));
+
+  // Tastatur: nur wenn der Fokus NICHT in einem Eingabefeld steht.
+  function inEingabe() {
+    let el = document.activeElement;
+    while (el) {
+      const tag = (el.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return true;
+      if (tag.indexOf('fig-input') === 0 || tag === 'fig-dropdown') return true;
+      if (el.isContentEditable) return true;
+      el = el.parentElement;
+    }
+    return false;
+  }
+  document.addEventListener('keydown', e => {
+    if (inEingabe() || !letzterDiff || !$('diff').classList.contains('an')) return;
+    if (e.key === '+' || e.key === '=') { e.preventDefault(); zoomSetzen(zoom + 1); }
+    else if (e.key === '-' || e.key === '_') { e.preventDefault(); zoomSetzen(zoom - 1); }
+    else if (e.key === '0') { e.preventDefault(); zoomFit(); }
+    else if (e.key === ' ' && vglModus === 'blinken' && !blinkPause) {
+      e.preventDefault(); blinkPause = true; blinkStoppen();
+      $('blinkHinweis').textContent = t('blink.pausiert');
+    }
+  });
+  document.addEventListener('keyup', e => {
+    if (e.key !== ' ' || !blinkPause) return;
+    blinkPause = false;
+    $('blinkHinweis').textContent = t('blink.hinweis');
+    if (vglModus === 'blinken') blinkStarten();
+  });
 
   (() => {
     const el = $('buehne');
@@ -241,7 +512,7 @@
 
     let aktiv = false, px = 0, py = 0, sx = 0, sy = 0;
     el.addEventListener('pointerdown', e => {
-      if (e.target.closest('fig-button, fig-slider, fig-switch, fig-segmented-control, fig-segment, label, input, button')) return;
+      if (e.target.closest('.schau.wisch, fig-header, fig-button, fig-slider, fig-switch, fig-segmented-control, fig-segment, label, input, button')) return;
       aktiv = true; px = e.clientX; py = e.clientY;
       sx = el.scrollLeft; sy = el.scrollTop;
       el.classList.add('zieht'); el.setPointerCapture(e.pointerId);
@@ -256,4 +527,3 @@
     el.addEventListener('pointerup', ende);
     el.addEventListener('pointercancel', ende);
   })();
-

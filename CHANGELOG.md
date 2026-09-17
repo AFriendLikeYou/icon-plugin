@@ -110,3 +110,15 @@ The original single-file script (`code.v1.js`, kept as a reference).
 - `union` → `flatten`, colour bound to the library variable `Text/70`, content
   swapped into the existing variant set so instances stayed connected.
 - Audit over all cards, onion-skin and pixel preview, optional stroke variant.
+
+## Runde 4 — 2026-09-17
+
+- Begriffe vereinheitlicht (Vorlage, Strichstärke, Kanten rasten auf, Ganze Pixel bevorzugen, Eckenradien, Rasterfehler, weiche Pixel, Maß stimmt); Hilfetexte und Tooltips an jedem Feld
+- Startseite im Icon-Tab: Liste aller Icons im File mit Status-Chips, Suche, Checkliste „Erste Schritte“
+- Onboarding als Slideshow (4 Schritte, Illustrationen, Dots, Pfeiltasten), erneut über „?“ im Kopf
+- Lizenz (Einmalkauf): Testphase 14 Tage, kostenpflichtig sind Batch-Bau, Bericht, Export, Konfig-Import; Paywall-Screen; Entwicklermodus zum Umschalten des Status
+- Bericht: Legende, Kacheln als Filter, Zeilenauswahl, Export „Ausgewählte“
+- Protokoll: Gruppen je Icon, Filter, Suche, Kopieren, verständliche Texte; strukturierte Audit-Meldungen mit Codes
+- Vorschau: Vergleichsmodi Überlagern / Wischen / Nebeneinander / Blinken, Fit-Zoom, kompakte Beschriftung, Statuspunkt
+- Design-Token-Liste mit Farbfeldern, Library-Werte werden nachgeladen
+- Beispiel-Icon auch im ZDS-Modus; UI in Module geteilt (src/ui), Handler-Registry

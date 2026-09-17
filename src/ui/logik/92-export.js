@@ -1,12 +1,17 @@
   // =========================================================================
   // SVG-Export → ZIP (Store-Methode, CRC32, ohne Bibliothek)
   // =========================================================================
+  // Umfang: Alle · Ausgewählte (Haken in der Bericht-Tabelle) · Aktuelles Icon.
   $('btnExport').addEventListener('click', () => {
     if (beschaeftigt) return;
-    const umfang = String($('segUmfang').value || 'alle') === 'auswahl' ? 'auswahl' : 'alle';
+    const wahl = String($('segUmfang').value || 'alle');
+    const namen = gewaehlteNamen();
+    if (wahl === 'namen' && !namen.length) { toast(t('ber.exportLeer')); return; }
+    if (wahl === 'auswahl' && !hatAuswahl) { toast(t('ber.exportLeer')); return; }
     $('fazit').className = 'fazit';
     sperren(true);
-    send({ type: 'exportieren', umfang: umfang });
+    if (wahl === 'namen') send({ type: 'exportieren', umfang: 'namen', namen: namen });
+    else send({ type: 'exportieren', umfang: wahl === 'auswahl' ? 'auswahl' : 'alle' });
   });
 
   let CRC_TAB = null;

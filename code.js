@@ -761,20 +761,25 @@ function listeUnd(werte) {
 // ===== 06-i18n-zusatz.js =====
 // ===========================================================================
 // 06-i18n-zusatz.js — Texte der Runde 3 (Trockenlauf, Abbruch, Bericht,
-// Export, Beispiel-Icon). Liegt bewusst in einer eigenen Datei: 05-i18n.js
-// gehört Paket A1. Beide Sprachen vollständig, gleiche Platzhalter.
+// Export, Beispiel-Icon) und der Runde 4 (Audit-Codes, Lizenz, Begriffe).
+// Liegt bewusst in einer eigenen Datei: 05-i18n.js gehört Paket A1.
+// Beide Sprachen vollständig, gleiche Platzhalter.
+//
+// Runde 4, Abschnitt 27: Im Deutschen heißt die Master-Komponente „Vorlage“,
+// nicht mehr „Source“. Die betroffenen Schlüssel aus 05-i18n.js werden hier
+// überschrieben (05 selbst bleibt unangetastet); im Englischen bleibt „source“.
 // ===========================================================================
 
 Object.assign(SPRACHEN.de, {
   // --- Trockenlauf ---
-  'plan.keineSource': 'keine Source gefunden',
+  'plan.keineSource': 'keine Vorlage gefunden',
   'plan.frameWandeln': 'Frame wird beim Bauen in eine Komponente umgewandelt',
   'plan.frameNichtErlaubt': 'Frame wird nicht umgewandelt — Einstellungen → Schreiben',
   'plan.gesperrt': 'gesperrt — Bauen nicht möglich',
   'plan.neuesSet': 'Set wird neu angelegt',
   'plan.fehlendeVarianten': '{n} Varianten werden ergänzt',
   'plan.fremdeVarianten': '{n} fremde Varianten bleiben stehen',
-  'plan.sourceMass': 'Source misst {ist} statt {soll}',
+  'plan.sourceMass': 'Vorlage misst {ist} statt {soll}',
   'plan.strokeHeimAus': 'Stroke-Fassung wird übersprungen — Einstellungen → Schreiben',
   'plan.strokeHeimNeu': 'Ablage für Stroke-Fassungen wird angelegt',
   'plan.instanzenUnbekannt': 'Instanzen nicht gezählt — zu viele Knoten im File',
@@ -796,7 +801,58 @@ Object.assign(SPRACHEN.de, {
 
   // --- Beispiel-Icon ---
   'beispiel.nurFrei': 'Ein Beispiel-Icon lässt sich nur im Frei-Modus anlegen.',
-  'beispiel.name': 'demo-icon'
+  'beispiel.name': 'demo-icon',
+
+  // === Runde 4 ============================================================
+  // --- Begriffe (Abschnitt 27): „Source“ → „Vorlage“, Schlüssel aus 05 ---
+  'fehler.KEINE_SOURCE': '{name}: keine Vorlage gefunden.',
+  'hinweis.KEINE_SOURCE': 'Erwartet wird eine Komponente mit {mass} × {mass} px.',
+  'fehler.SOURCE_LEER': '{name}: die Vorlage enthält keine Vektoren.',
+  'hinweis.SOURCE_LEER': 'Ohne zeichnende Ebenen lässt sich keine Keyline messen.',
+  'fehler.SOURCE_MASS': '{name}: Vorlage misst {ist}, erwartet {soll}.',
+  'hinweis.SOURCE_MASS': 'Die Master-Größe steht in den Einstellungen unter „Master“. Setze die Vorlage auf dieses Maß oder passe die Konfiguration an.',
+  'fehler.GESPERRT': '{name}: Vorlage, Set oder Variante ist gesperrt.',
+  'konfig.farbVariable': 'Keine Farbvariable gewählt — Modus „Wie Vorlage“ gesetzt.',
+  'bau.sourceMisst': ' — Vorlage misst {ist} statt {soll}',
+  'audit.keineSource': '{name}: keine Vorlage',
+  'audit.schiefeKante': '{name}: Kante {wert} — in der Vorlage begradigen',
+  'audit.veraltet': '{name}: Vorlage geändert seit dem letzten Bau — neu bauen',
+  'audit.luecke': '{name}/{N}: Zwischenraum {wert} px füllt sich bei 1× zu',
+  'profil.generic.beschreibung': 'Neutraler Start für ein beliebiges File: 24-px-Master, Größen 16/20/24, Farbe aus der Vorlage.',
+
+  // --- Strukturierte Audit-Befunde (Abschnitt 28.1) ---
+  'fehler.KEYLINE_ABWEICHUNG': '{name} · {N} px: Maß {ist} statt {soll}.',
+  'hinweis.KEYLINE_ABWEICHUNG': 'Der Icon-Körper füllt das vorgesehene Keyline-Maß nicht. Keyline dieser Größe prüfen oder das Icon neu bauen.',
+  'fehler.STRUKTUR_KNOTEN': '{name} · {N} px: {n} Knoten statt einem.',
+  'hinweis.STRUKTUR_KNOTEN': 'Eine Variante soll genau einen geflatteten Pfad enthalten. Icon neu bauen.',
+  'fehler.STRUKTUR_TYP': '{name} · {N} px: {typ} statt VECTOR.',
+  'hinweis.STRUKTUR_TYP': 'Nur ein Vektor lässt sich rastern und messen. Icon neu bauen.',
+  'fehler.RESTKONTUR': '{name} · {N} px: Restkontur vorhanden.',
+  'hinweis.RESTKONTUR': 'Nach dem Plätten bleibt nur eine Fläche übrig — hier hängt noch eine Kontur daran. Icon neu bauen.',
+  'fehler.FARBE_UNGEBUNDEN': '{name} · {N} px: Farbe nicht an das Design-Token gebunden.',
+  'hinweis.FARBE_UNGEBUNDEN': 'Einstellungen → Farbe prüfen und das Icon neu bauen.',
+  'fehler.LUECKE_ENG': '{name} · {N} px: Zwischenraum {d} px füllt sich bei 1× zu.',
+  'hinweis.LUECKE_ENG': 'In der Vorlage den Abstand vergrößern — sonst verschwindet die Trennung in der kleinsten Größe.',
+  'fehler.KANTE_SCHIEF': '{name}: Kante bei {ist}° statt {soll}° — in der Vorlage begradigen.',
+  'hinweis.KANTE_SCHIEF': 'Fast gerade Kanten rastern schlecht und flimmern. In der Vorlage auf den vollen Winkel bringen.',
+  'fehler.VORLAGE_GEAENDERT': '{name}: Vorlage geändert seit dem letzten Bau.',
+  'hinweis.VORLAGE_GEAENDERT': 'Icon neu bauen, damit das Set wieder zur Vorlage passt.',
+  'fehler.KEIN_SET': '{name}: kein Varianten-Set vorhanden.',
+  'hinweis.KEIN_SET': 'Icon einmal bauen — danach liegt das Set neben der Vorlage.',
+
+  // --- Lizenz (Abschnitt 28.5) ---
+  'fehler.LIZENZ_NOETIG': '{funktion} gehört zur Vollversion.',
+  'hinweis.LIZENZ_NOETIG': 'Einmalkauf, kein Abo. Die Testphase läuft {tage} Tage ab dem ersten Start.',
+  'lizenz.funktion.alle': 'Alle Icons bauen',
+  'lizenz.funktion.bericht': 'Der Qualitätsbericht',
+  'lizenz.funktion.exportieren': 'Der SVG-Export',
+  'lizenz.funktion.konfigImport': 'Der Konfig-Import',
+  'lizenz.kaufFehler': 'Der Kauf ließ sich nicht öffnen: {grund}',
+  'lizenz.keinKauf': 'Diese Figma-Version kennt keine Plugin-Zahlungen — es bleibt alles freigeschaltet.',
+  'lizenz.debugGesetzt': 'Entwicklermodus: Lizenzstatus auf {status} gesetzt.',
+
+  // --- Übersicht (Startseite der UI) ---
+  'log.uebersichtLaeuft': 'Übersicht wird geladen …'
 });
 
 Object.assign(SPRACHEN.en, {
@@ -830,7 +886,42 @@ Object.assign(SPRACHEN.en, {
 
   // --- demo icon ---
   'beispiel.nurFrei': 'A demo icon can only be created in free mode.',
-  'beispiel.name': 'demo-icon'
+  'beispiel.name': 'demo-icon',
+
+  // === round 4 ============================================================
+  // --- structured audit findings (section 28.1) ---
+  'fehler.KEYLINE_ABWEICHUNG': '{name} · {N} px: size {ist} instead of {soll}.',
+  'hinweis.KEYLINE_ABWEICHUNG': 'The icon body does not fill the intended keyline. Check the keyline of this size or rebuild the icon.',
+  'fehler.STRUKTUR_KNOTEN': '{name} · {N} px: {n} nodes instead of one.',
+  'hinweis.STRUKTUR_KNOTEN': 'A variant should hold exactly one flattened path. Rebuild the icon.',
+  'fehler.STRUKTUR_TYP': '{name} · {N} px: {typ} instead of VECTOR.',
+  'hinweis.STRUKTUR_TYP': 'Only a vector can be rasterised and measured. Rebuild the icon.',
+  'fehler.RESTKONTUR': '{name} · {N} px: a stroke is left over.',
+  'hinweis.RESTKONTUR': 'After flattening only a filled shape should remain. Rebuild the icon.',
+  'fehler.FARBE_UNGEBUNDEN': '{name} · {N} px: colour not bound to the design token.',
+  'hinweis.FARBE_UNGEBUNDEN': 'Check Settings → Colour and rebuild the icon.',
+  'fehler.LUECKE_ENG': '{name} · {N} px: gap of {d} px closes at 1×.',
+  'hinweis.LUECKE_ENG': 'Widen the gap in the source — otherwise the separation disappears at the smallest size.',
+  'fehler.KANTE_SCHIEF': '{name}: edge at {ist}° instead of {soll}° — straighten in the source.',
+  'hinweis.KANTE_SCHIEF': 'Almost straight edges snap badly and shimmer. Bring them to the full angle in the source.',
+  'fehler.VORLAGE_GEAENDERT': '{name}: source changed since the last build.',
+  'hinweis.VORLAGE_GEAENDERT': 'Rebuild the icon so that the set matches the source again.',
+  'fehler.KEIN_SET': '{name}: no variant set yet.',
+  'hinweis.KEIN_SET': 'Build the icon once — the set then sits next to the source.',
+
+  // --- licence (section 28.5) ---
+  'fehler.LIZENZ_NOETIG': '{funktion} is part of the full version.',
+  'hinweis.LIZENZ_NOETIG': 'One-time purchase, no subscription. The trial runs for {tage} days from the first start.',
+  'lizenz.funktion.alle': 'Building all icons',
+  'lizenz.funktion.bericht': 'The quality report',
+  'lizenz.funktion.exportieren': 'The SVG export',
+  'lizenz.funktion.konfigImport': 'Importing a configuration',
+  'lizenz.kaufFehler': 'The purchase could not be opened: {grund}',
+  'lizenz.keinKauf': 'This Figma version has no plugin payments — everything stays unlocked.',
+  'lizenz.debugGesetzt': 'Developer mode: licence status set to {status}.',
+
+  // --- overview (UI start page) ---
+  'log.uebersichtLaeuft': 'Loading the overview …'
 });
 
 // ===== 10-errors.js =====
@@ -848,7 +939,11 @@ const FEHLER_CODES = [
   'SET_HAT_FREMDE_VARIANTE', 'FRAME_ZU_KOMPONENTE', 'KONFIG_UNGUELTIG',
   'BIBLIOTHEK_UNZUGAENGLICH', 'KEINE_BIBLIOTHEKEN',
   // Runde 3
-  'GESPERRT', 'FRAME_NICHT_ERLAUBT', 'STROKEHEIM_AUS', 'ABGEBROCHEN', 'EXPORT_FEHLT'
+  'GESPERRT', 'FRAME_NICHT_ERLAUBT', 'STROKEHEIM_AUS', 'ABGEBROCHEN', 'EXPORT_FEHLT',
+  // Runde 4 — strukturierte Audit-Befunde (Abschnitt 28.1) und Lizenz
+  'KEYLINE_ABWEICHUNG', 'STRUKTUR_KNOTEN', 'STRUKTUR_TYP', 'RESTKONTUR',
+  'FARBE_UNGEBUNDEN', 'LUECKE_ENG', 'KANTE_SCHIEF', 'VORLAGE_GEAENDERT',
+  'KEIN_SET', 'LIZENZ_NOETIG'
 ];
 
 class PipelineFehler extends Error {
@@ -868,29 +963,53 @@ const ui = m => figma.ui.postMessage(m);
 // Dem Event-Loop Luft geben, damit die UI zwischen Icons zeichnen kann.
 const tick = () => new Promise(r => setTimeout(r, 0));
 
+// Zusatzfelder einer Log-Nachricht (Runde 4): die UI gruppiert danach.
+// `extra` ist immer optional — alte Aufrufe bleiben unverändert gültig.
+function logExtra(m, extra) {
+  if (!extra) return m;
+  if (extra.name != null) m.name = extra.name;
+  if (extra.N != null) m.N = extra.N;
+  if (extra.schwere) m.schwere = extra.schwere;
+  if (extra.code && m.code == null) m.code = extra.code;
+  if (extra.hinweis && m.hinweis == null) m.hinweis = extra.hinweis;
+  if (extra.funktion) m.funktion = extra.funktion;
+  return m;
+}
+
+// Log-Art aus der Schwere (Abschnitt 28.1).
+function artVonSchwere(schwere) {
+  return schwere === 'fehler' ? 'err' : (schwere === 'info' ? 'info' : 'warn');
+}
+
 // Warnung/Info mit Code — dieselben Texte wie ein geworfener PipelineFehler.
-function melden(art, code, params, nodeId) {
-  ui({
+function melden(art, code, params, nodeId, extra) {
+  const p = params || {};
+  ui(logExtra({
     type: 'log',
     art: art,
     code: code,
-    text: t('fehler.' + code, params || {}),
-    hinweis: t('hinweis.' + code, params || {}),
-    nodeId: nodeId || null
-  });
+    text: t('fehler.' + code, p),
+    hinweis: t('hinweis.' + code, p),
+    nodeId: nodeId || null,
+    schwere: art === 'err' ? 'fehler' : (art === 'info' ? 'info' : 'warnung')
+  }, Object.assign({ name: p.name, N: p.N }, extra || {})));
 }
 
 // Freitext-Protokoll ohne Code (Audit-Zeilen, Fortschrittsnotizen).
-function logZeile(art, text, nodeId) {
-  ui({ type: 'log', art: art, text: text, nodeId: nodeId || null });
+// extra = { name, N, schwere } — für die Gruppierung im Protokoll.
+function logZeile(art, text, nodeId, extra) {
+  ui(logExtra({ type: 'log', art: art, text: text, nodeId: nodeId || null }, extra));
 }
 
 // Beliebigen Fehler in eine Log-Nachricht übersetzen.
 function fehlerLog(e) {
   if (e instanceof PipelineFehler) {
-    return { type: 'log', art: 'err', text: e.message, hinweis: e.hinweis, code: e.code, nodeId: e.nodeId };
+    return logExtra(
+      { type: 'log', art: 'err', text: e.message, hinweis: e.hinweis, code: e.code, nodeId: e.nodeId },
+      { name: e.params && e.params.name, N: e.params && e.params.N, schwere: 'fehler',
+        funktion: e.params && e.params.funktion });   // LIZENZ_NOETIG: welche Funktion gesperrt ist
   }
-  return { type: 'log', art: 'err', text: t('log.fehler', { grund: (e && e.message) || String(e) }) };
+  return { type: 'log', art: 'err', text: t('log.fehler', { grund: (e && e.message) || String(e) }), schwere: 'fehler' };
 }
 
 // ===== 20-geometrie.js =====
@@ -1668,16 +1787,37 @@ const adapterZds = {
              || CTX.zds.K.children.find(c => c.name === 'Karte · ' + n.name.replace(/^\./, ''))
              || null;
     }
-    if (!karte) return null;
-    return await zdsZiel(karte);
+    if (karte) return await zdsZiel(karte);
+
+    // Runde 4: Eine Komponente im Master-Maß ohne Karte ist kein Fehler mehr —
+    // sie wird nach den Frei-Regeln behandelt (Beispiel-Icon auf der Seite
+    // Source, lose Vorlagen). Die Frei-Helfer liegen im selben Scope.
+    let n = sel;
+    while (n && n.type !== 'PAGE' && n.type !== 'DOCUMENT') {
+      if (n.type === 'COMPONENT' && hatMasterMass(n) &&
+          !(n.parent && n.parent.type === 'COMPONENT_SET')) return freiZielAusSource(n);
+      n = n.parent;
+    }
+    return null;
   },
 
   // Async wie im Frei-Adapter — das Interface ist fuer beide gleich.
-  async zielSet(ziel) { return zdsLibrarySet(ziel.name); },
+  // Ziele ohne Karte (Beispiel-Icon, lose Vorlagen) folgen den Frei-Regeln:
+  // ihr Set gehört neben die Vorlage, nicht in die Library-Seite.
+  async zielSet(ziel) {
+    if (!ziel.karte) return await adapterFrei.zielSet(ziel);
+    return zdsLibrarySet(ziel.name);
+  },
 
-  zielEltern(ziel) { return { node: CTX.zds.IC, x: 80, y: 120 }; },
+  zielEltern(ziel) {
+    if (!ziel.karte) return adapterFrei.zielEltern(ziel);
+    return { node: CTX.zds.IC, x: 80, y: 120 };
+  },
 
-  arbeitsFlaeche(ziel) { return CTX.zds.IC; },
+  arbeitsFlaeche(ziel) {
+    if (!ziel.karte) return adapterFrei.arbeitsFlaeche(ziel);
+    return CTX.zds.IC;
+  },
 
   // Gibt es die Ablage schon? (Trockenlauf — nichts anlegen.)
   strokeHeimDa(ziel) {
@@ -1980,6 +2120,29 @@ async function farbenListen() {
   } catch (e) { diagnose.bibFehler = (e && e.message) || String(e); }
 
   return { lokal: lokal, bibliotheken: bibliotheken, diagnose: diagnose };
+}
+
+// Werte einzelner Library-Variablen nachladen (Abschnitt 28.2).
+// `farbenListen` liefert Library-Variablen bewusst ohne hex — der Import je
+// Variable ist teuer. Die UI fordert die Werte einer aufgeklappten Kollektion
+// paketweise nach; ein Fehler je Key ist kein Fehler des Aufrufs, sondern null.
+const FARBEN_WERTE_MAX = 40;
+
+async function farbenWerte(keys) {
+  const werte = {};
+  const liste = (Array.isArray(keys) ? keys : [])
+    .filter(k => typeof k === 'string' && k)
+    .slice(0, FARBEN_WERTE_MAX);
+  for (const k of liste) {
+    if (Object.prototype.hasOwnProperty.call(werte, k)) continue;
+    let hex = null;
+    try {
+      const v = await figma.variables.importVariableByKeyAsync(k);
+      hex = v ? await farbeWertVon(v) : null;
+    } catch (e) { hex = null; }
+    werte[k] = hex;
+  }
+  return werte;
 }
 
 // key → id → Name. Ergebnis landet in CTX.farbVariable.
@@ -2288,7 +2451,10 @@ async function einIcon(ziel, snap, strokeAuch) {
     ? t('bau.sourceMisst', { ist: istMaster.toFixed(2), soll: sollMaster }) : '';
 
   const neu = !set;
-  if (neu && ADAPTER.name === 'zds') melden('info', 'KARTE_OHNE_SET', { name: name }, ziel.fokusNode ? ziel.fokusNode.id : null);
+  // Nur echte Karten melden „Karte ohne Set“ — ein karteloses Ziel im ZDS-Board
+  // (Beispiel-Icon) folgt den Frei-Regeln und braucht den Hinweis nicht.
+  if (neu && ADAPTER.name === 'zds' && ziel.karte)
+    melden('info', 'KARTE_OHNE_SET', { name: name }, ziel.fokusNode ? ziel.fokusNode.id : null);
 
   const pdAlt = set ? pdLesen(set) : {};
   const vorher = pdAlt.fehler || {};
@@ -2451,6 +2617,51 @@ async function vorschau(ziel, snap, ohneNormalisieren) {
   return { name: ziel.name, klasse: kl, kl: kl, zellen: zellen };
 }
 
+// --- Strukturierte Befunde (Abschnitt 28.1) -------------------------------
+// Audit und Bericht liefern keine fertigen Sätze mehr, sondern Einträge mit
+// Code, Schwere, Icon-Name und Größe. Der Text kommt aus dem Wörterbuch; die
+// UI kann nach Code, Icon und Schwere gruppieren und filtern.
+
+const ABW_SCHWERE = {
+  KEYLINE_ABWEICHUNG: 'warnung',
+  STRUKTUR_KNOTEN: 'warnung',
+  STRUKTUR_TYP: 'warnung',
+  RESTKONTUR: 'warnung',
+  FARBE_UNGEBUNDEN: 'warnung',
+  LUECKE_ENG: 'info',
+  KANTE_SCHIEF: 'warnung',
+  VORLAGE_GEAENDERT: 'info',
+  KEINE_SOURCE: 'fehler',
+  KEIN_SET: 'fehler'
+};
+
+// name/N stehen sowohl als Platzhalter im Text als auch als eigene Felder.
+function abwEintrag(code, name, N, params, nodeId) {
+  const p = Object.assign({ name: name, N: N == null ? '' : N }, params || {});
+  return {
+    code: code,
+    name: name == null ? null : name,
+    N: N == null ? null : N,
+    schwere: ABW_SCHWERE[code] || 'warnung',
+    text: t('fehler.' + code, p),
+    hinweis: t('hinweis.' + code, p),
+    nodeId: nodeId || null
+  };
+}
+
+// Einen Befund ins Protokoll schreiben — mit name/N/schwere für die Gruppierung.
+function abwLog(z) {
+  logZeile(artVonSchwere(z.schwere), z.text, z.nodeId,
+    { name: z.name, N: z.N, schwere: z.schwere, code: z.code, hinweis: z.hinweis });
+}
+
+// schiefeWinkel() liefert fertige Strings ('12.34° (soll 30°)') — für den
+// strukturierten Eintrag brauchen wir ist und soll getrennt.
+function abwWinkelTeile(wert) {
+  const m = /^([\d.,]+)°.*?(\d+)°/.exec(String(wert));
+  return m ? { ist: m[1], soll: m[2] } : { ist: String(wert), soll: '—' };
+}
+
 // --- Gemeinsame Messungen (Audit und Bericht) -----------------------------
 // Live gemessen wird an der gebauten Variante, nicht an der Source. Audit und
 // Bericht teilen sich diese drei Helfer, damit beide dasselbe Maß nehmen.
@@ -2478,20 +2689,26 @@ function messRaster(v, g) {
 
 // Struktur: genau ein Vektor, keine Restkontur, Farbe gebunden, keine engen Lücken.
 // `kleinste` schaltet die Lückenprüfung zu (nur bei der kleinsten Größe aussagekräftig).
+// Liefert strukturierte Einträge (Abschnitt 28.1); der Bericht nimmt daraus .text.
 function messStruktur(v, name, N, kleinste) {
-  const texte = [];
-  if (v.children.length !== 1) texte.push(t('audit.knoten', { name: name, N: N, n: v.children.length }));
+  const funde = [];
+  const id = v && v.id;
+  if (v.children.length !== 1)
+    funde.push(abwEintrag('STRUKTUR_KNOTEN', name, N, { n: v.children.length }, id));
   const kind = v.children[0];
-  if (!kind) return texte;
-  if (kind.type !== 'VECTOR') texte.push(t('audit.typ', { name: name, N: N, typ: kind.type }));
-  if ((kind.strokes || []).length) texte.push(t('audit.restkontur', { name: name, N: N }));
+  if (!kind) return funde;
+  if (kind.type !== 'VECTOR')
+    funde.push(abwEintrag('STRUKTUR_TYP', name, N, { typ: kind.type }, id));
+  if ((kind.strokes || []).length)
+    funde.push(abwEintrag('RESTKONTUR', name, N, null, id));
   if (CFG.farbe.modus === 'variable') {
     const fb = kind.fills && kind.fills[0] && kind.fills[0].boundVariables;
-    if (!(fb && fb.color)) texte.push(t('audit.farbe', { name: name, N: N }));
+    if (!(fb && fb.color)) funde.push(abwEintrag('FARBE_UNGEBUNDEN', name, N, null, id));
   }
   if (kleinste && kind.type === 'VECTOR')
-    engeLuecken(kind).forEach(l => texte.push(t('audit.luecke', { name: name, N: N, wert: l.toFixed(2) })));
-  return texte;
+    engeLuecken(kind).forEach(l =>
+      funde.push(abwEintrag('LUECKE_ENG', name, N, { d: l.toFixed(2) }, id)));
+  return funde;
 }
 
 // --- Audit -----------------------------------------------------------------
@@ -2510,15 +2727,25 @@ async function audit() {
     ui({ type: 'progress', i: geprueft, n: ziele.length, name: ziel.name });
     const name = ziel.name;
     const src = ziel.src;
-    if (!src) { abw.push(t('audit.keineSource', { name: name })); continue; }
+    const zielId = (ziel.fokusNode && ziel.fokusNode.id) || (src && src.id) || null;
+    if (!src) {
+      abw.push(abwEintrag('KEINE_SOURCE', name, null, { mass: CFG.master.groesse }, zielId));
+      continue;
+    }
     const kl = ziel.klasse;
 
-    schiefeWinkel(src).forEach(w => abw.push(t('audit.schiefeKante', { name: name, wert: w })));
+    schiefeWinkel(src).forEach(w => {
+      const teile = abwWinkelTeile(w);
+      abw.push(abwEintrag('KANTE_SCHIEF', name, null, teile, src.id));
+    });
 
     const set = await ADAPTER.zielSet(ziel);
-    if (!set) { abw.push(t('audit.keinSet', { name: name })); continue; }
+    if (!set) { abw.push(abwEintrag('KEIN_SET', name, null, null, zielId)); continue; }
 
-    if (istVeraltet(set, src)) { veraltet++; abw.push(t('audit.veraltet', { name: name })); }
+    if (istVeraltet(set, src)) {
+      veraltet++;
+      abw.push(abwEintrag('VORLAGE_GEAENDERT', name, null, null, set.id));
+    }
 
     for (const g of CFG.groessen) {
       const N = g.N;
@@ -2529,7 +2756,8 @@ async function audit() {
       if (k) {
         gesamt++;
         if (k.ok) treffer++;
-        else abw.push(t('audit.keyline', { name: name, klasse: kl, N: N, ist: k.ist.toFixed(3), soll: k.soll }));
+        else abw.push(abwEintrag('KEYLINE_ABWEICHUNG', name, N,
+          { ist: k.ist.toFixed(3), soll: k.soll, klasse: kl }, v.id));
       }
 
       messStruktur(v, name, N, N === kleinste).forEach(z => abw.push(z));
@@ -2746,6 +2974,7 @@ function berichtTreueVon(eintrag, N) {
 
 async function bericht(ziele) {
   const zeilen = [];
+  const abw = [];   // strukturierte Befunde wie im Audit (Abschnitt 28.1)
   const kleinste = CFG.groessen.length ? CFG.groessen[0].N : null;
   let icons = 0, ohneSet = 0, veraltetN = 0, keylineOk = 0, keylineGesamt = 0;
   let tSum = 0, tN = 0, tvSum = 0, tvN = 0;
@@ -2767,11 +2996,19 @@ async function bericht(ziele) {
       groessen: {}
     };
     icons++;
-    if (!set) { ohneSet++; zeilen.push(zeile); await tick(); continue; }
+    if (!ziel.src) abw.push(abwEintrag('KEINE_SOURCE', name, null, { mass: CFG.master.groesse }, zeile.nodeId));
+    if (!set) {
+      ohneSet++;
+      abw.push(abwEintrag('KEIN_SET', name, null, null, zeile.nodeId));
+      zeilen.push(zeile); await tick(); continue;
+    }
 
     const pd = pdLesen(set);
     zeile.veraltet = istVeraltet(set, ziel.src);
-    if (zeile.veraltet) veraltetN++;
+    if (zeile.veraltet) {
+      veraltetN++;
+      abw.push(abwEintrag('VORLAGE_GEAENDERT', name, null, null, set.id));
+    }
 
     // Vorletzter Verlaufseintrag = Stand vor dem letzten Bau.
     const verlauf = Array.isArray(pd.verlauf) ? pd.verlauf : [];
@@ -2791,7 +3028,12 @@ async function bericht(ziele) {
 
       const k = messKeyline(v, g, kl);
       const rr = messRaster(v, g);
-      const struktur = messStruktur(v, name, N, N === kleinste);
+      const funde = messStruktur(v, name, N, N === kleinste);
+      funde.forEach(z => abw.push(z));
+      // Der Bericht zeigt je Zelle nur die Sätze; die Codes stehen in `abw`.
+      const struktur = funde.map(z => z.text);
+      if (k && !k.ok) abw.push(abwEintrag('KEYLINE_ABWEICHUNG', name, N,
+        { ist: k.ist.toFixed(3), soll: k.soll, klasse: kl }, v.id));
 
       zeile.groessen[N] = {
         treue: treue, aa: aa, treueVorher: treueVorher,
@@ -2813,6 +3055,7 @@ async function bericht(ziele) {
 
   return {
     zeilen: zeilen,
+    abw: abw,
     zusammenfassung: {
       icons: icons, ohneSet: ohneSet, veraltet: veraltetN,
       treueMittel: tN ? tSum / tN : null,
@@ -2820,6 +3063,57 @@ async function bericht(ziele) {
       keylineOk: keylineOk, keylineGesamt: keylineGesamt
     },
     zeit: Date.now(),
+    geprueft: geprueft, n: ziele.length, abgebrochen: abgebrochen
+  };
+}
+
+// --- Übersicht: Startseite der UI -----------------------------------------
+// Liste aller Icons im File, bewusst billig: keine PNG-Exporte, keine
+// Güte-Messung — nur was ADAPTER.alle() und das Set ohne Rendern hergeben.
+// Fortschritt melden wir erst ab UEBERSICHT_PROGRESS_AB Icons, sonst flackert
+// die Zeile bei kleinen Files sinnlos auf.
+const UEBERSICHT_PROGRESS_AB = 50;
+
+async function uebersicht(ziele) {
+  const eintraege = [];
+  let ohneSet = 0, veraltetN = 0;
+  let geprueft = 0, abgebrochen = false;
+  const melde = ziele.length > UEBERSICHT_PROGRESS_AB;
+
+  for (const ziel of ziele) {
+    if (abbruchAktiv()) { abgebrochen = true; break; }
+    geprueft++;
+    if (melde) ui({ type: 'progress', i: geprueft, n: ziele.length, name: ziel.name });
+
+    let set = null;
+    try { set = await ADAPTER.zielSet(ziel); } catch (e) { set = null; }
+
+    const groessen = [];
+    if (set) {
+      for (const g of CFG.groessen) {
+        if (set.children.some(c => c.name === variantenName(g.N))) groessen.push(g.N);
+      }
+    }
+
+    const veraltet = set ? istVeraltet(set, ziel.src) : false;
+    if (!set) ohneSet++;
+    if (veraltet) veraltetN++;
+
+    eintraege.push({
+      name: ziel.name,
+      hatSet: !!set,
+      veraltet: veraltet,
+      groessen: groessen,
+      klasse: ziel.klasse,
+      nodeId: (ziel.fokusNode && ziel.fokusNode.id) || (ziel.src && ziel.src.id) || null,
+      setNodeId: set ? set.id : null
+    });
+    await tick();
+  }
+
+  return {
+    eintraege: eintraege,
+    zusammenfassung: { icons: eintraege.length, ohneSet: ohneSet, veraltet: veraltetN },
     geprueft: geprueft, n: ziele.length, abgebrochen: abgebrochen
   };
 }
@@ -2930,23 +3224,42 @@ async function exportieren(ziele) {
 
 // ===== 68-beispiel.js =====
 // ===========================================================================
-// 68-beispiel.js — Beispiel-Icon für den Leerzustand (Abschnitt 21).
+// 68-beispiel.js — Beispiel-Icon für den Leerzustand (Abschnitt 21, 28.6).
 // Ein Kreis plus Querbalken im Master-Maß: genug Geometrie, damit Keyline-Fit,
-// Snapping und Flatten sichtbar etwas tun. Nur im Frei-Modus — im ZDS-Board
-// gehören neue Icons auf eine Karte, nicht irgendwohin auf die Seite.
+// Snapping und Flatten sichtbar etwas tun. Seit Runde 4 auch im ZDS-Board —
+// dort aber gesammelt im Frame „Icon Pipeline · Beispiel“ auf der Seite Source,
+// nicht irgendwo zwischen den Karten.
 // ===========================================================================
 
 const BEISPIEL_NAME = 'demo-icon';
+const BEISPIEL_FRAME = 'Icon Pipeline · Beispiel';
+
+// Wo landet das Beispiel? Frei-Modus: aktuelle Seite. ZDS: eigener Frame auf
+// der Seite Source (wird bei Bedarf angelegt).
+function beispielHeim() {
+  if (!(ADAPTER && ADAPTER.name === 'zds' && CTX.zds && CTX.zds.SRC)) return figma.currentPage;
+  const SRC = CTX.zds.SRC;
+  let f = SRC.children.find(c => c.type === 'FRAME' && c.name === BEISPIEL_FRAME);
+  if (f) return f;
+  f = figma.createFrame();
+  SRC.appendChild(f);
+  f.name = BEISPIEL_FRAME;
+  const karten = SRC.children.find(c => c.name === ZDS_KARTEN_FRAME);
+  f.x = karten ? karten.x : 100;
+  f.y = karten ? karten.y + karten.height + 160 : 100;
+  f.resize(640, 320);
+  f.fills = [{ type: 'SOLID', color: { r: 1, g: 1, b: 1 } }];
+  f.clipsContent = false;
+  return f;
+}
 
 async function beispielAnlegen(snap) {
-  if (!ADAPTER || ADAPTER.name !== 'frei') {
-    logZeile('warn', t('beispiel.nurFrei'));
-    return null;
-  }
+  if (!ADAPTER) return null;
 
   const g = CFG.master.groesse;
   const w = CFG.master.kontur;
-  const seite = figma.currentPage;
+  const heim = beispielHeim();
+  const aufSeite = heim.type === 'PAGE';
   const tinte = [{ type: 'SOLID', color: { r: 0.267, g: 0.267, b: 0.267 } }];
 
   const comp = figma.createComponent();
@@ -2954,10 +3267,15 @@ async function beispielAnlegen(snap) {
   comp.resize(g, g);
   comp.fills = [];
   comp.clipsContent = false;
-  seite.appendChild(comp);
+  heim.appendChild(comp);
 
-  // Rechts neben der Viewport-Mitte; auf einer leeren Seite schlicht bei (0,0).
-  if (seite.children.length > 1) {
+  if (!aufSeite) {
+    // Im Sammel-Frame in einer Reihe aufreihen, damit mehrere Versuche nebeneinander liegen.
+    const geschwister = heim.children.filter(c => c !== comp).length;
+    comp.x = 40 + (geschwister % 6) * (g + 40);
+    comp.y = 40 + Math.floor(geschwister / 6) * (g + 40);
+  } else if (heim.children.length > 1) {
+    // Rechts neben der Viewport-Mitte; auf einer leeren Seite schlicht bei (0,0).
     let c = null;
     try { c = figma.viewport.center; } catch (e) { c = null; }
     comp.x = c ? Math.round(c.x + g * 0.75) : 0;
@@ -2987,15 +3305,22 @@ async function beispielAnlegen(snap) {
   linie.strokeWeight = w;
   try { linie.strokeCap = 'ROUND'; } catch (e) {}
 
-  figma.currentPage.selection = [comp];
-  logZeile('info', t('log.beispielAngelegt', { name: BEISPIEL_NAME }), comp.id);
+  // Auswählen geht nur auf der aktuellen Seite — im ZDS-Board liegt das
+  // Beispiel auf „Source“, also vorher dorthin wechseln.
+  let seite = comp; while (seite && seite.type !== 'PAGE') seite = seite.parent;
+  if (seite && seite !== figma.currentPage) {
+    try { await figma.setCurrentPageAsync(seite); } catch (e) {}
+  }
+  try { figma.currentPage.selection = [comp]; } catch (e) {}
+  logZeile('info', t('log.beispielAngelegt', { name: BEISPIEL_NAME }), comp.id,
+    { name: BEISPIEL_NAME, schwere: 'info' });
 
   // Gleich das Set daneben bauen — dafür ist das Beispiel da.
   let ziel = null;
   try { ziel = await ADAPTER.aufloesen(comp); } catch (e) { ziel = null; }
   if (ziel) {
     const text = await einIcon(ziel, !!snap, false);
-    logZeile('ok', text, comp.id);
+    logZeile('ok', text, comp.id, { name: ziel.name, schwere: 'info' });
   }
 
   // Ein Undo-Schritt für Komponente und Set.
@@ -3044,8 +3369,36 @@ function konfigSenden(pruef) {
     adapter: ADAPTER ? ADAPTER.name : null,
     profile: PROFIL_NAMEN,
     // Defensiv: läuft das Plugin gegen eine ältere 00-config.js, fehlt die Funktion.
-    profilInfo: typeof konfigProfilInfo === 'function' ? konfigProfilInfo() : []
+    profilInfo: typeof konfigProfilInfo === 'function' ? konfigProfilInfo() : [],
+    // Der Lizenzstatus hängt an jeder Konfig-Antwort, damit die UI ihn nie
+    // separat nachfragen muss (Abschnitt 28.5).
+    lizenz: lizenzStatus()
   });
+}
+
+// --- Merker: generischer UI-Zustand im clientStorage (Abschnitt 28.4) ------
+// Werte liegen als JSON, damit auch Objekte (ersteSchritte) durchgehen.
+
+const MERKER_PRAEFIX = 'icon-pipeline/merker/';
+
+function merkerSchluessel(s) {
+  return MERKER_PRAEFIX + String(s == null ? '' : s).replace(/[^A-Za-z0-9_.-]/g, '_').slice(0, 64);
+}
+
+async function merkerSetzen(schluessel, wert) {
+  try {
+    await figma.clientStorage.setAsync(merkerSchluessel(schluessel),
+      JSON.stringify(wert === undefined ? null : wert));
+  } catch (e) {}
+}
+
+async function merkerLaden(schluessel) {
+  try {
+    const roh = await figma.clientStorage.getAsync(merkerSchluessel(schluessel));
+    if (roh == null) return null;
+    if (typeof roh !== 'string') return roh;   // älterer Stand ohne JSON
+    return JSON.parse(roh);
+  } catch (e) { return null; }
 }
 
 // Auswahl auflösen und melden — das Ziel wird gecacht (wie aktiveKarte in v1).
@@ -3091,10 +3444,26 @@ async function zielStill() {
   return ziel;
 }
 
-// Umfang 'alle' → alle Ziele des Adapters, sonst das aktuell ausgewählte.
-async function zieleFuer(umfang) {
+// Umfang 'alle' → alle Ziele des Adapters, 'namen' → die genannten,
+// sonst das aktuell ausgewählte.
+async function zieleFuer(umfang, namen) {
   if (umfang === 'alle') return await ADAPTER.alle();
+  if (umfang === 'namen') return (await zieleNachNamen(namen)).ziele;
   return [await zielVerlangen()];
+}
+
+// Namen auf Ziele abbilden — in der Reihenfolge der Anfrage, Unbekanntes
+// kommt als `fehlend` zurück (die UI hat die Namen aus dem Bericht).
+async function zieleNachNamen(namen) {
+  const gesucht = (Array.isArray(namen) ? namen : []).map(n => String(n));
+  const alle = await ADAPTER.alle();
+  const ziele = [], fehlend = [];
+  for (const n of gesucht) {
+    const z = alle.find(x => x.name === n);
+    if (z) { if (ziele.indexOf(z) < 0) ziele.push(z); }
+    else fehlend.push(n);
+  }
+  return { ziele: ziele, fehlend: fehlend };
 }
 
 async function fokussieren(node) {
@@ -3144,6 +3513,34 @@ figma.ui.onmessage = async m => {
       return; // kein 'fertig' — darf einen laufenden Batch nicht entsperren
     }
 
+    // --- Merker: Zustandsablage der UI, antwortet ohne 'fertig' -----------
+    if (m.type === 'merkerSetzen') {
+      await merkerSetzen(m.schluessel, m.wert);
+      return;
+    }
+
+    if (m.type === 'merkerLaden') {
+      const wert = await merkerLaden(m.schluessel);
+      ui({ type: 'merker', schluessel: m.schluessel, wert: wert });
+      return;
+    }
+
+    // --- Lizenz -----------------------------------------------------------
+    if (m.type === 'lizenzStatus') { lizenzSenden(); return; }
+
+    if (m.type === 'lizenzKaufen') {
+      await lizenzKaufen(m.grund);
+      lizenzSenden();
+      ui({ type: 'fertig' });
+      return;
+    }
+
+    if (m.type === 'lizenzDebug') {
+      await lizenzDebugSetzen(m.status);
+      lizenzSenden();
+      return;
+    }
+
     if (m.type === 'fokus') {
       let node = null;
       if (m.nodeId) { try { node = await figma.getNodeByIdAsync(m.nodeId); } catch (e) { node = null; } }
@@ -3161,6 +3558,9 @@ figma.ui.onmessage = async m => {
     }
 
     if (m.type === 'konfigSpeichern') {
+      // Eine importierte Konfig ist eine Vollversions-Funktion; das normale
+      // Speichern aus dem Formular bleibt frei.
+      if (m.quelle === 'import') await lizenzPruefen('konfigImport');
       const pruef = await konfigSpeichern(m.konfig);
       spracheSetzen(CFG.sprache, m.sprache || uiSprache);
       await adapterWaehlen(CFG);
@@ -3198,6 +3598,14 @@ figma.ui.onmessage = async m => {
       return;
     }
 
+    // Werte einzelner Library-Variablen nachladen (max. 40 je Aufruf).
+    if (m.type === 'farbenWerte') {
+      const werte = await farbenWerte(m.keys);
+      ui({ type: 'farbenWerteErgebnis', werte: werte });
+      ui({ type: 'fertig' });
+      return;
+    }
+
     if (m.type === 'farbePruefen') {
       const r = await farbePruefen(m.farbe);
       ui({ type: 'farbeGeprueft', ok: r.ok, hex: r.hex, name: r.name });
@@ -3209,7 +3617,8 @@ figma.ui.onmessage = async m => {
       const ziel = await zielVerlangen();
       if (KLASSEN.indexOf(m.klasse) >= 0 && ziel.src) {
         try { ziel.src.setPluginData(KLASSE_SCHLUESSEL, m.klasse); } catch (e) {}
-        logZeile('ok', t('log.klasseGesetzt', { name: ziel.name, klasse: m.klasse }), ziel.src.id);
+        logZeile('ok', t('log.klasseGesetzt', { name: ziel.name, klasse: m.klasse }), ziel.src.id,
+          { name: ziel.name, schwere: 'info' });
       }
       await auswahlMelden();
       ui({ type: 'fertig' });
@@ -3230,9 +3639,10 @@ figma.ui.onmessage = async m => {
       ABBRUCH = false;
       const ziel = await zielVerlangen();
       const text = await einIcon(ziel, !!m.snap, !!m.stroke);
-      logZeile('ok', text, ziel.fokusNode ? ziel.fokusNode.id : null);
+      logZeile('ok', text, ziel.fokusNode ? ziel.fokusNode.id : null,
+        { name: ziel.name, schwere: 'info' });
       try { figma.commitUndo(); } catch (e) {}
-      logZeile('info', t('log.undo', { name: ziel.name }));
+      logZeile('info', t('log.undo', { name: ziel.name }), null, { name: ziel.name, schwere: 'info' });
       ui({ type: 'fazit', gut: true, text: t('fazit.neuGebaut'), beiAuswahl: true });
     }
 
@@ -3263,7 +3673,7 @@ figma.ui.onmessage = async m => {
     if (m.type === 'audit') {
       ABBRUCH = false;
       const r = await audit();
-      r.abw.forEach(z => logZeile('warn', z));
+      r.abw.forEach(abwLog);
       if (r.abgebrochen) fazitAbgebrochen(r.geprueft, r.n);
       else ui({
         type: 'fazit', gut: r.abw.length === 0,
@@ -3276,6 +3686,7 @@ figma.ui.onmessage = async m => {
 
     if (m.type === 'alle') {
       ABBRUCH = false;
+      await lizenzPruefen('alle');
       const ziele = await ADAPTER.alle();
       let ok = 0, i = 0, abgebrochen = false;
       for (; i < ziele.length; i++) {
@@ -3283,7 +3694,8 @@ figma.ui.onmessage = async m => {
         ui({ type: 'progress', i: i + 1, n: ziele.length, name: ziele[i].name });
         try {
           const text = await einIcon(ziele[i], !!m.snap, !!m.stroke);
-          ok++; logZeile('ok', text, ziele[i].fokusNode ? ziele[i].fokusNode.id : null);
+          ok++; logZeile('ok', text, ziele[i].fokusNode ? ziele[i].fokusNode.id : null,
+            { name: ziele[i].name, schwere: 'info' });
         } catch (e) {
           ui(fehlerLog(e));
         }
@@ -3298,7 +3710,7 @@ figma.ui.onmessage = async m => {
       } else {
         logZeile('info', t('audit.laeuft'));
         const r = await audit();
-        r.abw.forEach(z => logZeile('warn', z));
+        r.abw.forEach(abwLog);
         if (r.abgebrochen) fazitAbgebrochen(r.geprueft, r.n);
         else ui({
           type: 'fazit', gut: ok === ziele.length && r.abw.length === 0,
@@ -3314,10 +3726,12 @@ figma.ui.onmessage = async m => {
     // --- Qualitätsbericht -------------------------------------------------
     if (m.type === 'bericht') {
       ABBRUCH = false;
+      await lizenzPruefen('bericht');
       logZeile('info', t('log.berichtLaeuft'));
       const ziele = await ADAPTER.alle();
       const b = await bericht(ziele);
-      ui({ type: 'bericht', zeilen: b.zeilen, zusammenfassung: b.zusammenfassung, zeit: b.zeit });
+      ui({ type: 'bericht', zeilen: b.zeilen, abw: b.abw, zusammenfassung: b.zusammenfassung, zeit: b.zeit });
+      b.abw.forEach(abwLog);
       const z = b.zusammenfassung;
       if (b.abgebrochen) fazitAbgebrochen(b.geprueft, b.n);
       else ui({
@@ -3334,11 +3748,20 @@ figma.ui.onmessage = async m => {
     // --- SVG-Export (die UI packt daraus das ZIP) -------------------------
     if (m.type === 'exportieren') {
       ABBRUCH = false;
+      await lizenzPruefen('exportieren');
       logZeile('info', t('log.exportLaeuft'));
-      const umfang = m.umfang === 'alle' ? 'alle' : 'auswahl';
-      const ziele = await zieleFuer(umfang);
+      const umfang = ['alle', 'namen'].indexOf(m.umfang) >= 0 ? m.umfang : 'auswahl';
+      let ziele, unbekannt = [];
+      if (umfang === 'namen') {
+        const r = await zieleNachNamen(m.namen);
+        ziele = r.ziele; unbekannt = r.fehlend;
+        unbekannt.forEach(n => melden('warn', 'EXPORT_FEHLT', { name: n }));
+      } else {
+        ziele = await zieleFuer(umfang);
+      }
       const e = await exportieren(ziele);
-      ui({ type: 'exportDaten', dateien: e.dateien, fehlend: e.fehlend });
+      e.fehlend = unbekannt.concat(e.fehlend);
+      ui({ type: 'exportDaten', dateien: e.dateien, fehlend: e.fehlend, umfang: umfang });
       if (e.abgebrochen) fazitAbgebrochen(e.geprueft, e.n);
       else ui({
         type: 'fazit', gut: e.fehlend.length === 0,
@@ -3347,6 +3770,18 @@ figma.ui.onmessage = async m => {
           fehlend: e.fehlend.length ? t('fazit.exportFehlend', { n: e.fehlend.length }) : ''
         })
       });
+    }
+
+    // --- Übersicht: Startseite der UI, Liste aller Icons im File ----------
+    if (m.type === 'uebersicht') {
+      ABBRUCH = false;
+      const ziele = await ADAPTER.alle();
+      const u = await uebersicht(ziele);
+      ui({
+        type: 'uebersicht', eintraege: u.eintraege, zusammenfassung: u.zusammenfassung,
+        adapter: ADAPTER ? ADAPTER.name : null
+      });
+      if (u.abgebrochen) fazitAbgebrochen(u.geprueft, u.n);
     }
 
     // --- Beispiel-Icon für den Leerzustand --------------------------------
@@ -3361,3 +3796,159 @@ figma.ui.onmessage = async m => {
   }
   ui({ type: 'fertig' });
 };
+
+// ===== 75-lizenz.js =====
+// ===========================================================================
+// 75-lizenz.js — Lizenz und Testphase (Abschnitt 28.5).
+//
+// Grundsatz: Das Plugin sperrt niemanden aus, wenn Figma keinen Status liefert.
+// `figma.payments` fehlt in älteren Figma-Versionen und ohne die Manifest-
+// Berechtigung "payments" — dann gilt DEV (Dev-Build) bzw. NOT_SUPPORTED, und
+// beides zählt wie bezahlt. Jeder Zugriff auf die API liegt in try/catch:
+// eine geworfene Zahlungs-API darf keinen Bau verhindern.
+//
+// Liegt nach 70-main.js: alle Funktionen hier sind Deklarationen und damit im
+// gemeinsamen Scope gehoistet; `LIZENZ` wird erst zur Nachrichtenzeit gelesen.
+// ===========================================================================
+
+const LIZENZ = {
+  modell: 'einmalzahlung',
+  testtage: 14,
+  debugUmgehen: true,   // Dev-Build — für die Veröffentlichung auf false setzen
+  kostenpflichtig: ['alle', 'bericht', 'exportieren', 'konfigImport']
+};
+
+// 'PAID' | 'UNPAID' | 'TRIAL' | null — überschreibt den echten Status, nur wenn debugUmgehen.
+let LIZENZ_DEBUG = null;
+
+const LIZENZ_STATI = ['PAID', 'UNPAID', 'TRIAL', 'NOT_SUPPORTED', 'DEV'];
+
+// Zahlungs-API defensiv holen: fehlende Berechtigung wirft in manchen Versionen.
+function lizenzZahlungen() {
+  try { return figma.payments || null; } catch (e) { return null; }
+}
+
+// Sekunden seit dem ersten Start — Grundlage der Testphase.
+function lizenzErstStart() {
+  const p = lizenzZahlungen();
+  if (!p || typeof p.getUserFirstRanSecondsAgo !== 'function') return null;
+  try {
+    const s = p.getUserFirstRanSecondsAgo();
+    return typeof s === 'number' && isFinite(s) ? s : null;
+  } catch (e) { return null; }
+}
+
+// Resttage der Testphase; null, wenn sich nichts messen lässt.
+function lizenzResttage() {
+  const s = lizenzErstStart();
+  if (s == null) return null;
+  const rest = LIZENZ.testtage * 86400 - s;
+  return rest <= 0 ? 0 : Math.ceil(rest / 86400);
+}
+
+function lizenzBasis() {
+  return {
+    modell: LIZENZ.modell,
+    testtage: LIZENZ.testtage,
+    kostenpflichtig: LIZENZ.kostenpflichtig.slice(),
+    debug: !!LIZENZ.debugUmgehen
+  };
+}
+
+function lizenzStatus() {
+  const basis = lizenzBasis();
+
+  // Entwicklermodus schlägt alles — aber nur im Dev-Build.
+  if (LIZENZ.debugUmgehen && LIZENZ_DEBUG) {
+    const rest = LIZENZ_DEBUG === 'TRIAL'
+      ? (lizenzResttage() == null ? LIZENZ.testtage : lizenzResttage())
+      : null;
+    return Object.assign(basis, { status: LIZENZ_DEBUG, resttage: rest });
+  }
+
+  const p = lizenzZahlungen();
+  let typ = null;
+  if (p) { try { typ = (p.status && p.status.type) || null; } catch (e) { typ = null; } }
+
+  // Kein Status ermittelbar → freischalten, nicht aussperren.
+  if (!typ) return Object.assign(basis, {
+    status: LIZENZ.debugUmgehen ? 'DEV' : 'NOT_SUPPORTED',
+    resttage: null
+  });
+
+  if (typ === 'PAID') return Object.assign(basis, { status: 'PAID', resttage: null });
+
+  // UNPAID: läuft die Testphase noch?
+  const rest = lizenzResttage();
+  if (rest == null) return Object.assign(basis, { status: 'TRIAL', resttage: null });  // Zeit unbekannt → Testphase
+  if (rest > 0) return Object.assign(basis, { status: 'TRIAL', resttage: rest });
+  return Object.assign(basis, { status: 'UNPAID', resttage: 0 });
+}
+
+// Zählt dieser Status als freigeschaltet? Nur ein sicher erkanntes UNPAID sperrt.
+function lizenzFrei(status) {
+  return status !== 'UNPAID';
+}
+
+// Lesbarer Name einer kostenpflichtigen Funktion; unbekannte Schlüssel bleiben roh.
+function lizenzFunktionName(funktion) {
+  const k = 'lizenz.funktion.' + funktion;
+  const s = t(k);
+  return s === k ? String(funktion) : s;
+}
+
+// Wirft PipelineFehler('LIZENZ_NOETIG'), wenn die Funktion Geld kostet und
+// der Status sicher UNPAID ist. Async, weil der Aufrufer ohnehin await nutzt
+// und eine spätere Status-Abfrage asynchron werden darf.
+async function lizenzPruefen(funktion) {
+  const s = lizenzStatus();
+  if (LIZENZ.kostenpflichtig.indexOf(funktion) < 0) return s;
+  if (!lizenzFrei(s.status))
+    throw new PipelineFehler('LIZENZ_NOETIG', {
+      funktion: lizenzFunktionName(funktion),
+      tage: LIZENZ.testtage
+    });
+  return s;
+}
+
+// Status an die UI schicken (Kopf-Chip, Einstellungen, Paywall-Dialog).
+function lizenzSenden() {
+  const s = lizenzStatus();
+  ui(Object.assign({ type: 'lizenz' }, s));
+  return s;
+}
+
+// Kauf anstoßen. Das Interstitial ist Figmas eigener Dialog; er darf hängen
+// oder abbrechen, ohne die UI zu blockieren — darum try/catch und danach
+// unabhängig vom Ausgang den Status neu melden.
+async function lizenzKaufen(grund) {
+  const p = lizenzZahlungen();
+  const interstitial = grund === 'TRIAL_ENDED' ? 'TRIAL_ENDED' : 'PAID_FEATURE';
+  if (!p || typeof p.initiateCheckoutAsync !== 'function') {
+    logZeile('info', t('lizenz.keinKauf'), null, { schwere: 'info' });
+    return lizenzStatus();
+  }
+  try {
+    await p.initiateCheckoutAsync({ interstitial: interstitial });
+  } catch (e) {
+    logZeile('warn', t('lizenz.kaufFehler', { grund: (e && e.message) || String(e) }),
+      null, { schwere: 'warnung' });
+  }
+  return lizenzStatus();
+}
+
+// Entwicklermodus: Status lokal umschalten. Ohne debugUmgehen passiert nichts.
+async function lizenzDebugSetzen(status) {
+  if (!LIZENZ.debugUmgehen) return lizenzStatus();
+  LIZENZ_DEBUG = LIZENZ_STATI.indexOf(status) >= 0 ? status : null;
+
+  const p = lizenzZahlungen();
+  // setPaymentStatusInDevelopment kennt nur PAID/UNPAID — TRIAL bilden wir
+  // über UNPAID plus LIZENZ_DEBUG ab.
+  const echt = LIZENZ_DEBUG === 'PAID' ? 'PAID' : (LIZENZ_DEBUG ? 'UNPAID' : null);
+  if (p && echt && typeof p.setPaymentStatusInDevelopment === 'function') {
+    try { p.setPaymentStatusInDevelopment({ type: echt }); } catch (e) {}
+  }
+  logZeile('info', t('lizenz.debugGesetzt', { status: LIZENZ_DEBUG || '—' }), null, { schwere: 'info' });
+  return lizenzStatus();
+}

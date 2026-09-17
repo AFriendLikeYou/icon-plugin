@@ -1,9 +1,28 @@
   // =========================================================================
   // Laufsteuerung
   // =========================================================================
+  // Fortschritt: Start des Laufs für die Restzeit-Schätzung.
+  let fortStart = 0;
+  function zeitText(sek) {
+    if (sek < 90) return t('fort.sek', { n: Math.max(1, Math.round(sek)) });
+    return t('fort.min', { n: Math.max(1, Math.round(sek / 60)) });
+  }
+  // `progress` wird in 95-nachrichten.js bereits roh angezeigt; hier kommt die
+  // verständliche Fassung („Baue 3/76 · arrow-left“) samt Restzeit darüber.
+  bei('progress', m => {
+    const i = Number(m.i) || 0, n = Number(m.n) || 0;
+    $('zahl').textContent = t('fort.baue', { i: i, n: n }) + (m.name ? ' · ' + m.name : '');
+    const rest = $('restzeit');
+    if (!fortStart) { fortStart = Date.now(); rest.textContent = ''; return; }
+    if (n >= 5 && i >= 2) {
+      const proStueck = (Date.now() - fortStart) / i;
+      rest.textContent = t('fort.rest', { zeit: zeitText(proStueck * Math.max(0, n - i) / 1000) });
+    } else rest.textContent = '';
+  });
+
   function sperren(an) {
     beschaeftigt = an;
-    if (an) chipLeeren();
+    if (an) { chipLeeren(); fortStart = Date.now(); $('restzeit').textContent = ''; }
     aus($('btnRun'), an || !hatAuswahl);
     aus($('btnDiff'), an || !hatAuswahl);
     aus($('btnAudit'), an);
@@ -16,7 +35,8 @@
     $('btnAbbrechen').hidden = !an;
     aus($('btnAbbrechen'), false);
     $('fortschritt').classList.toggle('an', an);
-    if (!an) { $('balken').style.width = '0%'; $('zahl').textContent = ''; }
+    if (!an) { $('balken').style.width = '0%'; $('zahl').textContent = '';
+      $('restzeit').textContent = ''; fortStart = 0; }
   }
   $('btnAbbrechen').addEventListener('click', () => {
     if (!beschaeftigt) return;

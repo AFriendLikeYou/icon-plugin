@@ -139,16 +139,37 @@ const adapterZds = {
              || CTX.zds.K.children.find(c => c.name === 'Karte · ' + n.name.replace(/^\./, ''))
              || null;
     }
-    if (!karte) return null;
-    return await zdsZiel(karte);
+    if (karte) return await zdsZiel(karte);
+
+    // Runde 4: Eine Komponente im Master-Maß ohne Karte ist kein Fehler mehr —
+    // sie wird nach den Frei-Regeln behandelt (Beispiel-Icon auf der Seite
+    // Source, lose Vorlagen). Die Frei-Helfer liegen im selben Scope.
+    let n = sel;
+    while (n && n.type !== 'PAGE' && n.type !== 'DOCUMENT') {
+      if (n.type === 'COMPONENT' && hatMasterMass(n) &&
+          !(n.parent && n.parent.type === 'COMPONENT_SET')) return freiZielAusSource(n);
+      n = n.parent;
+    }
+    return null;
   },
 
   // Async wie im Frei-Adapter — das Interface ist fuer beide gleich.
-  async zielSet(ziel) { return zdsLibrarySet(ziel.name); },
+  // Ziele ohne Karte (Beispiel-Icon, lose Vorlagen) folgen den Frei-Regeln:
+  // ihr Set gehört neben die Vorlage, nicht in die Library-Seite.
+  async zielSet(ziel) {
+    if (!ziel.karte) return await adapterFrei.zielSet(ziel);
+    return zdsLibrarySet(ziel.name);
+  },
 
-  zielEltern(ziel) { return { node: CTX.zds.IC, x: 80, y: 120 }; },
+  zielEltern(ziel) {
+    if (!ziel.karte) return adapterFrei.zielEltern(ziel);
+    return { node: CTX.zds.IC, x: 80, y: 120 };
+  },
 
-  arbeitsFlaeche(ziel) { return CTX.zds.IC; },
+  arbeitsFlaeche(ziel) {
+    if (!ziel.karte) return adapterFrei.arbeitsFlaeche(ziel);
+    return CTX.zds.IC;
+  },
 
   // Gibt es die Ablage schon? (Trockenlauf — nichts anlegen.)
   strokeHeimDa(ziel) {

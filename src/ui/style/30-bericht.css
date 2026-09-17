@@ -1,0 +1,149 @@
+  /* =======================================================================
+     Runde 4 / UI-2 — Bericht, Protokoll, Vorschau, Fortschritt
+     Ruhige Karten statt dichter Tabellen: Abstände 8/12/16, weiche Schatten,
+     6 px Radius, Status als kleine Chips, nur eine primäre Aktion je Panel.
+     ======================================================================= */
+
+  /* ---- Fortschritt ------------------------------------------------------ */
+  .fortschritt .zahl.rest { color: var(--figma-color-text-tertiary, #9a9aa0); }
+
+  /* ---- Vorschau: Kopfzeile ---------------------------------------------- */
+  #diff .diffkopf { gap: 12px; margin-bottom: 12px; }
+  #diff .diffkopf .seklabel { margin-right: 0; }
+  #diff .diffkopf > fig-tooltip { display: inline-flex; }
+  #segModus { flex: none; }
+  #diff .zoom { margin-left: auto; }
+  #diff .zoom fig-button#zoomFit { min-width: 30px; font-size: 9.5px; }
+  .blinkhinweis { flex: none; }
+  .chips[hidden] { display: none; }
+
+  /* ---- Vorschau: Zellen -------------------------------------------------- */
+  .zeile { gap: 16px; }
+  .zelle .schau {
+    border-radius: 6px; overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  }
+  /* Pixelraster erst ab Zoom 4 — darunter wäre es nur Grau. */
+  .zelle .schau:not(.raster),
+  #diff.dunkel .zelle .schau:not(.raster) {
+    background-image: none;
+  }
+  .zelle .schau .leer { position: absolute; inset: 0; display: flex;
+    align-items: center; justify-content: center; text-align: center;
+    color: var(--figma-color-text-tertiary, #9a9aa0); font-size: 9px; padding: 4px; }
+  .zelle .label { margin-top: 8px; text-align: left; white-space: normal; }
+  .zelle .label .l1, .pxzelle .label .l1, .dfzelle .label .l1 {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 10px; font-weight: 700;
+    color: var(--figma-color-text, #1c1c22); }
+  .zelle .label .l2, .pxzelle .label .l2, .dfzelle .label .l2 {
+    font-size: 9px; color: var(--figma-color-text-secondary, #6e6e76);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pxzelle .label, .dfzelle .label { text-align: left; white-space: normal; margin-top: 8px; }
+  .statuspunkt { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+  .statuspunkt.gut { background: #12a76a; }
+  .statuspunkt.ab { background: #c98a12; }
+
+  /* Wischen: Regler mit Griff, Beschriftung an den Rändern */
+  .schau.wisch { cursor: ew-resize; touch-action: none; }
+  .schau.wisch .wischklipp { position: absolute; inset: 0 auto 0 0;
+    overflow: hidden; width: 50%; }
+  .schau.wisch .wischklipp img { position: absolute; inset: 0 auto auto 0; max-width: none; }
+  .schau.wisch .wischgriff { position: absolute; top: 0; bottom: 0; left: 50%;
+    width: 0; border-left: 1px solid rgba(255,255,255,.9);
+    box-shadow: 0 0 0 1px rgba(20,20,30,.45); pointer-events: none; }
+  .schau.wisch .wischgriff::after {
+    content: ""; position: absolute; top: 50%; left: 0;
+    width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%;
+    background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35); }
+  .schau.wisch .wischkante { position: absolute; bottom: 3px; font-size: 8px;
+    padding: 1px 4px; border-radius: 3px; pointer-events: none;
+    background: rgba(255,255,255,.82); color: #3a3a42; }
+  .schau.wisch .wischkante.links { left: 3px; }
+  .schau.wisch .wischkante.rechts { right: 3px; }
+  #diff.dunkel .schau.wisch .wischkante { background: rgba(30,30,30,.8); color: #d8d8e0; }
+
+  /* Blinken: die neue Lage wird im Takt ein- und ausgeblendet */
+  #zellen.blink img.lage-neu { display: none; }
+  #zellen.blink.blinkNeu img.lage-neu { display: block; }
+  #zellen.blink.blinkNeu img.lage-alt { display: none; }
+
+  /* Pixelkoordinate unter dem Zeiger */
+  .koordanzeige { position: fixed; z-index: 20; pointer-events: none;
+    font-size: 9px; font-variant-numeric: tabular-nums;
+    padding: 2px 6px; border-radius: 4px;
+    background: var(--figma-color-bg-inverse, #1e1e1e);
+    color: var(--figma-color-text-oninverse, #fff);
+    box-shadow: 0 1px 4px rgba(0,0,0,.25); }
+  .koordanzeige[hidden] { display: none; }
+
+  /* Pixel- und Differenzbereich als aufklappbare Gruppen */
+  fig-group.diffgruppe { margin: 12px 0 0; width: max-content; min-width: 100%; }
+  fig-group.diffgruppe fig-header { position: sticky; left: 0; }
+  fig-group.diffgruppe .sektion { padding: 4px 0 8px; }
+  .pxzelle .wrap, .dfzelle .wrap { border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+
+  /* ---- Protokoll --------------------------------------------------------- */
+  .logkopf .logaktionen { display: flex; gap: 8px; align-items: center; }
+  .logfilter { display: flex; align-items: center; gap: 8px; padding: 0 2px 8px; }
+  .logfilter #segLog { flex: none; }
+  .logfilter fig-input-text { flex: 1; min-width: 0; }
+  .log { font: 10.5px/1.6 Inter, "Inter var", system-ui, sans-serif;
+    padding: 8px; white-space: normal; }
+  .log > div + div { border-top: none; }
+  fig-group.loggruppe { margin: 0 0 8px; box-shadow: none;
+    border: 1px solid var(--figma-color-border, #e3e3e6); border-radius: 8px;
+    background: var(--figma-color-bg, #fff); padding: 0; }
+  fig-group.loggruppe:last-child { margin-bottom: 0; }
+  fig-group.loggruppe > fig-header { padding: 6px 10px; box-shadow: none;
+    display: flex; align-items: center; gap: 8px; min-height: 28px; }
+  fig-group.loggruppe h3.lgname { font-size: 10.5px; font-weight: 700; margin: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  fig-group.loggruppe .lgzaehler { margin-left: auto; display: flex; gap: 4px; flex: none; }
+  .lgchip { font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 9px;
+    background: var(--figma-color-bg-secondary, #f0f0f3);
+    color: var(--figma-color-text-secondary, #6e6e76); white-space: nowrap; }
+  .lgchip.err { background: rgba(194,64,42,.12); color: #c2402a; }
+  .lgchip.warn { background: rgba(201,138,18,.16); color: #8a6208; }
+  .logzeile { padding: 4px 10px 5px; }
+  .logzeile + .logzeile { border-top: 1px solid color-mix(in srgb, var(--figma-color-border, #e3e3e6) 45%, transparent); }
+  .logzeile .lztext { display: flex; align-items: baseline; gap: 6px; }
+  .logzeile .lztext .txt { flex: 1; min-width: 0; word-break: break-word; }
+  .logzeile .lzn { flex: none; }
+  .logzeile .zeigen { flex: none; }
+  .logzeile.ok > .lztext > .txt::before   { content: "\2713 "; color: #12a76a; }
+  .logzeile.warn > .lztext > .txt::before { content: "\25B3 "; color: #c98a12; }
+  .logzeile.err > .lztext > .txt::before  { content: "\2715 "; color: #c2402a; }
+  .logzeile .hinw { color: var(--figma-color-text-tertiary, #9a9aa0);
+    padding-left: 14px; margin-top: 1px; }
+
+  /* ---- Bericht ----------------------------------------------------------- */
+  #panelBericht { gap: 12px; }
+  .kacheln { gap: 8px; }
+  .legende { font-size: 9.5px; line-height: 1.5; padding: 0 2px;
+    color: var(--figma-color-text-tertiary, #9a9aa0); }
+  .legende[hidden] { display: none; }
+  .filterzeile { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 2px; }
+  .filterzeile[hidden] { display: none; }
+  .filterzeile fig-button { font-size: 9.5px; height: 22px; border-radius: 11px; }
+  .filterzeile fig-button.fltaktiv {
+    background: var(--figma-color-bg-brand-tertiary, rgba(13,153,255,.14));
+    color: var(--figma-color-text-brand, #0d99ff); font-weight: 700; }
+  .tabkopf { display: flex; align-items: center; gap: 12px; padding: 0 2px; }
+  .tabkopf[hidden] { display: none; }
+  .tabkopf fig-checkbox { font-size: 9.5px; }
+  .tabzahl { margin-left: auto; font-size: 9.5px; font-variant-numeric: tabular-nums;
+    color: var(--figma-color-text-secondary, #6e6e76); }
+  .btabelle th { padding: 6px 8px; }
+  .btabelle th.gz { text-align: center; }
+  .btabelle th fig-tooltip { display: inline-flex; }
+  .btabelle td { height: 32px; padding: 4px 8px; }
+  /* Zebra sehr dezent — die Kopfzeile ist Kind 1, Datenzeilen ab 2. */
+  .btabelle tr:nth-child(even) td {
+    background: color-mix(in srgb, var(--figma-color-bg-secondary, #f0f0f3) 40%, transparent); }
+  .btabelle td.wspalte, .btabelle th.wspalte { width: 26px; padding-right: 0; }
+  .btabelle td.wspalte fig-checkbox { display: block; }
+  .btabelle .treuewert { min-width: 38px; }
+  .btabelle td.berichtleer { height: 44px; text-align: center; }
+  .exportzeile { gap: 12px; }
+  .exportzeile fig-tooltip { display: inline-flex; }

@@ -1,0 +1,147 @@
+/* =========================================================================
+   Runde 4 · Paket UI-1 — Kopf, Startseite, Einstellungen, Onboarding, Lizenz
+   Rhythmus: Karten 12 px innen, Überschriften 11 px fett, Hilfetexte 9,5 px
+   sekundär, Abstände 8 / 12 / 16 px.
+   ========================================================================= */
+
+/* ---- Kopf --------------------------------------------------------------- */
+.kopf fig-tooltip { display: flex; flex: none; }
+.kopf .rundgang { min-width: 22px; height: 22px; font-weight: 700; }
+.kopf .lizchip { margin-left: 6px; }
+.chip.lizchip { display: none; }
+.chip.lizchip.an { display: inline-block; background: var(--figma-color-bg-secondary, #f0f0f3);
+  color: var(--figma-color-text-secondary, #6e6e76); }
+.chip.lizchip.voll { background: rgba(18,167,106,.14); color: #0e8a57; }
+.chip.lizchip.test { background: rgba(201,138,18,.16); color: #8a6208; }
+.chip.lizchip.aus { background: rgba(194,64,42,.12); color: #c2402a; }
+
+/* ---- Felder mit Hilfezeile ---------------------------------------------- */
+.feldgruppe { display: flex; flex-direction: column; gap: 3px; }
+.feld > fig-tooltip { flex: 1; min-width: 0; display: block; }
+.feld > fig-tooltip > * { width: 100%; }
+.fhilfe { font-size: 9.5px; line-height: 1.45;
+  color: var(--figma-color-text-secondary, #6e6e76); }
+.fhilfe[hidden] { display: none; }
+.vier .feldgruppe .feld > .fname { width: 62px; }
+
+/* Größen-Karte: Feld = Label, Steuerung, Hilfezeile untereinander */
+.gfeld { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.gfeld[hidden] { display: none; }
+.gfeld > .fname { color: var(--figma-color-text-secondary, #6e6e76); }
+.gfeld > fig-tooltip { display: block; }
+.gfeld > fig-tooltip > * { width: 100%; }
+.gzeilen { gap: 8px 12px; }
+.groessekarte { padding: 12px; gap: 8px; }
+.gkopf .gtitel { font-size: 11px; }
+
+/* ---- Farbe / Token-Liste ------------------------------------------------ */
+#farbeErkl { margin-top: -2px; }
+.varzeile fig-skeleton, .varladen fig-skeleton { width: 16px; height: 16px;
+  border-radius: 3px; flex: none; display: block; }
+.varzeile fig-swatch { flex: none; }
+fig-group.kollektion .varzeile { padding-left: 8px; }
+.varladen { display: flex; align-items: center; gap: 8px; padding: 4px 6px; }
+.varladen fig-shimmer { font-size: 9.5px; }
+
+/* ---- Lizenz-Block ------------------------------------------------------- */
+.lizkarte { display: flex; flex-direction: column; gap: 8px; padding: 12px;
+  border: 1px solid var(--figma-color-border, #e3e3e6); border-radius: 8px; cursor: default; }
+.lizzeile { display: flex; align-items: center; gap: 8px; }
+.lizmodell { font-size: 11px; font-weight: 700; }
+#lizDebug { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+#lizDebug[hidden] { display: none; }
+
+/* ---- Startseite (kein Ziel ausgewählt) ---------------------------------- */
+.startseite { display: flex; flex-direction: column; gap: 12px; }
+.start-kopf { display: flex; align-items: center; gap: 8px; }
+.start-kopf .stitel { font-size: 11px; font-weight: 700; }
+.start-kopf .schip { margin-left: auto; }
+.start-summe { font-size: 9.5px; color: var(--figma-color-text-secondary, #6e6e76);
+  font-variant-numeric: tabular-nums; }
+.start-suche { width: 100%; }
+.ikarten { display: flex; flex-direction: column; gap: 4px;
+  max-height: 232px; overflow-y: auto; }
+.ikarte { display: flex; align-items: center; gap: 8px; padding: 7px 9px;
+  border: 1px solid var(--figma-color-border, #e3e3e6); border-radius: 7px;
+  cursor: pointer; background: var(--figma-color-bg, #fff); }
+.ikarte:hover { background: var(--figma-color-bg-secondary, #f0f0f3); }
+.ikarte .iname { flex: 1; min-width: 0; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.ikarte .igroessen { flex: none; font-size: 9.5px; font-variant-numeric: tabular-nums;
+  color: var(--figma-color-text-secondary, #6e6e76); }
+.ikarte .chip { flex: none; }
+.startleer { font-size: 10px; font-style: italic;
+  color: var(--figma-color-text-tertiary, #9a9aa0); padding: 4px 2px; }
+
+/* Checkliste „Erste Schritte“ */
+.eskarte { display: flex; flex-direction: column; gap: 6px; padding: 12px;
+  border: 1px solid var(--figma-color-border, #e3e3e6); border-radius: 8px;
+  background: var(--figma-color-bg-secondary, #fafafc); }
+.eskarte[hidden] { display: none; }
+.eskopf { display: flex; align-items: center; gap: 8px; }
+.eskopf .estitel { font-size: 11px; font-weight: 700; }
+.eskopf fig-button { margin-left: auto; font-size: 9.5px; height: 18px; }
+.esliste { display: flex; flex-direction: column; gap: 4px; }
+.eszeile { display: flex; align-items: center; gap: 7px; font-size: 10.5px;
+  color: var(--figma-color-text-secondary, #6e6e76); }
+.eszeile .haken { width: 13px; height: 13px; border-radius: 50%; flex: none;
+  border: 1px solid var(--figma-color-border, #cfcfd6); display: flex;
+  align-items: center; justify-content: center; font-size: 8px; color: transparent; }
+.eszeile.fertig { color: var(--figma-color-text, #1c1c22); }
+.eszeile.fertig .haken { background: #12a76a; border-color: #12a76a; color: #fff; }
+
+/* ---- Bühne: Onboarding-Slideshow und Lizenz-Screen ---------------------- */
+dialog[is="fig-dialog"].buehne-dlg {
+  position: fixed; inset: 0; width: 100%; height: 100%;
+  max-width: none; max-height: none; margin: 0; padding: 0; border-radius: 0;
+  background: var(--figma-color-bg, #fff);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+dialog[is="fig-dialog"].buehne-dlg:not([open]) { display: none; }
+.bh-bild { position: relative; flex: none; height: 190px;
+  display: flex; align-items: center; padding: 0 20px;
+  background-color: #221f2b;
+  background-image:
+    repeating-linear-gradient(to right,  rgba(255,255,255,.075) 0 1px, transparent 1px 16px),
+    repeating-linear-gradient(to bottom, rgba(255,255,255,.075) 0 1px, transparent 1px 16px),
+    radial-gradient(120% 120% at 18% 20%, #2f2a3d 0%, #1d1b25 70%);
+  transition: opacity .18s ease;
+}
+.bh-bild .marke-gross { width: 96px; height: 96px; border-radius: 22px; flex: none;
+  background: linear-gradient(160deg, #3a3350, #262233);
+  box-shadow: 0 6px 18px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.08);
+  display: flex; align-items: center; justify-content: center; }
+.bh-bild .skizze { display: flex; align-items: center; gap: 10px; margin-left: 16px; }
+.bh-bild .skizze svg { border-radius: 5px; background: rgba(255,255,255,.04);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); }
+.bh-bild .pfeil { color: rgba(255,255,255,.45); font-size: 13px; }
+.bh-bild .bunt { color: #cfc9e6; font-size: 9.5px; letter-spacing: .06em;
+  text-transform: uppercase; font-weight: 700; }
+.bh-x { position: absolute; top: 10px; right: 10px; z-index: 2; color: #e7e3f4; }
+.bh-text { padding: 16px 20px 0; transition: opacity .18s ease; }
+.bh-zaehler { font-size: 9.5px; font-weight: 700; letter-spacing: .08em;
+  color: var(--figma-color-text-tertiary, #9a9aa0); margin-bottom: 6px; }
+.bh-titel { font-size: 26px; line-height: 1.15; font-weight: 700; margin: 0 0 8px;
+  letter-spacing: -.01em; text-wrap: balance; }
+.bh-fliess { font-size: 14px; line-height: 1.5; margin: 0;
+  color: var(--figma-color-text-secondary, #6e6e76); }
+.bh-extra { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.bh-extra .profilliste { padding: 0; max-height: 150px; }
+.bh-wechsel .bh-bild, .bh-wechsel .bh-text { opacity: 0; }
+.bh-dots { display: flex; gap: 7px; justify-content: center; padding: 16px 0 4px; }
+.bh-dots button { appearance: none; border: 0; padding: 0; cursor: pointer;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--figma-color-border, #d9d9de); transition: all .18s ease; }
+.bh-dots button.an { width: 18px; border-radius: 4px;
+  background: var(--figma-color-bg-brand, #0d99ff); }
+.bh-knoepfe { display: flex; flex-direction: column; gap: 8px;
+  padding: 8px 20px 12px; margin-top: auto; }
+.bh-knoepfe.zwei { flex-direction: row; }
+.bh-knoepfe fig-button { flex: 1; height: 44px; font-size: 12px; }
+.bh-hinweis { display: flex; align-items: flex-start; gap: 8px; cursor: default;
+  margin: 0 20px 16px; padding: 12px; border-radius: 8px;
+  border: 1px solid var(--figma-color-border, #e3e3e6);
+  background: var(--figma-color-bg-secondary, #fafafc);
+  font-size: 10px; line-height: 1.5; color: var(--figma-color-text-secondary, #6e6e76); }
+.bh-hinweis .punkt { width: 7px; height: 7px; border-radius: 50%; flex: none;
+  margin-top: 4px; background: #12a76a; }

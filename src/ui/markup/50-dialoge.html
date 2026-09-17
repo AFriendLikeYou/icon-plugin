@@ -22,4 +22,38 @@
   </div>
 </dialog>
 
+<!-- Onboarding: Slideshow, Anatomie wie der Lizenz-Screen ------------------ -->
+<dialog is="fig-dialog" modal class="buehne-dlg" id="dlgOnboarding">
+  <div class="bh-bild" id="obBild"></div>
+  <fig-button id="obSkip" variant="ghost" class="bh-x"></fig-button>
+  <div class="bh-text">
+    <div class="bh-zaehler" id="obZaehler"></div>
+    <h2 class="bh-titel" id="obTitel"></h2>
+    <p class="bh-fliess" id="obText"></p>
+    <div class="bh-extra" id="obExtra"></div>
+  </div>
+  <div class="bh-dots" id="obDots"></div>
+  <div class="bh-knoepfe zwei">
+    <fig-button id="obZurueck" variant="secondary" class="bh-sekundaer"></fig-button>
+    <fig-button id="obWeiter" class="bh-primaer"></fig-button>
+  </div>
+</dialog>
+
+<!-- Lizenz-/Paywall-Screen: überlagert das Panel vollflächig --------------- -->
+<dialog is="fig-dialog" modal class="buehne-dlg" id="dlgPaywall">
+  <div class="bh-bild" id="pwBild"></div>
+  <fig-button id="pwZu" variant="ghost" class="bh-x">✕</fig-button>
+  <div class="bh-text">
+    <h2 class="bh-titel" id="pwTitel"></h2>
+    <p class="bh-fliess" id="pwText"></p>
+  </div>
+  <div class="bh-knoepfe">
+    <fig-button id="pwKaufen" class="bh-primaer"></fig-button>
+    <fig-button id="pwSpaeter" variant="secondary" class="bh-sekundaer"></fig-button>
+  </div>
+  <fig-card class="bh-hinweis">
+    <span class="punkt"></span><span id="pwHinweisText"></span>
+  </fig-card>
+</dialog>
+
 <dialog is="fig-toast" id="toast" duration="2600"><span id="toastText"></span></dialog>

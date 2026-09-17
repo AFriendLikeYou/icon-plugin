@@ -15,6 +15,20 @@
     <fig-card id="kachelTreue"><div class="kachelzahl" id="kachelTreueWert">–</div></fig-card>
     <fig-card id="kachelKeyline"><div class="kachelzahl" id="kachelKeylineWert">–</div></fig-card>
   </div>
+  <div class="legende" id="berichtLegende" hidden data-t="ber.legende"></div>
+
+  <div class="filterzeile" id="berichtFilterZeile" hidden>
+    <fig-button id="fltAlle" variant="ghost" class="fltaktiv" data-t="flt.alle"></fig-button>
+    <fig-button id="fltOhneSet" variant="ghost" data-t="flt.ohneSet"></fig-button>
+    <fig-button id="fltVeraltet" variant="ghost" data-t="flt.veraltet"></fig-button>
+    <fig-button id="fltMass" variant="ghost" data-t="flt.mass"></fig-button>
+    <fig-button id="fltSchlecht" variant="ghost" data-t="flt.schlecht"></fig-button>
+  </div>
+
+  <div class="tabkopf" id="berichtTabKopf" hidden>
+    <fig-checkbox id="chkAlleSichtbaren"></fig-checkbox>
+    <span class="tabzahl" id="berichtZaehler"></span>
+  </div>
 
   <div class="berichtleer" id="berichtLeer" data-t="ber.leer"></div>
   <div class="btabWrap" id="berichtTabWrap" hidden>
@@ -25,10 +39,13 @@
     <div class="gruppenkopf" data-t="ber.export"></div>
     <div class="exportzeile">
       <span class="ctlLabel" data-t="ber.umfang"></span>
-      <fig-segmented-control id="segUmfang" value="alle">
-        <fig-segment value="alle" selected="true"><span data-t="ber.umfangAlle"></span></fig-segment>
-        <fig-segment value="auswahl"><span data-t="ber.umfangAuswahl"></span></fig-segment>
-      </fig-segmented-control>
+      <fig-tooltip data-t-text="ber.tipUmfang" delay="500">
+        <fig-segmented-control id="segUmfang" value="alle">
+          <fig-segment value="alle" selected="true"><span data-t="ber.umfangAlle"></span></fig-segment>
+          <fig-segment value="namen" disabled><span id="segUmfangNamen"></span></fig-segment>
+          <fig-segment value="auswahl"><span data-t="ber.umfangAuswahl"></span></fig-segment>
+        </fig-segmented-control>
+      </fig-tooltip>
       <fig-tooltip data-t-text="tip.sprite" delay="400">
         <fig-switch id="chkSprite"><span data-t="chk.sprite"></span></fig-switch>
       </fig-tooltip>
@@ -40,4 +57,3 @@
     </div>
   </div>
 </div>
-

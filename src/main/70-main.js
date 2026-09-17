@@ -38,8 +38,36 @@ function konfigSenden(pruef) {
     adapter: ADAPTER ? ADAPTER.name : null,
     profile: PROFIL_NAMEN,
     // Defensiv: läuft das Plugin gegen eine ältere 00-config.js, fehlt die Funktion.
-    profilInfo: typeof konfigProfilInfo === 'function' ? konfigProfilInfo() : []
+    profilInfo: typeof konfigProfilInfo === 'function' ? konfigProfilInfo() : [],
+    // Der Lizenzstatus hängt an jeder Konfig-Antwort, damit die UI ihn nie
+    // separat nachfragen muss (Abschnitt 28.5).
+    lizenz: lizenzStatus()
   });
+}
+
+// --- Merker: generischer UI-Zustand im clientStorage (Abschnitt 28.4) ------
+// Werte liegen als JSON, damit auch Objekte (ersteSchritte) durchgehen.
+
+const MERKER_PRAEFIX = 'icon-pipeline/merker/';
+
+function merkerSchluessel(s) {
+  return MERKER_PRAEFIX + String(s == null ? '' : s).replace(/[^A-Za-z0-9_.-]/g, '_').slice(0, 64);
+}
+
+async function merkerSetzen(schluessel, wert) {
+  try {
+    await figma.clientStorage.setAsync(merkerSchluessel(schluessel),
+      JSON.stringify(wert === undefined ? null : wert));
+  } catch (e) {}
+}
+
+async function merkerLaden(schluessel) {
+  try {
+    const roh = await figma.clientStorage.getAsync(merkerSchluessel(schluessel));
+    if (roh == null) return null;
+    if (typeof roh !== 'string') return roh;   // älterer Stand ohne JSON
+    return JSON.parse(roh);
+  } catch (e) { return null; }
 }
 
 // Auswahl auflösen und melden — das Ziel wird gecacht (wie aktiveKarte in v1).
@@ -85,10 +113,26 @@ async function zielStill() {
   return ziel;
 }
 
-// Umfang 'alle' → alle Ziele des Adapters, sonst das aktuell ausgewählte.
-async function zieleFuer(umfang) {
+// Umfang 'alle' → alle Ziele des Adapters, 'namen' → die genannten,
+// sonst das aktuell ausgewählte.
+async function zieleFuer(umfang, namen) {
   if (umfang === 'alle') return await ADAPTER.alle();
+  if (umfang === 'namen') return (await zieleNachNamen(namen)).ziele;
   return [await zielVerlangen()];
+}
+
+// Namen auf Ziele abbilden — in der Reihenfolge der Anfrage, Unbekanntes
+// kommt als `fehlend` zurück (die UI hat die Namen aus dem Bericht).
+async function zieleNachNamen(namen) {
+  const gesucht = (Array.isArray(namen) ? namen : []).map(n => String(n));
+  const alle = await ADAPTER.alle();
+  const ziele = [], fehlend = [];
+  for (const n of gesucht) {
+    const z = alle.find(x => x.name === n);
+    if (z) { if (ziele.indexOf(z) < 0) ziele.push(z); }
+    else fehlend.push(n);
+  }
+  return { ziele: ziele, fehlend: fehlend };
 }
 
 async function fokussieren(node) {
@@ -138,6 +182,34 @@ figma.ui.onmessage = async m => {
       return; // kein 'fertig' — darf einen laufenden Batch nicht entsperren
     }
 
+    // --- Merker: Zustandsablage der UI, antwortet ohne 'fertig' -----------
+    if (m.type === 'merkerSetzen') {
+      await merkerSetzen(m.schluessel, m.wert);
+      return;
+    }
+
+    if (m.type === 'merkerLaden') {
+      const wert = await merkerLaden(m.schluessel);
+      ui({ type: 'merker', schluessel: m.schluessel, wert: wert });
+      return;
+    }
+
+    // --- Lizenz -----------------------------------------------------------
+    if (m.type === 'lizenzStatus') { lizenzSenden(); return; }
+
+    if (m.type === 'lizenzKaufen') {
+      await lizenzKaufen(m.grund);
+      lizenzSenden();
+      ui({ type: 'fertig' });
+      return;
+    }
+
+    if (m.type === 'lizenzDebug') {
+      await lizenzDebugSetzen(m.status);
+      lizenzSenden();
+      return;
+    }
+
     if (m.type === 'fokus') {
       let node = null;
       if (m.nodeId) { try { node = await figma.getNodeByIdAsync(m.nodeId); } catch (e) { node = null; } }
@@ -155,6 +227,9 @@ figma.ui.onmessage = async m => {
     }
 
     if (m.type === 'konfigSpeichern') {
+      // Eine importierte Konfig ist eine Vollversions-Funktion; das normale
+      // Speichern aus dem Formular bleibt frei.
+      if (m.quelle === 'import') await lizenzPruefen('konfigImport');
       const pruef = await konfigSpeichern(m.konfig);
       spracheSetzen(CFG.sprache, m.sprache || uiSprache);
       await adapterWaehlen(CFG);
@@ -192,6 +267,14 @@ figma.ui.onmessage = async m => {
       return;
     }
 
+    // Werte einzelner Library-Variablen nachladen (max. 40 je Aufruf).
+    if (m.type === 'farbenWerte') {
+      const werte = await farbenWerte(m.keys);
+      ui({ type: 'farbenWerteErgebnis', werte: werte });
+      ui({ type: 'fertig' });
+      return;
+    }
+
     if (m.type === 'farbePruefen') {
       const r = await farbePruefen(m.farbe);
       ui({ type: 'farbeGeprueft', ok: r.ok, hex: r.hex, name: r.name });
@@ -203,7 +286,8 @@ figma.ui.onmessage = async m => {
       const ziel = await zielVerlangen();
       if (KLASSEN.indexOf(m.klasse) >= 0 && ziel.src) {
         try { ziel.src.setPluginData(KLASSE_SCHLUESSEL, m.klasse); } catch (e) {}
-        logZeile('ok', t('log.klasseGesetzt', { name: ziel.name, klasse: m.klasse }), ziel.src.id);
+        logZeile('ok', t('log.klasseGesetzt', { name: ziel.name, klasse: m.klasse }), ziel.src.id,
+          { name: ziel.name, schwere: 'info' });
       }
       await auswahlMelden();
       ui({ type: 'fertig' });
@@ -224,9 +308,10 @@ figma.ui.onmessage = async m => {
       ABBRUCH = false;
       const ziel = await zielVerlangen();
       const text = await einIcon(ziel, !!m.snap, !!m.stroke);
-      logZeile('ok', text, ziel.fokusNode ? ziel.fokusNode.id : null);
+      logZeile('ok', text, ziel.fokusNode ? ziel.fokusNode.id : null,
+        { name: ziel.name, schwere: 'info' });
       try { figma.commitUndo(); } catch (e) {}
-      logZeile('info', t('log.undo', { name: ziel.name }));
+      logZeile('info', t('log.undo', { name: ziel.name }), null, { name: ziel.name, schwere: 'info' });
       ui({ type: 'fazit', gut: true, text: t('fazit.neuGebaut'), beiAuswahl: true });
     }
 
@@ -257,7 +342,7 @@ figma.ui.onmessage = async m => {
     if (m.type === 'audit') {
       ABBRUCH = false;
       const r = await audit();
-      r.abw.forEach(z => logZeile('warn', z));
+      r.abw.forEach(abwLog);
       if (r.abgebrochen) fazitAbgebrochen(r.geprueft, r.n);
       else ui({
         type: 'fazit', gut: r.abw.length === 0,
@@ -270,6 +355,7 @@ figma.ui.onmessage = async m => {
 
     if (m.type === 'alle') {
       ABBRUCH = false;
+      await lizenzPruefen('alle');
       const ziele = await ADAPTER.alle();
       let ok = 0, i = 0, abgebrochen = false;
       for (; i < ziele.length; i++) {
@@ -277,7 +363,8 @@ figma.ui.onmessage = async m => {
         ui({ type: 'progress', i: i + 1, n: ziele.length, name: ziele[i].name });
         try {
           const text = await einIcon(ziele[i], !!m.snap, !!m.stroke);
-          ok++; logZeile('ok', text, ziele[i].fokusNode ? ziele[i].fokusNode.id : null);
+          ok++; logZeile('ok', text, ziele[i].fokusNode ? ziele[i].fokusNode.id : null,
+            { name: ziele[i].name, schwere: 'info' });
         } catch (e) {
           ui(fehlerLog(e));
         }
@@ -292,7 +379,7 @@ figma.ui.onmessage = async m => {
       } else {
         logZeile('info', t('audit.laeuft'));
         const r = await audit();
-        r.abw.forEach(z => logZeile('warn', z));
+        r.abw.forEach(abwLog);
         if (r.abgebrochen) fazitAbgebrochen(r.geprueft, r.n);
         else ui({
           type: 'fazit', gut: ok === ziele.length && r.abw.length === 0,
@@ -308,10 +395,12 @@ figma.ui.onmessage = async m => {
     // --- Qualitätsbericht -------------------------------------------------
     if (m.type === 'bericht') {
       ABBRUCH = false;
+      await lizenzPruefen('bericht');
       logZeile('info', t('log.berichtLaeuft'));
       const ziele = await ADAPTER.alle();
       const b = await bericht(ziele);
-      ui({ type: 'bericht', zeilen: b.zeilen, zusammenfassung: b.zusammenfassung, zeit: b.zeit });
+      ui({ type: 'bericht', zeilen: b.zeilen, abw: b.abw, zusammenfassung: b.zusammenfassung, zeit: b.zeit });
+      b.abw.forEach(abwLog);
       const z = b.zusammenfassung;
       if (b.abgebrochen) fazitAbgebrochen(b.geprueft, b.n);
       else ui({
@@ -328,11 +417,20 @@ figma.ui.onmessage = async m => {
     // --- SVG-Export (die UI packt daraus das ZIP) -------------------------
     if (m.type === 'exportieren') {
       ABBRUCH = false;
+      await lizenzPruefen('exportieren');
       logZeile('info', t('log.exportLaeuft'));
-      const umfang = m.umfang === 'alle' ? 'alle' : 'auswahl';
-      const ziele = await zieleFuer(umfang);
+      const umfang = ['alle', 'namen'].indexOf(m.umfang) >= 0 ? m.umfang : 'auswahl';
+      let ziele, unbekannt = [];
+      if (umfang === 'namen') {
+        const r = await zieleNachNamen(m.namen);
+        ziele = r.ziele; unbekannt = r.fehlend;
+        unbekannt.forEach(n => melden('warn', 'EXPORT_FEHLT', { name: n }));
+      } else {
+        ziele = await zieleFuer(umfang);
+      }
       const e = await exportieren(ziele);
-      ui({ type: 'exportDaten', dateien: e.dateien, fehlend: e.fehlend });
+      e.fehlend = unbekannt.concat(e.fehlend);
+      ui({ type: 'exportDaten', dateien: e.dateien, fehlend: e.fehlend, umfang: umfang });
       if (e.abgebrochen) fazitAbgebrochen(e.geprueft, e.n);
       else ui({
         type: 'fazit', gut: e.fehlend.length === 0,
@@ -341,6 +439,18 @@ figma.ui.onmessage = async m => {
           fehlend: e.fehlend.length ? t('fazit.exportFehlend', { n: e.fehlend.length }) : ''
         })
       });
+    }
+
+    // --- Übersicht: Startseite der UI, Liste aller Icons im File ----------
+    if (m.type === 'uebersicht') {
+      ABBRUCH = false;
+      const ziele = await ADAPTER.alle();
+      const u = await uebersicht(ziele);
+      ui({
+        type: 'uebersicht', eintraege: u.eintraege, zusammenfassung: u.zusammenfassung,
+        adapter: ADAPTER ? ADAPTER.name : null
+      });
+      if (u.abgebrochen) fazitAbgebrochen(u.geprueft, u.n);
     }
 
     // --- Beispiel-Icon für den Leerzustand --------------------------------

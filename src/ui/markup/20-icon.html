@@ -61,56 +61,85 @@
     <fig-spinner aria-label="…"></fig-spinner>
     <div class="balkenrahmen"><div class="balken" id="balken"></div></div>
     <div class="zahl" id="zahl"></div>
+    <div class="zahl rest" id="restzeit"></div>
     <fig-button id="btnAbbrechen" variant="ghost" data-t="btn.abbrechen" style="flex:none"></fig-button>
   </div>
 
   <div id="diff">
     <div class="diffkopf">
-      <span class="seklabel" data-t="diff.vektor"></span>
-      <div class="chips">
+      <span class="seklabel" data-t="diff.vergleich"></span>
+      <fig-tooltip data-t-text="tip.vergleich" delay="500">
+        <fig-segmented-control id="segModus" value="ueberlagern">
+          <fig-segment value="ueberlagern" selected="true"><span data-t="modus.ueberlagern"></span></fig-segment>
+          <fig-segment value="wischen"><span data-t="modus.wischen"></span></fig-segment>
+          <fig-segment value="neben"><span data-t="modus.neben"></span></fig-segment>
+          <fig-segment value="blinken"><span data-t="modus.blinken"></span></fig-segment>
+        </fig-segmented-control>
+      </fig-tooltip>
+      <div class="chips" id="lagenSchalter">
         <fig-switch id="chkAlt" checked><span class="dot alt"></span><span data-t="diff.aktuell"></span></fig-switch>
         <fig-switch id="chkNeu" checked><span class="dot neu"></span><span data-t="diff.neu"></span></fig-switch>
+      </div>
+      <div class="chips">
         <fig-switch id="chkDunkel"><span data-t="diff.dunkel"></span></fig-switch>
       </div>
       <div class="zoom">
         <fig-button id="zoomMinus" variant="ghost" data-t-title="zoom.kleiner">−</fig-button>
         <fig-slider id="zoomRegler" min="3" max="32" step="1" value="6" text="false"></fig-slider>
         <fig-button id="zoomPlus" variant="ghost" data-t-title="zoom.groesser">+</fig-button>
+        <fig-button id="zoomFit" variant="ghost" data-t-title="zoom.fitTitel" data-t="zoom.fit"></fig-button>
         <span class="zwert" id="zoomWertAnzeige" data-t-title="zoom.zurueck">6×</span>
       </div>
+      <span class="klein blinkhinweis" id="blinkHinweis" hidden data-t="blink.hinweis"></span>
     </div>
     <div class="buehne" id="buehne">
       <div class="zeile" id="zellen"></div>
-      <div class="trennlinie"></div>
-      <div class="sektion">
-        <span class="seklabel" style="margin-right:0" data-t="diff.pixel"></span>
-        <div class="chips">
-          <span class="ctlLabel" data-t="diff.rasterung"></span>
-          <fig-segmented-control id="segRaster" value="1">
-            <fig-segment value="1" selected="true">1×</fig-segment>
-            <fig-segment value="2">2×</fig-segment>
-          </fig-segmented-control>
+      <div class="koordanzeige" id="koordAnzeige" hidden></div>
+
+      <fig-group collapsible open="true" id="grpPixel" class="diffgruppe">
+        <div class="sektion">
+          <div class="chips">
+            <span class="ctlLabel" data-t="diff.rasterung"></span>
+            <fig-segmented-control id="segRaster" value="1">
+              <fig-segment value="1" selected="true">1×</fig-segment>
+              <fig-segment value="2">2×</fig-segment>
+            </fig-segmented-control>
+          </div>
+          <span class="klein" data-t="diff.schaerfe"></span>
         </div>
-        <span class="klein" data-t="diff.schaerfe"></span>
-      </div>
-      <div class="zeile" id="pxzellen"></div>
-      <div class="trennlinie"></div>
-      <div class="sektion">
-        <span class="seklabel" style="margin-right:0" data-t="diff.differenz"></span>
-        <div class="chips">
-          <span class="ctlLabel"><span class="dot weg"></span><span data-t="diff.weg"></span></span>
-          <span class="ctlLabel"><span class="dot dazu"></span><span data-t="diff.dazu"></span></span>
+        <div class="zeile" id="pxzellen"></div>
+      </fig-group>
+
+      <fig-group collapsible open="true" id="grpDifferenz" class="diffgruppe">
+        <div class="sektion">
+          <div class="chips">
+            <span class="ctlLabel"><span class="dot weg"></span><span data-t="diff.weg"></span></span>
+            <span class="ctlLabel"><span class="dot dazu"></span><span data-t="diff.dazu"></span></span>
+          </div>
         </div>
-      </div>
-      <div class="zeile" id="dfzellen"></div>
+        <div class="zeile" id="dfzellen"></div>
+      </fig-group>
     </div>
   </div>
 
   <div class="logblock">
-    <div class="logkopf"><span data-t="log.titel"></span>
-      <fig-button id="btnLeeren" variant="ghost" data-t="btn.leeren"></fig-button>
+    <div class="logkopf">
+      <span data-t="log.titel"></span>
+      <span class="logaktionen">
+        <fig-button id="btnKopieren" variant="ghost" data-t="btn.kopieren"></fig-button>
+        <fig-button id="btnLeeren" variant="ghost" data-t="btn.leeren"></fig-button>
+      </span>
+    </div>
+    <div class="logfilter">
+      <fig-segmented-control id="segLog" value="alle">
+        <fig-segment value="alle" selected="true"><span data-t="log.filterAlle"></span></fig-segment>
+        <fig-segment value="err"><span data-t="log.filterFehler"></span></fig-segment>
+        <fig-segment value="warn"><span data-t="log.filterWarn"></span></fig-segment>
+        <fig-segment value="info"><span data-t="log.filterInfo"></span></fig-segment>
+        <fig-segment value="ok"><span data-t="log.filterOk"></span></fig-segment>
+      </fig-segmented-control>
+      <fig-input-text id="logSuche" type="search" data-t-ph="log.suche"></fig-input-text>
     </div>
     <div class="log" id="log"></div>
   </div>
 </div>
-

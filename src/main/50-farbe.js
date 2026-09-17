@@ -72,6 +72,29 @@ async function farbenListen() {
   return { lokal: lokal, bibliotheken: bibliotheken, diagnose: diagnose };
 }
 
+// Werte einzelner Library-Variablen nachladen (Abschnitt 28.2).
+// `farbenListen` liefert Library-Variablen bewusst ohne hex — der Import je
+// Variable ist teuer. Die UI fordert die Werte einer aufgeklappten Kollektion
+// paketweise nach; ein Fehler je Key ist kein Fehler des Aufrufs, sondern null.
+const FARBEN_WERTE_MAX = 40;
+
+async function farbenWerte(keys) {
+  const werte = {};
+  const liste = (Array.isArray(keys) ? keys : [])
+    .filter(k => typeof k === 'string' && k)
+    .slice(0, FARBEN_WERTE_MAX);
+  for (const k of liste) {
+    if (Object.prototype.hasOwnProperty.call(werte, k)) continue;
+    let hex = null;
+    try {
+      const v = await figma.variables.importVariableByKeyAsync(k);
+      hex = v ? await farbeWertVon(v) : null;
+    } catch (e) { hex = null; }
+    werte[k] = hex;
+  }
+  return werte;
+}
+
 // key → id → Name. Ergebnis landet in CTX.farbVariable.
 async function farbeVariableAufloesen(cfgFarbe) {
   const f = cfgFarbe || (CFG && CFG.farbe) || {};

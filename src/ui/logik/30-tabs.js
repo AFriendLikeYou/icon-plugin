@@ -9,6 +9,8 @@
       if (!KONFIG) send({ type: 'konfigLaden' });
       if (cfgLokal && cfgLokal.farbe && cfgLokal.farbe.modus === 'variable') farbenAnfordern();
     }
+    // Startseite im Icon-Tab: Liste auffrischen (gedrosselt auf 2 s).
+    if (v === 'icon' && !hatAuswahl) uebersichtAnfordern();
   }
   // Tab von Hand umschalten (fig-tabs spiegelt das value-Attribut auf die Kinder).
   function tabWechseln(v) {

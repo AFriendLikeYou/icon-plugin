@@ -6,25 +6,40 @@
 
   <div class="cfgblock">
     <div class="gruppenkopf" data-t="cfg.allgemein"></div>
-    <div class="feld">
-      <span class="fname" data-t="cfg.adapter"></span>
-      <fig-dropdown id="selAdapter" data-pfad="adapter">
-        <option value="auto" data-t="opt.auto"></option>
-        <option value="zds" data-t="opt.zds"></option>
-        <option value="frei" data-t="opt.frei"></option>
-      </fig-dropdown>
+    <div class="feldgruppe">
+      <div class="feld">
+        <span class="fname" data-t="cfg.adapter"></span>
+        <fig-tooltip data-t-text="tip.adapter" delay="400">
+          <fig-dropdown id="selAdapter" data-pfad="adapter">
+            <option value="auto" data-t="opt.auto"></option>
+            <option value="zds" data-t="opt.zds"></option>
+            <option value="frei" data-t="opt.frei"></option>
+          </fig-dropdown>
+        </fig-tooltip>
+      </div>
+      <div class="fhilfe" data-t="hilf.adapter"></div>
     </div>
-    <div class="feld">
-      <span class="fname" data-t="cfg.sprache"></span>
-      <fig-dropdown id="selSprache" data-pfad="sprache">
-        <option value="auto" data-t="opt.auto"></option>
-        <option value="de" data-t="opt.de"></option>
-        <option value="en" data-t="opt.en"></option>
-      </fig-dropdown>
+    <div class="feldgruppe">
+      <div class="feld">
+        <span class="fname" data-t="cfg.sprache"></span>
+        <fig-tooltip data-t-text="tip.sprache" delay="400">
+          <fig-dropdown id="selSprache" data-pfad="sprache">
+            <option value="auto" data-t="opt.auto"></option>
+            <option value="de" data-t="opt.de"></option>
+            <option value="en" data-t="opt.en"></option>
+          </fig-dropdown>
+        </fig-tooltip>
+      </div>
+      <div class="fhilfe" data-t="hilf.sprache"></div>
     </div>
-    <div class="feld">
-      <span class="fname" data-t="cfg.variantenProperty"></span>
-      <fig-input-text id="inpVarProp" data-pfad="variantenProperty"></fig-input-text>
+    <div class="feldgruppe">
+      <div class="feld">
+        <span class="fname" data-t="cfg.variantenProperty"></span>
+        <fig-tooltip data-t-text="tip.variantenProperty" delay="400">
+          <fig-input-text id="inpVarProp" data-pfad="variantenProperty"></fig-input-text>
+        </fig-tooltip>
+      </div>
+      <div class="fhilfe" data-t="hilf.variantenProperty"></div>
     </div>
   </div>
 
@@ -41,16 +56,27 @@
   <div class="cfgblock">
     <div class="gruppenkopf" data-t="cfg.master"></div>
     <div class="vier">
-      <div class="feld">
-        <span class="fname" data-t="cfg.masterGroesse"></span>
-        <fig-input-number id="inpMasterGroesse" min="1" step="1" data-pfad="master.groesse"></fig-input-number>
+      <div class="feldgruppe">
+        <div class="feld">
+          <span class="fname" data-t="cfg.masterGroesse"></span>
+          <fig-tooltip data-t-text="tip.masterGroesse" delay="400">
+            <fig-input-number id="inpMasterGroesse" min="1" step="1" data-pfad="master.groesse"></fig-input-number>
+          </fig-tooltip>
+        </div>
+        <div class="fhilfe" data-t="hilf.masterGroesse"></div>
       </div>
-      <div class="feld">
-        <span class="fname" data-t="cfg.masterKontur"></span>
-        <fig-input-number id="inpMasterKontur" min="0.1" step="0.5" data-pfad="master.kontur"></fig-input-number>
+      <div class="feldgruppe">
+        <div class="feld">
+          <span class="fname" data-t="cfg.masterKontur"></span>
+          <fig-tooltip data-t-text="tip.masterKontur" delay="400">
+            <fig-input-number id="inpMasterKontur" min="0.1" step="0.5" data-pfad="master.kontur"></fig-input-number>
+          </fig-tooltip>
+        </div>
+        <div class="fhilfe" data-t="hilf.masterKontur"></div>
       </div>
     </div>
     <div class="gruppenkopf" data-t="cfg.keylines"></div>
+    <div class="fhilfe" data-t="hilf.masterKeyline"></div>
     <div id="masterKeyViz"></div>
     <div class="vier" id="masterKeylines"></div>
   </div>
@@ -63,11 +89,14 @@
 
   <div class="cfgblock">
     <div class="gruppenkopf" data-t="cfg.farbe"></div>
-    <fig-segmented-control id="segFarbe" value="source" data-pfad="farbe.modus">
-      <fig-segment value="source" selected="true"><span data-t="farbe.source"></span></fig-segment>
-      <fig-segment value="hex"><span data-t="farbe.hex"></span></fig-segment>
-      <fig-segment value="variable"><span data-t="farbe.variable"></span></fig-segment>
-    </fig-segmented-control>
+    <fig-tooltip data-t-text="tip.farbeModus" delay="400">
+      <fig-segmented-control id="segFarbe" value="source" data-pfad="farbe.modus">
+        <fig-segment value="source" selected="true"><span data-t="farbe.source"></span></fig-segment>
+        <fig-segment value="hex"><span data-t="farbe.hex"></span></fig-segment>
+        <fig-segment value="variable"><span data-t="farbe.variable"></span></fig-segment>
+      </fig-segmented-control>
+    </fig-tooltip>
+    <div class="fhilfe" id="farbeErkl"></div>
     <div id="farbeHex" hidden>
       <fig-input-color id="inpHex" alpha="false" data-pfad="farbe.hex"></fig-input-color>
     </div>
@@ -77,13 +106,40 @@
         <fig-button id="btnFarbenNeu" variant="ghost" data-t="farbe.aktualisieren" style="flex:none"></fig-button>
       </div>
       <div class="varliste" id="varListe"></div>
+      <div class="fhilfe" data-t="hilf.token"></div>
       <div class="gewaehltzeile" id="varGewaehlt" hidden>
         <span class="ctlLabel" data-t="farbe.gewaehlt"></span>
         <span class="platte" id="varPlatte"></span>
         <span id="varName"></span>
       </div>
     </div>
-    <fig-switch id="chkAngleichen" data-pfad="farbe.sourceAngleichen"><span data-t="farbe.angleichen"></span></fig-switch>
+    <div id="angleichenZeile" hidden>
+      <fig-tooltip data-t-text="tip.angleichen" delay="400">
+        <fig-switch id="chkAngleichen" data-pfad="farbe.sourceAngleichen"><span data-t="farbe.angleichen"></span></fig-switch>
+      </fig-tooltip>
+    </div>
+  </div>
+
+  <div class="cfgblock" id="lizenzBlock">
+    <div class="gruppenkopf" data-t="liz.titel"></div>
+    <fig-card class="lizkarte" id="lizKarte">
+      <div class="lizzeile">
+        <span class="chip grau" id="lizStatusChip"></span>
+        <span class="lizmodell" id="lizModell"></span>
+      </div>
+      <div class="fhilfe" id="lizUmfang"></div>
+      <div class="fhilfe" id="lizHinweis"></div>
+      <fig-button id="btnLizKaufen" data-t="liz.kaufen"></fig-button>
+    </fig-card>
+    <div id="lizDebug" hidden>
+      <div class="gruppenkopf" data-t="liz.debugTitel"></div>
+      <fig-segmented-control id="segLizDebug" value="PAID">
+        <fig-segment value="PAID" selected="true">PAID</fig-segment>
+        <fig-segment value="TRIAL">TRIAL</fig-segment>
+        <fig-segment value="UNPAID">UNPAID</fig-segment>
+      </fig-segmented-control>
+      <div class="fhilfe" data-t="liz.debugHinweis"></div>
+    </div>
   </div>
 
   <div class="cfgblock">
@@ -100,4 +156,3 @@
     <fig-button id="btnSpeichern" data-t="btn.speichern"></fig-button>
   </div>
 </div>
-

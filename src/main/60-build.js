@@ -212,7 +212,10 @@ async function einIcon(ziel, snap, strokeAuch) {
     ? t('bau.sourceMisst', { ist: istMaster.toFixed(2), soll: sollMaster }) : '';
 
   const neu = !set;
-  if (neu && ADAPTER.name === 'zds') melden('info', 'KARTE_OHNE_SET', { name: name }, ziel.fokusNode ? ziel.fokusNode.id : null);
+  // Nur echte Karten melden „Karte ohne Set“ — ein karteloses Ziel im ZDS-Board
+  // (Beispiel-Icon) folgt den Frei-Regeln und braucht den Hinweis nicht.
+  if (neu && ADAPTER.name === 'zds' && ziel.karte)
+    melden('info', 'KARTE_OHNE_SET', { name: name }, ziel.fokusNode ? ziel.fokusNode.id : null);
 
   const pdAlt = set ? pdLesen(set) : {};
   const vorher = pdAlt.fehler || {};
@@ -375,6 +378,51 @@ async function vorschau(ziel, snap, ohneNormalisieren) {
   return { name: ziel.name, klasse: kl, kl: kl, zellen: zellen };
 }
 
+// --- Strukturierte Befunde (Abschnitt 28.1) -------------------------------
+// Audit und Bericht liefern keine fertigen Sätze mehr, sondern Einträge mit
+// Code, Schwere, Icon-Name und Größe. Der Text kommt aus dem Wörterbuch; die
+// UI kann nach Code, Icon und Schwere gruppieren und filtern.
+
+const ABW_SCHWERE = {
+  KEYLINE_ABWEICHUNG: 'warnung',
+  STRUKTUR_KNOTEN: 'warnung',
+  STRUKTUR_TYP: 'warnung',
+  RESTKONTUR: 'warnung',
+  FARBE_UNGEBUNDEN: 'warnung',
+  LUECKE_ENG: 'info',
+  KANTE_SCHIEF: 'warnung',
+  VORLAGE_GEAENDERT: 'info',
+  KEINE_SOURCE: 'fehler',
+  KEIN_SET: 'fehler'
+};
+
+// name/N stehen sowohl als Platzhalter im Text als auch als eigene Felder.
+function abwEintrag(code, name, N, params, nodeId) {
+  const p = Object.assign({ name: name, N: N == null ? '' : N }, params || {});
+  return {
+    code: code,
+    name: name == null ? null : name,
+    N: N == null ? null : N,
+    schwere: ABW_SCHWERE[code] || 'warnung',
+    text: t('fehler.' + code, p),
+    hinweis: t('hinweis.' + code, p),
+    nodeId: nodeId || null
+  };
+}
+
+// Einen Befund ins Protokoll schreiben — mit name/N/schwere für die Gruppierung.
+function abwLog(z) {
+  logZeile(artVonSchwere(z.schwere), z.text, z.nodeId,
+    { name: z.name, N: z.N, schwere: z.schwere, code: z.code, hinweis: z.hinweis });
+}
+
+// schiefeWinkel() liefert fertige Strings ('12.34° (soll 30°)') — für den
+// strukturierten Eintrag brauchen wir ist und soll getrennt.
+function abwWinkelTeile(wert) {
+  const m = /^([\d.,]+)°.*?(\d+)°/.exec(String(wert));
+  return m ? { ist: m[1], soll: m[2] } : { ist: String(wert), soll: '—' };
+}
+
 // --- Gemeinsame Messungen (Audit und Bericht) -----------------------------
 // Live gemessen wird an der gebauten Variante, nicht an der Source. Audit und
 // Bericht teilen sich diese drei Helfer, damit beide dasselbe Maß nehmen.
@@ -402,20 +450,26 @@ function messRaster(v, g) {
 
 // Struktur: genau ein Vektor, keine Restkontur, Farbe gebunden, keine engen Lücken.
 // `kleinste` schaltet die Lückenprüfung zu (nur bei der kleinsten Größe aussagekräftig).
+// Liefert strukturierte Einträge (Abschnitt 28.1); der Bericht nimmt daraus .text.
 function messStruktur(v, name, N, kleinste) {
-  const texte = [];
-  if (v.children.length !== 1) texte.push(t('audit.knoten', { name: name, N: N, n: v.children.length }));
+  const funde = [];
+  const id = v && v.id;
+  if (v.children.length !== 1)
+    funde.push(abwEintrag('STRUKTUR_KNOTEN', name, N, { n: v.children.length }, id));
   const kind = v.children[0];
-  if (!kind) return texte;
-  if (kind.type !== 'VECTOR') texte.push(t('audit.typ', { name: name, N: N, typ: kind.type }));
-  if ((kind.strokes || []).length) texte.push(t('audit.restkontur', { name: name, N: N }));
+  if (!kind) return funde;
+  if (kind.type !== 'VECTOR')
+    funde.push(abwEintrag('STRUKTUR_TYP', name, N, { typ: kind.type }, id));
+  if ((kind.strokes || []).length)
+    funde.push(abwEintrag('RESTKONTUR', name, N, null, id));
   if (CFG.farbe.modus === 'variable') {
     const fb = kind.fills && kind.fills[0] && kind.fills[0].boundVariables;
-    if (!(fb && fb.color)) texte.push(t('audit.farbe', { name: name, N: N }));
+    if (!(fb && fb.color)) funde.push(abwEintrag('FARBE_UNGEBUNDEN', name, N, null, id));
   }
   if (kleinste && kind.type === 'VECTOR')
-    engeLuecken(kind).forEach(l => texte.push(t('audit.luecke', { name: name, N: N, wert: l.toFixed(2) })));
-  return texte;
+    engeLuecken(kind).forEach(l =>
+      funde.push(abwEintrag('LUECKE_ENG', name, N, { d: l.toFixed(2) }, id)));
+  return funde;
 }
 
 // --- Audit -----------------------------------------------------------------
@@ -434,15 +488,25 @@ async function audit() {
     ui({ type: 'progress', i: geprueft, n: ziele.length, name: ziel.name });
     const name = ziel.name;
     const src = ziel.src;
-    if (!src) { abw.push(t('audit.keineSource', { name: name })); continue; }
+    const zielId = (ziel.fokusNode && ziel.fokusNode.id) || (src && src.id) || null;
+    if (!src) {
+      abw.push(abwEintrag('KEINE_SOURCE', name, null, { mass: CFG.master.groesse }, zielId));
+      continue;
+    }
     const kl = ziel.klasse;
 
-    schiefeWinkel(src).forEach(w => abw.push(t('audit.schiefeKante', { name: name, wert: w })));
+    schiefeWinkel(src).forEach(w => {
+      const teile = abwWinkelTeile(w);
+      abw.push(abwEintrag('KANTE_SCHIEF', name, null, teile, src.id));
+    });
 
     const set = await ADAPTER.zielSet(ziel);
-    if (!set) { abw.push(t('audit.keinSet', { name: name })); continue; }
+    if (!set) { abw.push(abwEintrag('KEIN_SET', name, null, null, zielId)); continue; }
 
-    if (istVeraltet(set, src)) { veraltet++; abw.push(t('audit.veraltet', { name: name })); }
+    if (istVeraltet(set, src)) {
+      veraltet++;
+      abw.push(abwEintrag('VORLAGE_GEAENDERT', name, null, null, set.id));
+    }
 
     for (const g of CFG.groessen) {
       const N = g.N;
@@ -453,7 +517,8 @@ async function audit() {
       if (k) {
         gesamt++;
         if (k.ok) treffer++;
-        else abw.push(t('audit.keyline', { name: name, klasse: kl, N: N, ist: k.ist.toFixed(3), soll: k.soll }));
+        else abw.push(abwEintrag('KEYLINE_ABWEICHUNG', name, N,
+          { ist: k.ist.toFixed(3), soll: k.soll, klasse: kl }, v.id));
       }
 
       messStruktur(v, name, N, N === kleinste).forEach(z => abw.push(z));
