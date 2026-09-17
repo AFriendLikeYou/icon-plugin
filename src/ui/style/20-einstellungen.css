@@ -147,12 +147,13 @@ dialog[is="fig-dialog"].buehne-dlg:not([open]) { display: none; }
   margin-top: 4px; background: #12a76a; }
 
 /* ---- Umfang-Umschalter, Fazit, Rückgängig (Runde 5, §34/§35) ------------ */
-.umfang { flex: none; width: 100%; }
+.umfang { flex: none; width: 100%; height: 24px; }
 #grpLibrary[hidden] { display: none; }
 #grpIcon[hidden] { display: none; }
-.libsumme { font-size: 11px; font-variant-numeric: tabular-nums;
+.libsumme { font-size: 10.5px; line-height: 20px; font-variant-numeric: tabular-nums;
   color: var(--figma-color-text-secondary, #6e6e76); }
-.fazitzeile { display: flex; align-items: center; gap: 8px; flex: none; }
+.fazitzeile { display: flex; align-items: center; gap: 8px; flex: none; min-height: 0; }
+.fazitzeile fig-button { height: 22px; font-size: 10px; }
 .fazitzeile .fazit { flex: 1; }
 .fazitzeile fig-tooltip { display: inline-flex; flex: none; }
 .fazitzeile fig-button[hidden] { display: none; }

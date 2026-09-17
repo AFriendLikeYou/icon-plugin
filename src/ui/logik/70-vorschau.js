@@ -11,7 +11,9 @@
 
   const ZOOM_STUFEN = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64];
   const Z_MIN = 1, Z_MAX = 64;
-  const MODI = ['neben', 'wischen'];
+  const MODI = ['neben', 'wischen', 'ueberlagern'];
+  // Modi mit nur einer Kachel je Karte
+  function einKachelModus() { return vglModus === 'wischen' || vglModus === 'ueberlagern'; }
   const W_LUECKE = 4;        // Weltabstand zwischen Vorher- und Nachher-Kachel
   const W_KARTE = 12;        // Weltabstand zwischen den Größenkarten
   const W_POLSTER = 3;       // Kartenrahmen um die Kacheln
@@ -142,13 +144,16 @@
   function regionenFinden(A, B) {
     const w = Math.min(A.w, B.w), h = Math.min(A.h, B.h);
     const maske = new Uint8Array(w * h);
-    let treffer = 0;
+    let treffer = 0, weg = 0, dazu = 0;
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
       const a = A.data[((y * A.w) + x) * 4 + 3];
       const b = B.data[((y * B.w) + x) * 4 + 3];
-      if (Math.abs(a - b) > MARK_SCHWELLE) { maske[y * w + x] = 1; treffer++; }
+      if (Math.abs(a - b) > MARK_SCHWELLE) {
+        maske[y * w + x] = 1; treffer++;
+        if (a > b) weg++; else dazu++;
+      }
     }
-    if (!treffer) return { regionen: [], pixel: 0 };
+    if (!treffer) return { regionen: [], pixel: 0, weg: 0, dazu: 0 };
     const regionen = [], stapel = [];
     for (let s = 0; s < maske.length; s++) {
       if (maske[s] !== 1) continue;
@@ -182,7 +187,7 @@
       });
     }
     regionen.sort((a, b) => (b.w * b.h) - (a.w * a.h));
-    return { regionen: regionen.slice(0, MARK_MAX), pixel: treffer };
+    return { regionen: regionen.slice(0, MARK_MAX), pixel: treffer, weg: weg, dazu: dazu };
   }
   // Heuristik für den Hover-Text: schmale, langgestreckte Regionen sind
   // gerasterte Kanten; der Weg kommt aus dem Schwerpunkt alt → neu.
@@ -218,7 +223,8 @@
     ANA = [];
     for (const c of (letzterDiff ? letzterDiff.zellen : [])) {
       const e = { N: c.N, zelle: c, bildAlt: null, bildNeu: null, vekAlt: null, vekNeu: null,
-        aaAlt: null, aaNeu: null, regionen: [], andersPixel: 0 };
+        aaAlt: null, aaNeu: null, regionen: [], andersPixel: 0, weg: 0, dazu: 0,
+        misch: null, mischSig: '' };
       if (c.pngNeu) { const r = await analysiere(c.pngNeu, false, dunkel); e.bildNeu = r.c; e.aaNeu = r.aa; }
       if (c.pngAlt) { const r = await analysiere(c.pngAlt, false, dunkel); e.bildAlt = r.c; e.aaAlt = r.aa; }
       if (c.neu) e.vekNeu = await svgCanvas(c.neu, umrissFarbe(), c.N);
@@ -228,6 +234,7 @@
         const B = await bitmapDaten(c.pngNeu);
         const d = regionenFinden(A, B);
         e.regionen = d.regionen; e.andersPixel = d.pixel;
+        e.weg = d.weg; e.dazu = d.dazu;
       }
       const g = gueteNeu(c);
       e.fehlerNeu = g && isFinite(g.fehler) ? g.fehler : null;
@@ -250,13 +257,32 @@
     if (c.ist == null || c.soll == null) return null;
     return Math.abs(Number(c.ist) - Number(c.soll)) <= 0.5;
   }
-  function fehlerText(v) { return v == null ? null : zahl(v.toFixed(3)); }
-  function deltaText(alt, neu) {
-    if (alt == null || neu == null || !(alt > 0)) return null;
-    const d = Math.round((neu - alt) / alt * 100);
+  // Eine Stelle für alle Zahlen: Rasterfehler immer drei Nachkommastellen,
+  // Prozent ganzzahlig, Maße zwei Stellen, Dezimaltrennzeichen aus zahl().
+  function fmt(art, v) {
+    if (v == null || !isFinite(Number(v))) return t('ber.keineDaten');
+    const n = Number(v);
+    if (art === 'fehler') return zahl(n.toFixed(3));
+    if (art === 'prozent') return Math.round(n) + ' %';
+    if (art === 'mass') return zahl(n.toFixed(2));
+    return zahl(String(n));
+  }
+  // Vergleichswert: bei Gleichstand nur EINE Zahl statt „0,012 → 0,012“.
+  function fmtVgl(art, alt, neu) {
+    if (neu == null || !isFinite(Number(neu))) return t('ber.keineDaten');
+    const a = alt == null || !isFinite(Number(alt)) ? null : fmt(art, alt);
+    const n = fmt(art, neu);
+    return (a == null || a === n) ? n : a + ' → ' + n;
+  }
+  // Delta mit Vorzeichen und Prozent; null, wenn sich nichts geändert hat.
+  function fmtDelta(alt, neu) {
+    if (alt == null || neu == null || !(Number(alt) > 0)) return null;
+    const d = Math.round((Number(neu) - Number(alt)) / Number(alt) * 100);
     if (!isFinite(d) || d === 0) return null;
     return (d < 0 ? '−' : '+') + Math.abs(d) + ' %';
   }
+  function fehlerText(v) { return v == null ? null : fmt('fehler', v); }
+  function deltaText(alt, neu) { return fmtDelta(alt, neu); }
   function radiusText(c) {
     if (c.radius == null) return null;
     if (typeof c.radius !== 'object') return zahl(c.radius);
@@ -314,9 +340,9 @@
     return s;
   }
   function urteilZeichnen(A) {
-    const karte = $('urteil'), txt = $('urteilText'), pillen = $('urteilPills');
+    const zeile = $('urteil'), txt = $('urteilText'), pillen = $('urteilPills');
     pillen.textContent = '';
-    if (!A.length) { karte.className = 'urteil'; txt.textContent = ''; return; }
+    if (!A.length) { zeile.className = 'urteilzeile'; txt.textContent = ''; return; }
     let aaAltS = 0, aaAltN = 0, aaNeuS = 0, aaNeuN = 0;
     let feAltS = 0, feAltN = 0, feNeuS = 0, feNeuN = 0;
     let massOk = 0, massGes = 0, gerastet = 0, mitAlt = 0;
@@ -336,32 +362,49 @@
     const feNeu = feNeuN ? feNeuS / feNeuN : null;
     const massAlle = massGes > 0 && massOk === massGes;
 
+    // Ein Satz in Klartext; bei Gleichstand keine zwei gleichen Zahlen.
     let art = 'neutral';
-    if (!mitAlt) txt.textContent = t('urt.neu');
-    else if (aaAlt != null && aaNeu != null && aaNeu < aaAlt - 0.5) { txt.textContent = t('urt.besser'); art = 'gut'; }
-    else if (aaAlt != null && aaNeu != null && aaNeu > aaAlt + 0.5) { txt.textContent = t('urt.schlechter'); art = 'warn'; }
-    else txt.textContent = t('urt.gleich');
+    if (!mitAlt) {
+      txt.textContent = t('urt.neu');
+    } else if (aaAlt != null && aaNeu != null && aaNeu < aaAlt - 0.5) {
+      txt.textContent = t('urt.besser', { alt: fmt('prozent', aaAlt), neu: fmt('prozent', aaNeu) });
+      art = 'gut';
+    } else if (aaAlt != null && aaNeu != null && aaNeu > aaAlt + 0.5) {
+      txt.textContent = t('urt.schlechter', { alt: fmt('prozent', aaAlt), neu: fmt('prozent', aaNeu) });
+      art = 'warn';
+    } else {
+      txt.textContent = t('urt.gleich', { neu: aaNeu == null ? fmt('fehler', feNeu) : fmt('prozent', aaNeu) });
+    }
     if (massGes && !massAlle) art = 'warn';
-    karte.className = 'urteil ' + art;
+    zeile.className = 'urteilzeile ' + art;
 
-    if (aaAlt != null && aaNeu != null && mitAlt) {
-      const d = deltaText(aaAlt, aaNeu);
-      pillen.appendChild(pille(t('urt.aa', { alt: aaAlt, neu: aaNeu }) + (d ? ' (' + d + ')' : ''),
-        d && d.charAt(0) === '−' ? 'gut' : ''));
-    } else if (feNeu != null) {
-      pillen.appendChild(pille(t('urt.fehler', { v: fehlerText(feNeu) })));
-    } else if (aaNeu != null) {
-      pillen.appendChild(pille(t('urt.aaNur', { neu: aaNeu })));
-    }
-    if (feAlt != null && feNeu != null) {
-      const d = deltaText(feAlt, feNeu);
-      pillen.appendChild(pille(t('urt.fehlerVgl', { alt: fehlerText(feAlt), neu: fehlerText(feNeu) })
-        + (d ? ' (' + d + ')' : ''), d && d.charAt(0) === '−' ? 'gut' : ''));
-    }
-    if (massGes) pillen.appendChild(pille(
-      massAlle ? t('urt.mass', { n: massOk, m: massGes }) : t('urt.massAb', { n: massGes - massOk, m: massGes }),
-      massAlle ? 'gut' : 'warn'));
-    if (gerastet && pillen.childNodes.length < 3) pillen.appendChild(pille(t('urt.gerastet', { n: gerastet })));
+    // Höchstens zwei kurze Pills: erst das Delta, dann Maß bzw. gerastete Kanten.
+    const d = mitAlt ? fmtDelta(aaAlt, aaNeu) : null;
+    const kandidaten = [];
+    if (d) kandidaten.push([d, d.charAt(0) === '−' ? 'gut' : 'warn']);
+    if (massGes) kandidaten.push([
+      t('urt.mass', { n: massOk, m: massGes }) + (massAlle ? ' ✓' : ' △'), massAlle ? 'gut' : 'warn']);
+    if (gerastet) kandidaten.push([t('urt.gerastet', { n: gerastet }), '']);
+    if (!kandidaten.length && feNeu != null) kandidaten.push([t('urt.fehler', { v: fmt('fehler', feNeu) }), '']);
+    kandidaten.slice(0, 2).forEach(k => pillen.appendChild(pille(k[0], k[1])));
+  }
+
+  // Legende: im Überlagern-Modus drei Farbfelder statt des Merksatzes.
+  function legendeZeichnen() {
+    const box = $('vLegende');
+    box.textContent = '';
+    if (vglModus !== 'ueberlagern') { box.textContent = t('v.legende'); return; }
+    [['weg', t('leg.weg')], ['dazu', t('leg.dazu')], ['beide', t('leg.beide')]].forEach(x => {
+      const s = document.createElement('span');
+      s.className = 'legstueck';
+      const i = document.createElement('i');
+      i.className = 'legfeld ' + x[0];
+      s.appendChild(i);
+      const b = document.createElement('span');
+      b.textContent = x[1];
+      s.appendChild(b);
+      box.appendChild(s);
+    });
   }
 
   // ---- Kennzahlen-Fuß (DOM, eine Spalte je Größe) -------------------------
@@ -382,20 +425,21 @@
     });
     tab.appendChild(kopf);
     const zeilen = [
-      { label: t('fuss.fehler'), tip: t('ber.tipTreue'), wert: e => {
-        const fe = fehlerText(e.fehlerNeu), feA = fehlerText(e.fehlerAlt);
-        return fe == null ? t('ber.keineDaten') : (feA ? feA + ' → ' + fe : fe);
-      } },
-      { label: t('fuss.aa'), tip: t('ber.tipAa'), wert: e =>
-        e.aaNeu == null ? t('ber.keineDaten')
-          : (e.aaAlt != null ? e.aaAlt + ' % → ' + e.aaNeu + ' %' : e.aaNeu + ' %') },
+      { label: t('fuss.fehler'), tip: t('ber.tipTreue'),
+        wert: e => fmtVgl('fehler', e.fehlerAlt, e.fehlerNeu) },
+      { label: t('fuss.aa'), tip: t('ber.tipAa'),
+        wert: e => fmtVgl('prozent', e.aaAlt, e.aaNeu) },
       { label: t('fuss.keyline'), tip: t('ber.tipMass'), wert: e => {
         const c = e.zelle, ok = massStimmt(c);
         return c.soll == null ? t('ber.keineDaten')
-          : zahl(c.ist == null ? '?' : Number(c.ist).toFixed(2)) + ' / ' + zahl(c.soll)
-            + (ok == null ? '' : ok ? ' ✓' : ' △');
+          : fmt('mass', c.ist) + ' / ' + zahl(c.soll) + (ok == null ? '' : ok ? ' ✓' : ' △');
       } }
     ];
+    // Im Überlagern-Modus zählt zusätzlich, wie viele Pixel sich geändert haben.
+    if (vglModus === 'ueberlagern') zeilen.push({
+      label: t('fuss.veraendert'), tip: t('tip.veraendert'),
+      wert: e => e.andersPixel ? t('fuss.veraendertWert',
+        { n: e.andersPixel, weg: e.weg || 0, dazu: e.dazu || 0 }) : t('ber.keineDaten') });
     zeilen.forEach(z => {
       const tr = document.createElement('tr');
       const td = document.createElement('td');
@@ -425,7 +469,7 @@
     A.forEach((e, i) => {
       const N = e.N || 1;
       if (N > maxN) maxN = N;
-      const breite = vglModus === 'neben' ? 2 * N + W_LUECKE : N;
+      const breite = einKachelModus() ? N : 2 * N + W_LUECKE;
       LAYOUT.push({ e: e, i: i, N: N, x: x, y: -N / 2, breite: breite });
       x += breite + W_KARTE;
     });
@@ -433,6 +477,7 @@
     WELT = { x0: -rand, y0: -maxN / 2 - rand, x1: Math.max(0, x - W_KARTE) + rand, y1: maxN / 2 + rand };
   }
   function kacheln(k) {
+    if (vglModus === 'ueberlagern') return [{ x: k.x, y: k.y, welche: 'misch' }];
     if (vglModus === 'wischen') return [{ x: k.x, y: k.y, welche: 'wisch' }];
     return [{ x: k.x, y: k.y, welche: 'alt' }, { x: k.x + k.N + W_LUECKE, y: k.y, welche: 'neu' }];
   }
@@ -520,7 +565,6 @@
     const k = LAYOUT[Math.max(0, Math.min(LAYOUT.length - 1, i))];
     if (!k) return;
     aktiveKarte = k.i;
-    sprungAktiv();
     kameraSetzen(k.x + k.breite / 2 - vpBreite() / 2 / ZIEL.z,
       k.y + k.N / 2 - vpHoehe() / 2 / ZIEL.z, ZIEL.z, mitLerp !== false);
   }
@@ -528,7 +572,6 @@
     const k = LAYOUT[Math.max(0, Math.min(LAYOUT.length - 1, i))];
     if (!k) return;
     aktiveKarte = k.i;
-    sprungAktiv();
     const rand = 16 * dpr(), obenRaum = 18 * dpr();
     const z = Math.max(Z_MIN, Math.min(Z_MAX, Math.min(
       (vpBreite() - 2 * rand) / (k.breite + 2 * W_POLSTER),
@@ -568,6 +611,75 @@
     g.fillText(text, x + 4 * p, y + h / 2 + 0.5 * p);
     return b;
   }
+  // ---- Überlagern: farbige Onionskin ---------------------------------------
+  // Deckung neutral, Unterschiede farbig. Je Pixel aus den Alphawerten:
+  // gemeinsam = min(alt, neu) → Grau, nur alt → Orange, nur neu → Akzentblau,
+  // Teildeckung mischt proportional. Der Überblend-Regler gewichtet die beiden
+  // Differenzanteile (0 % = nur Vorher, 100 % = nur Nachher).
+  const MISCH_GRAU = { hell: [58, 58, 68], dunkel: [217, 217, 222] };
+  const MISCH_WEG  = { hell: [245, 166, 35], dunkel: [255, 184, 77] };
+  function alphaFeld(bild, R) {
+    const c = document.createElement('canvas');
+    c.width = R; c.height = R;
+    const g = c.getContext('2d');
+    g.imageSmoothingEnabled = R !== bild.width;
+    g.clearRect(0, 0, R, R);
+    g.drawImage(bild, 0, 0, R, R);
+    const d = g.getImageData(0, 0, R, R).data;
+    const a = new Uint8ClampedArray(R * R);
+    for (let i = 0; i < a.length; i++) a[i] = d[i * 4 + 3];
+    return a;
+  }
+  function mischCanvas(e) {
+    // Auflösung: Pixelansicht zeigt die echte Rasterung (N), die Vektoransicht
+    // rastert feiner (N × 8). Der Regler wirkt in 5-%-Stufen, damit das Ziehen
+    // nicht jedes Bild neu rechnet.
+    const R = darstellung === 'vektor' ? e.N * 8 : e.N;
+    const stufe = Math.round(blend / 5) * 5;
+    const sig = darstellung + '|' + R + '|' + stufe + '|' + (dunkel ? 'd' : 'h');
+    if (e.mischSig === sig && e.misch) return e.misch;
+    const qAlt = darstellung === 'vektor' ? (e.vekAlt || e.bildAlt) : e.bildAlt;
+    const qNeu = darstellung === 'vektor' ? (e.vekNeu || e.bildNeu) : e.bildNeu;
+    if (!qNeu && !qAlt) return null;
+    const A = qAlt ? alphaFeld(qAlt, R) : null;
+    const B = qNeu ? alphaFeld(qNeu, R) : null;
+    const c = document.createElement('canvas');
+    c.width = R; c.height = R;
+    const g = c.getContext('2d');
+    const bild = g.createImageData(R, R);
+    const d = bild.data;
+    const grau = dunkel ? MISCH_GRAU.dunkel : MISCH_GRAU.hell;
+    const weg = dunkel ? MISCH_WEG.dunkel : MISCH_WEG.hell;
+    const dazu = akzentRgb();
+    const gNeu = stufe / 100, gAlt = 1 - gNeu;
+    // Ohne Alt-Variante gibt es nichts zu vergleichen: alles neutral.
+    const vergleich = !!(A && B);
+    for (let i = 0; i < R * R; i++) {
+      const a = A ? A[i] / 255 : 0, b = B ? B[i] / 255 : 0;
+      if (!vergleich) {
+        const v = Math.max(a, b);
+        if (v <= 0.004) continue;
+        const k0 = i * 4;
+        d[k0] = grau[0]; d[k0 + 1] = grau[1]; d[k0 + 2] = grau[2];
+        d[k0 + 3] = Math.round(v * 255);
+        continue;
+      }
+      const gem = Math.min(a, b);
+      const nurA = Math.max(0, a - b) * gAlt;
+      const nurB = Math.max(0, b - a) * gNeu;
+      const summe = gem + nurA + nurB;
+      if (summe <= 0.004) continue;
+      const k = i * 4;
+      d[k]     = (grau[0] * gem + weg[0] * nurA + dazu[0] * nurB) / summe;
+      d[k + 1] = (grau[1] * gem + weg[1] * nurA + dazu[1] * nurB) / summe;
+      d[k + 2] = (grau[2] * gem + weg[2] * nurA + dazu[2] * nurB) / summe;
+      d[k + 3] = Math.round(Math.min(1, summe) * 255);
+    }
+    g.putImageData(bild, 0, 0);
+    e.misch = c; e.mischSig = sig;
+    return c;
+  }
+
   function bildZeichnen(g, bild, x, y, s, alpha) {
     if (!bild) return;
     g.save();
@@ -576,8 +688,9 @@
     g.drawImage(bild, x, y, s, s);
     g.restore();
   }
+  function markenAn() { return markieren && vglModus !== 'ueberlagern'; }
   function markenZeichnen(g, regionen, x, y, N, s, p) {
-    if (!markieren || !regionen || !regionen.length) return;
+    if (!markenAn() || !regionen || !regionen.length) return;
     const e = s / N;
     const f = akzentRgb();
     g.save();
@@ -604,7 +717,16 @@
     g.fillStyle = kachelGrund();
     g.fillRect(x, y, s, s);
     const e = k.e;
-    if (welche === 'wisch') {
+    if (welche === 'misch') {
+      const m = mischCanvas(e);
+      if (m) {
+        g.save();
+        g.imageSmoothingEnabled = darstellung === 'vektor';
+        g.drawImage(m, x, y, s, s);
+        g.restore();
+      }
+      pillZeichnen(g, t('pill.beide'), x + 4 * p, y + 4 * p, p);
+    } else if (welche === 'wisch') {
       bildZeichnen(g, bildVon(e, 'alt'), x, y, s);
       const w = Math.max(0, Math.min(s, s * wischPos));
       g.save();
@@ -681,7 +803,10 @@
       g.fillStyle = textFarbe();
       const titel = zahl(k.N) + ' px';
       g.fillText(titel, x, ty);
-      let tx = x + g.measureText(titel).width + 6 * p;
+      const tb = g.measureText(titel).width;
+      // Der Titel ist anklickbar: er zentriert seine Karte.
+      k.titelFeld = { x: x - 4 * p, y: ty - 13 * p, w: tb + 8 * p, h: 18 * p };
+      let tx = x + tb + 6 * p;
       const ok = massStimmt(k.e.zelle);
       if (ok != null) {
         g.fillStyle = ok ? '#12a76a' : '#c98a12';
@@ -699,6 +824,13 @@
   }
 
   // ---- Hit-Test und Hover --------------------------------------------------
+  function titelUnter(devX, devY) {
+    for (const k of LAYOUT) {
+      const f = k.titelFeld;
+      if (f && devX >= f.x && devY >= f.y && devX < f.x + f.w && devY < f.y + f.h) return k;
+    }
+    return null;
+  }
   function kachelUnter(devX, devY) {
     const wx = weltX(devX), wy = weltY(devY);
     for (const k of LAYOUT) {
@@ -735,23 +867,6 @@
   }
 
   // ---- Bühne aufbauen ------------------------------------------------------
-  function sprungAktiv() {
-    $('sprungleiste').querySelectorAll('.sprung').forEach((b, k) => b.classList.toggle('an', k === aktiveKarte));
-  }
-  function sprungleisteZeichnen(A) {
-    const box = $('sprungleiste');
-    box.textContent = '';
-    box.hidden = A.length < 2;
-    if (A.length < 2) return;
-    A.forEach((e, i) => {
-      const b = document.createElement('fig-button');
-      b.setAttribute('variant', 'ghost');
-      b.className = 'sprung' + (i === aktiveKarte ? ' an' : '');
-      b.textContent = zahl(e.N) + ' px';
-      b.addEventListener('click', () => karteMittig(i, true));
-      box.appendChild(b);
-    });
-  }
   function zoomPilleSetzen() {
     $('zoomWertAnzeige').textContent = Math.round(ZIEL.z * 100) + ' %';
   }
@@ -762,7 +877,6 @@
     urteilZeichnen(A);
     kennzahlenZeichnen(A);
     layoutRechnen(A);
-    sprungleisteZeichnen(A);
     leinwandMessen();
     if (fitQuelle !== letzterDiff) { fitQuelle = letzterDiff; zoomFit(false); }
     else { klemmen(ZIEL); kameraSetzen(ZIEL.x, ZIEL.y, ZIEL.z, false); }
@@ -941,6 +1055,7 @@
     try { $('segDarstellung').setAttribute('value', darstellung); } catch (e) {}
     $('vTitel').textContent = t('v.titel', { name: (letzterDiff && letzterDiff.name) || '' });
     $('scrubberZeile').hidden = !verbesserung;
+    legendeZeichnen();
     zoomPilleSetzen();
   }
   function renderDiff() {
@@ -973,11 +1088,21 @@
 
   function hoeheSetzen(h, melden) {
     buehneHoehe = Math.max(200, Math.min(600, Math.round(h)));
-    $('buehne').style.height = buehneHoehe + 'px';
+    const el = $('buehne');
+    el.style.height = buehneHoehe + 'px';
+    el.style.flex = 'none';
     if (leinwandMessen()) { klemmen(ZIEL); anstossen(false); }
     if (melden) send({ type: 'merkerSetzen', schluessel: 'buehneHoehe', wert: buehneHoehe });
   }
-  hoeheSetzen(buehneHoehe);
+  // Die Bühne misst sich selbst nach, wenn das Panel sie wachsen lässt.
+  if (typeof ResizeObserver === 'function') {
+    try {
+      new ResizeObserver(() => {
+        if (!letzterDiff) return;
+        if (leinwandMessen()) { klemmen(ZIEL); anstossen(false); }
+      }).observe($('buehne'));
+    } catch (e) {}
+  }
 
   // ---- Bedienung -----------------------------------------------------------
   $('segModus').addEventListener('change', e => {
@@ -994,6 +1119,7 @@
   $('chkVerbesserung').addEventListener('change', e => {
     verbesserung = !!e.target.checked;
     $('scrubberZeile').hidden = !verbesserung;
+    legendeZeichnen();
     blend = verbesserung ? Number($('blendRegler').value || 100) : 100;
     anstossen(false);
   });
@@ -1032,6 +1158,19 @@
   });
   document.addEventListener('click', e => {
     if (!$('zoomPille').contains(e.target)) $('zoomMenu').hidden = true;
+  }, true);
+
+  // „⋯“ öffnet die beiden Schalter als fig-popup an seinem Knopf.
+  function mehrMenuSetzen(auf) {
+    const m = $('mehrMenu');
+    try { m.open = auf; } catch (e) { if (auf) m.setAttribute('open', 'true'); else m.removeAttribute('open'); }
+  }
+  $('btnMehr').addEventListener('click', e => {
+    e.stopPropagation();
+    mehrMenuSetzen(!$('mehrMenu').open);
+  });
+  document.addEventListener('click', e => {
+    if ($('mehrMenu').open && !$('mehrMenu').contains(e.target) && e.target !== $('btnMehr')) mehrMenuSetzen(false);
   }, true);
 
   // Höhengriff: 200–600 px, Merker `buehneHoehe`.
@@ -1123,8 +1262,10 @@
       px = e.clientX; py = e.clientY; kx = ZIEL.x; ky = ZIEL.y;
       box.classList.add('zieht');
       box.setPointerCapture(e.pointerId);
+      const tk = titelUnter(d.x, d.y);
+      if (tk) { karteMittig(tk.i, true); e.preventDefault(); return; }
       const tr = kachelUnter(d.x, d.y);
-      if (tr) { aktiveKarte = tr.k.i; sprungAktiv(); anstossen(false); }
+      if (tr) { aktiveKarte = tr.k.i; anstossen(false); }
       e.preventDefault();
     });
     box.addEventListener('pointermove', e => {
@@ -1146,7 +1287,7 @@
         const tr = kachelUnter(d.x, d.y);
         if (!tr) { hoverSetzen(null); return; }
         let text = t('px.koord', { x: tr.px, y: tr.py }), region = null;
-        if (markieren && (tr.ka.welche === 'neu' || tr.ka.welche === 'wisch')) {
+        if (markenAn() && (tr.ka.welche === 'neu' || tr.ka.welche === 'wisch')) {
           region = (tr.k.e.regionen || []).filter(r =>
             tr.px >= r.x && tr.py >= r.y && tr.px < r.x + r.w && tr.py < r.y + r.h)[0] || null;
           if (region) text = regionText(region);

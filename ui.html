@@ -28,7 +28,14 @@ html,:host{width:100%;height:100%;color:var(--figma-color-text);-webkit-font-smo
 
   body > fig-tabs { flex: none; }
   .panel { display: flex; flex-direction: column; gap: 9px; flex: 1 1 auto; min-height: 0; }
-  #panelIcon { overflow-y: auto; padding-right: 2px; }
+  /* Icon-Tab: eine Flex-Spalte über die volle Panelhöhe; der Kopf bleibt
+     kompakt (28-px-Zeilen), die Vorschau nimmt den Rest. */
+  #panelIcon { overflow-y: auto; padding-right: 2px; gap: 4px; }
+  .kopfblock { display: flex; flex-direction: column; gap: 6px; flex: none; }
+  .kopfblock[hidden] { display: none; }
+  #auswahl { min-height: 28px; height: 28px; }
+  .reihe fig-button { height: 28px; }
+  #diff { flex: 1 1 auto; min-height: 320px; }
   .panel[hidden] { display: none; }
   #panelCfg { overflow-y: auto; padding-right: 2px; gap: 12px; }
 
@@ -61,11 +68,13 @@ html,:host{width:100%;height:100%;color:var(--figma-color-text);-webkit-font-smo
   }
   .gruppenkopf { font-size: 9px; font-weight: 700; letter-spacing: .07em;
     text-transform: uppercase; color: var(--figma-color-text-secondary, #6e6e76); }
-  .optzeile { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
-  .optzeile fig-switch { font-size: 10.5px; white-space: nowrap; }
+  .optzeile { display: flex; gap: 16px; align-items: center; flex: none;
+    height: 18px; overflow: hidden; }
+  .optzeile fig-switch { font-size: 9.5px; white-space: nowrap; }
+  .optzeile fig-tooltip { display: inline-flex; flex: none; }
 
-  .fortschritt { visibility: hidden; display: flex; gap: 9px; align-items: center; height: 16px; flex: none; }
-  .fortschritt.an { visibility: visible; }
+  .fortschritt { display: none; gap: 9px; align-items: center; height: 16px; flex: none; }
+  .fortschritt.an { display: flex; }
   .fortschritt fig-spinner { width: 14px; height: 14px; flex: none; }
   .balkenrahmen { flex: 1; height: 4px; border-radius: 2px; overflow: hidden;
     background: var(--figma-color-bg-secondary, #f0f0f3); }
@@ -73,7 +82,9 @@ html,:host{width:100%;height:100%;color:var(--figma-color-text);-webkit-font-smo
     border-radius: 2px; transition: width .18s ease; }
   .fortschritt .zahl { font-variant-numeric: tabular-nums; font-size: 10px;
     color: var(--figma-color-text-secondary, #6e6e76); white-space: nowrap; }
-  .fazit { display: none; border-radius: 6px; padding: 6px 10px; font-weight: 600; font-size: 10.5px; flex: none; }
+  .fazit { display: none; border-radius: 6px; padding: 2px 8px; font-weight: 600;
+    font-size: 10.5px; line-height: 18px; flex: none;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .fazit.gruen { display: block; background: rgba(18,167,106,.1); color: #0e8a57; }
   .fazit.rot { display: block; background: rgba(194,64,42,.1); color: #c2402a; }
 
@@ -146,11 +157,15 @@ html,:host{width:100%;height:100%;color:var(--figma-color-text);-webkit-font-smo
   .dlg-aktionen { display: flex; gap: 8px; justify-content: flex-end; padding: 4px 12px 12px; }
   .dlg-wahl { display: flex; flex-direction: column; gap: 6px; padding: 8px 12px 4px; }
 
-  .logblock { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 96px; }
-  .logkopf { display: flex; align-items: center; justify-content: space-between;
-    font-size: 9px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
-    color: var(--figma-color-text-secondary, #6e6e76); padding: 0 2px 4px; }
-  .logkopf fig-button { font-size: 9px; height: 18px; letter-spacing: 0; text-transform: none; }
+  fig-group.logblock { flex: none; margin: 0; border: 1px solid var(--figma-color-border, #e3e3e6);
+    border-radius: 8px; background: var(--figma-color-bg, #fff); padding: 0; }
+  fig-group.logblock > fig-header { padding: 2px 10px; min-height: 22px;
+    display: flex; align-items: center; gap: 8px; }
+  fig-group.logblock h3.logtitel { margin: 0; font-size: 9px; font-weight: 700;
+    letter-spacing: .07em; text-transform: uppercase;
+    color: var(--figma-color-text-secondary, #6e6e76); }
+  fig-group.logblock .logaktionen { margin-left: auto; }
+  fig-group.logblock .log { max-height: 220px; }
   .log {
     flex: 1; overflow-y: auto; border-radius: 8px; padding: 8px 12px;
     border: 1px solid var(--figma-color-border, #d9d9de);
@@ -443,12 +458,13 @@ dialog[is="fig-dialog"].buehne-dlg:not([open]) { display: none; }
   margin-top: 4px; background: #12a76a; }
 
 /* ---- Umfang-Umschalter, Fazit, Rückgängig (Runde 5, §34/§35) ------------ */
-.umfang { flex: none; width: 100%; }
+.umfang { flex: none; width: 100%; height: 24px; }
 #grpLibrary[hidden] { display: none; }
 #grpIcon[hidden] { display: none; }
-.libsumme { font-size: 11px; font-variant-numeric: tabular-nums;
+.libsumme { font-size: 10.5px; line-height: 20px; font-variant-numeric: tabular-nums;
   color: var(--figma-color-text-secondary, #6e6e76); }
-.fazitzeile { display: flex; align-items: center; gap: 8px; flex: none; }
+.fazitzeile { display: flex; align-items: center; gap: 8px; flex: none; min-height: 0; }
+.fazitzeile fig-button { height: 22px; font-size: 10px; }
 .fazitzeile .fazit { flex: 1; }
 .fazitzeile fig-tooltip { display: inline-flex; flex: none; }
 .fazitzeile fig-button[hidden] { display: none; }
@@ -468,50 +484,33 @@ dialog[is="fig-dialog"].buehne-dlg:not([open]) { display: none; }
   /* ---- Fortschritt ------------------------------------------------------ */
   .fortschritt .zahl.rest { color: var(--figma-color-text-tertiary, #9a9aa0); }
 
-  /* ---- Vorschau: Kopf ---------------------------------------------------- */
-  /* Genau drei Textgrößen: 12 fett (Titel), 11 (Werte), 9,5 sekundär.
-     Abstände 12 und 8, Karten 1 px Rahmen und 8 px Radius. */
-  #diff .vkopf { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex: none; }
-  #diff .vkopf.zwei { gap: 8px; margin-top: 8px; }
-  #diff .vtitel { font-size: 12px; font-weight: 700; margin-right: auto;
+  /* ---- Vorschau: eine Werkzeugzeile (28 px) ------------------------------ */
+  /* Genau drei Textgrößen: 11 px fett (Titel), 10,5 px (Steuerung), 9,5 px
+     sekundär. Die Bühne ist der Hauptteil, alles andere bleibt schmal. */
+  #diff { gap: 4px; }
+  .vwerkzeug { display: flex; align-items: center; gap: 6px; height: 28px; flex: none; }
+  .vwerkzeug .vtitel { font-size: 11px; font-weight: 700; min-width: 40px;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  #diff .vkopf > fig-tooltip { display: inline-flex; }
-  #diff .vkopf fig-switch { font-size: 9.5px; white-space: nowrap; }
-  #segModus, #segDarstellung { flex: none; }
-  #diff .zoom { display: flex; align-items: center; gap: 4px; flex: none; }
-  #diff .zoom fig-button { min-width: 22px; font-size: 10px; }
-  #diff .grundknopf { min-width: 22px; }
-
-  .sprungleiste { display: flex; gap: 8px; flex: none; margin-top: 8px; flex-wrap: wrap; }
-  .sprungleiste[hidden] { display: none; }
-  .sprungleiste fig-button.sprung { font-size: 9.5px; height: 20px; border-radius: 10px; }
-  .sprungleiste fig-button.sprung.an {
-    background: var(--figma-color-bg-brand-tertiary, rgba(13,153,255,.14));
-    color: var(--figma-color-text-brand, #0d99ff); font-weight: 700; }
-
-  /* ---- Urteil-Zeile ------------------------------------------------------ */
-  fig-card.urteil { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-    cursor: default; flex: none; margin-top: 12px; padding: 12px;
+  .vwerkzeug .vfueller { flex: 1; min-width: 4px; }
+  .vwerkzeug > fig-tooltip { display: inline-flex; flex: none; }
+  .vwerkzeug fig-segmented-control { flex: none; height: 24px; font-size: 10.5px; }
+  .vwerkzeug fig-segment { font-size: 10.5px; white-space: nowrap; }
+  .vwerkzeug .iknopf { flex: none; width: 24px; min-width: 24px; height: 24px;
+    padding: 0; font-size: 11px; }
+  dialog.mehrmenu { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px;
     border: 1px solid var(--figma-color-border, #e3e3e6); border-radius: 8px;
-    background: var(--figma-color-bg, #fff); }
-  fig-card.urteil .utext { font-size: 11px; font-weight: 700; }
-  fig-card.urteil .upills { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
-  fig-card.urteil.gut { border-color: rgba(18,167,106,.5); background: rgba(18,167,106,.07); }
-  fig-card.urteil.gut .utext { color: #0e8a57; }
-  fig-card.urteil.warn { border-color: rgba(201,138,18,.5); background: rgba(201,138,18,.09); }
-  fig-card.urteil.warn .utext { color: #8a6208; }
-  .upill { font-size: 9.5px; font-weight: 700; padding: 2px 9px; border-radius: 10px;
-    white-space: nowrap; font-variant-numeric: tabular-nums;
-    background: var(--figma-color-bg-secondary, #f0f0f3);
-    color: var(--figma-color-text-secondary, #6e6e76); }
-  .upill.gut { background: rgba(18,167,106,.14); color: #0e8a57; }
-  .upill.warn { background: rgba(201,138,18,.16); color: #8a6208; }
+    background: var(--figma-color-bg, #fff); box-shadow: 0 4px 14px rgba(0,0,0,.18);
+    max-width: 240px; }
+  dialog.mehrmenu:not([open]) { display: none; }
+  dialog.mehrmenu fig-switch { font-size: 9.5px; white-space: nowrap; }
+  dialog.mehrmenu fig-tooltip { display: block; }
 
-  /* ---- Bühne: Canvas-Viewport -------------------------------------------- */
-  .buehne { position: relative; flex: none; margin-top: 12px; overflow: hidden;
-    border-radius: 8px; border: 1px solid var(--figma-color-border, #e3e3e6);
+  /* ---- Bühne: Canvas-Viewport, wächst mit dem Panel ---------------------- */
+  .buehne { position: relative; flex: 1 1 auto; min-height: 280px;
+    overflow: hidden; border-radius: 8px;
+    border: 1px solid var(--figma-color-border, #e3e3e6);
     background: var(--figma-color-bg-secondary, #fafafc);
-    touch-action: none; user-select: none; height: 320px; }
+    touch-action: none; user-select: none; }
   .buehne canvas { display: block; width: 100%; height: 100%; }
   .buehne.zieht { cursor: grabbing; }
   .buehne.raum { cursor: grab; }
@@ -538,29 +537,58 @@ dialog[is="fig-dialog"].buehne-dlg:not([open]) { display: none; }
     width: 26px; height: 3px; margin-left: -13px; border-radius: 2px;
     background: var(--figma-color-border, #d9d9de); }
 
-  .scrubberzeile { display: flex; align-items: center; gap: 12px; flex: none; margin-top: 8px; }
+  /* ---- Unter der Bühne: Regler, Urteil, Kennzahlen, Legende -------------- */
+  .scrubberzeile { display: flex; align-items: center; gap: 8px; flex: none; height: 22px; }
   .scrubberzeile[hidden] { display: none; }
-  .scrubberzeile .slabel { font-size: 9.5px; color: var(--figma-color-text-secondary, #6e6e76); }
+  .scrubberzeile .slabel { font-size: 9.5px; white-space: nowrap;
+    color: var(--figma-color-text-secondary, #6e6e76); }
   .scrubberzeile fig-slider { flex: 1; }
 
-  /* ---- Kennzahlen unter der Bühne ---------------------------------------- */
-  .kennzahlen { flex: none; margin-top: 12px; overflow-x: auto; }
-  table.kztab { border-collapse: collapse; font-size: 11px;
+  .urteilzeile { display: flex; align-items: center; gap: 8px; flex: none; height: 24px; }
+  .urteilzeile .upunkt { width: 7px; height: 7px; border-radius: 50%; flex: none;
+    background: var(--figma-color-text-tertiary, #9a9aa0); }
+  .urteilzeile.gut .upunkt { background: #12a76a; }
+  .urteilzeile.warn .upunkt { background: #c98a12; }
+  .urteilzeile .utext { font-size: 11px; font-weight: 700; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .urteilzeile.gut .utext { color: #0e8a57; }
+  .urteilzeile.warn .utext { color: #8a6208; }
+  .urteilzeile .upills { display: flex; gap: 6px; margin-left: auto; flex: none; }
+  .upill { font-size: 9.5px; font-weight: 700; padding: 1px 8px; border-radius: 9px;
+    white-space: nowrap; font-variant-numeric: tabular-nums;
+    background: var(--figma-color-bg-secondary, #f0f0f3);
+    color: var(--figma-color-text-secondary, #6e6e76); }
+  .upill.gut { background: rgba(18,167,106,.14); color: #0e8a57; }
+  .upill.warn { background: rgba(201,138,18,.16); color: #8a6208; }
+
+  .kennzahlen { flex: none; overflow-x: auto; }
+  table.kztab { border-collapse: collapse; font-size: 10px;
     font-variant-numeric: tabular-nums; width: 100%; }
-  table.kztab th { text-align: right; padding: 4px 8px; font-size: 11px; font-weight: 700;
-    color: var(--figma-color-text, #1c1c22);
+  table.kztab th { text-align: right; padding: 0 8px; height: 20px; font-size: 10px;
+    font-weight: 700; color: var(--figma-color-text, #1c1c22);
     border-bottom: 1px solid var(--figma-color-border, #e3e3e6); white-space: nowrap; }
   table.kztab th.gut { color: #0e8a57; } table.kztab th.warn { color: #8a6208; }
-  table.kztab td { text-align: right; padding: 4px 8px; white-space: nowrap;
+  table.kztab td { text-align: right; padding: 0 8px; height: 22px; white-space: nowrap;
     border-bottom: 1px solid color-mix(in srgb, var(--figma-color-border, #e3e3e6) 45%, transparent); }
   table.kztab td.kzlabel { text-align: left; font-size: 9.5px;
     color: var(--figma-color-text-secondary, #6e6e76); }
   table.kztab td.kzlabel fig-tooltip { display: inline-flex; }
-  .vlegende { flex: none; margin-top: 8px; font-size: 9.5px;
-    color: var(--figma-color-text-tertiary, #9a9aa0); }
+
+  .vlegende { flex: none; height: 16px; display: flex; align-items: center; gap: 12px;
+    font-size: 9.5px; color: var(--figma-color-text-tertiary, #9a9aa0); }
+  .vlegende .legstueck { display: inline-flex; align-items: center; gap: 5px; }
+  .vlegende .legfeld { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+  .vlegende .legfeld.weg { background: #f5a623; }
+  .vlegende .legfeld.dazu { background: var(--figma-color-bg-brand, #0d99ff); }
+  .vlegende .legfeld.beide { background: #3a3a44; }
+  #diff.dunkel .vlegende .legfeld.weg { background: #ffb84d; }
+  #diff.dunkel .vlegende .legfeld.beide { background: #d9d9de; }
+
 
   /* ---- Details ------------------------------------------------------------ */
-  fig-group.diffgruppe { margin: 12px 0 0; flex: none; }
+  fig-group.diffgruppe { margin: 0; flex: none; }
+  fig-group.diffgruppe > fig-header { padding: 2px 10px; min-height: 22px; }
+  fig-group.diffgruppe h3 { margin: 0; font-size: 10px; }
   .detailband { overflow-x: auto; padding-bottom: 4px; }
   .zelle .schau { border-radius: 6px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
   /* Pixelraster erst ab Zoom 6 — darunter wäre es nur Grau. */
@@ -580,7 +608,8 @@ dialog[is="fig-dialog"].buehne-dlg:not([open]) { display: none; }
   .pxzelle .wrap, .dfzelle .wrap { border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
 
   /* ---- Protokoll --------------------------------------------------------- */
-  .logkopf .logaktionen { display: flex; gap: 8px; align-items: center; }
+  .logaktionen { display: flex; gap: 6px; align-items: center; }
+  .logaktionen fig-button { font-size: 9px; height: 18px; letter-spacing: 0; text-transform: none; }
   .logfilter { display: flex; align-items: center; gap: 8px; padding: 0 2px 8px; }
   .logfilter #segLog { flex: none; }
   .logfilter fig-input-text { flex: 1; min-width: 0; }
@@ -671,7 +700,7 @@ dialog[is="fig-dialog"].buehne-dlg:not([open]) { display: none; }
     <fig-segment value="library"><span data-t="umf.library"></span></fig-segment>
   </fig-segmented-control>
 
-  <div class="gruppe" id="grpIcon">
+  <div class="kopfblock" id="grpIcon">
     <div class="auswahlzeile">
       <fig-tooltip data-t-text="auswahl.tip" delay="600">
         <fig-button variant="input" id="auswahl">
@@ -698,7 +727,7 @@ dialog[is="fig-dialog"].buehne-dlg:not([open]) { display: none; }
     </div>
   </div>
 
-  <div class="gruppe" id="grpLibrary" hidden>
+  <div class="kopfblock" id="grpLibrary" hidden>
     <div class="libsumme" id="libSumme"></div>
     <div class="reihe">
       <fig-button id="btnAudit" variant="secondary" data-t="btn.audit"></fig-button>
@@ -715,7 +744,7 @@ dialog[is="fig-dialog"].buehne-dlg:not([open]) { display: none; }
     </fig-tooltip>
   </div>
 
-  <div class="gruppe leerzustand" id="leerzustand" hidden>
+  <div class="kopfblock leerzustand" id="leerzustand" hidden>
     <p class="fhilfe" id="leerKarte" hidden data-t="leer.karte"></p>
     <p class="fhilfe" id="leerHinweis" data-t="leer.kurz"></p>
     <fig-button id="btnBeispiel" variant="secondary" data-t="btn.beispiel"></fig-button>
@@ -736,45 +765,36 @@ dialog[is="fig-dialog"].buehne-dlg:not([open]) { display: none; }
     <fig-button id="btnAbbrechen" variant="ghost" data-t="btn.abbrechen" style="flex:none"></fig-button>
   </div>
 
-  <!-- Vorschau (§33): Kopf, Urteil, Canvas-Bühne, Kennzahlen, Details ------ -->
+  <!-- Vorschau (§33): eine Werkzeugzeile, die Bühne, darunter das Urteil ---- -->
   <div id="diff">
-    <div class="vkopf">
+    <div class="vwerkzeug">
       <span class="vtitel" id="vTitel"></span>
-      <div class="zoom">
-        <fig-button id="zoomMinus" variant="ghost" data-t-title="zoom.kleiner">−</fig-button>
-        <fig-button id="zoomPlus" variant="ghost" data-t-title="zoom.groesser">+</fig-button>
-        <fig-button id="zoomFit" variant="ghost" data-t-title="zoom.fitTitel" data-t="zoom.fit"></fig-button>
-        <fig-tooltip data-t-text="v.grund" delay="400">
-          <fig-button id="btnGrund" variant="ghost" class="grundknopf" aria-label="◐">◐</fig-button>
-        </fig-tooltip>
-      </div>
-    </div>
-    <div class="vkopf zwei">
-      <fig-tooltip data-t-text="tip.vergleich" delay="500">
-        <fig-segmented-control id="segModus" value="neben">
-          <fig-segment value="neben" selected="true"><span data-t="modus.neben"></span></fig-segment>
-          <fig-segment value="wischen"><span data-t="modus.wischen"></span></fig-segment>
-        </fig-segmented-control>
-      </fig-tooltip>
+      <fig-segmented-control id="segModus" value="neben" aria-label="Vergleich">
+        <fig-segment value="neben" selected="true" data-t-title="tip.neben"><span data-t="modus.neben"></span></fig-segment>
+        <fig-segment value="wischen" data-t-title="tip.wischen"><span data-t="modus.wischen"></span></fig-segment>
+        <fig-segment value="ueberlagern" data-t-title="tip.ueberlagern"><span data-t="modus.ueberlagern"></span></fig-segment>
+      </fig-segmented-control>
       <fig-tooltip data-t-text="tip.darstellung" delay="500">
         <fig-segmented-control id="segDarstellung" value="pixel">
           <fig-segment value="pixel" selected="true"><span data-t="dar.pixel"></span></fig-segment>
           <fig-segment value="vektor"><span data-t="dar.vektor"></span></fig-segment>
         </fig-segmented-control>
       </fig-tooltip>
-      <fig-tooltip data-t-text="tip.markieren" delay="400">
-        <fig-switch id="chkMarkieren" checked><span data-t="v.markieren"></span></fig-switch>
-      </fig-tooltip>
-      <fig-tooltip data-t-text="tip.verbesserung" delay="400">
-        <fig-switch id="chkVerbesserung"><span data-t="v.verbesserung"></span></fig-switch>
-      </fig-tooltip>
+      <span class="vfueller"></span>
+      <fig-button id="zoomMinus" variant="ghost" class="iknopf" data-t-title="zoom.kleiner">−</fig-button>
+      <fig-button id="zoomPlus" variant="ghost" class="iknopf" data-t-title="zoom.groesser">+</fig-button>
+      <fig-button id="zoomFit" variant="ghost" class="iknopf" data-t-title="zoom.fitTitel" data-t="zoom.fitKurz"></fig-button>
+      <fig-button id="btnGrund" variant="ghost" class="iknopf" data-t-title="v.grund">◐</fig-button>
+      <fig-button id="btnMehr" variant="ghost" class="iknopf" data-t-title="v.mehr">⋯</fig-button>
+      <dialog is="fig-popup" id="mehrMenu" anchor="#btnMehr" position="bottom-end" class="mehrmenu">
+        <fig-tooltip data-t-text="tip.markieren" delay="400">
+          <fig-switch id="chkMarkieren" checked><span data-t="v.markieren"></span></fig-switch>
+        </fig-tooltip>
+        <fig-tooltip data-t-text="tip.verbesserung" delay="400">
+          <fig-switch id="chkVerbesserung"><span data-t="v.verbesserung"></span></fig-switch>
+        </fig-tooltip>
+      </dialog>
     </div>
-    <div class="sprungleiste" id="sprungleiste" hidden></div>
-
-    <fig-card class="urteil" id="urteil">
-      <span class="utext" id="urteilText"></span>
-      <span class="upills" id="urteilPills"></span>
-    </fig-card>
 
     <div class="buehne" id="buehne">
       <canvas id="vpCanvas"></canvas>
@@ -795,6 +815,12 @@ dialog[is="fig-dialog"].buehne-dlg:not([open]) { display: none; }
     <div class="scrubberzeile" id="scrubberZeile" hidden>
       <span class="slabel" data-t="v.scrubber"></span>
       <fig-slider id="blendRegler" min="0" max="100" step="1" value="100" text="false"></fig-slider>
+    </div>
+
+    <div class="urteilzeile" id="urteil">
+      <span class="upunkt"></span>
+      <span class="utext" id="urteilText"></span>
+      <span class="upills" id="urteilPills"></span>
     </div>
 
     <div class="kennzahlen" id="kennzahlen"></div>
@@ -828,17 +854,17 @@ dialog[is="fig-dialog"].buehne-dlg:not([open]) { display: none; }
     </fig-group>
   </div>
 
-  <div class="logblock">
-    <div class="logkopf">
-      <span data-t="log.titel"></span>
-      <span class="logaktionen">
+  <fig-group collapsible open="false" id="grpLog" class="logblock">
+    <fig-header>
+      <h3 class="logtitel" data-t="log.titel"></h3>
+      <span class="logaktionen" id="logAktionen">
         <fig-tooltip data-t-text="tip.undo" delay="400">
           <fig-button id="btnUndoLog" variant="ghost" hidden>↶</fig-button>
         </fig-tooltip>
         <fig-button id="btnKopieren" variant="ghost" data-t="btn.kopieren"></fig-button>
         <fig-button id="btnLeeren" variant="ghost" data-t="btn.leeren"></fig-button>
       </span>
-    </div>
+    </fig-header>
     <div class="logfilter">
       <fig-segmented-control id="segLog" value="alle">
         <fig-segment value="alle" selected="true"><span data-t="log.filterAlle"></span></fig-segment>
@@ -850,7 +876,7 @@ dialog[is="fig-dialog"].buehne-dlg:not([open]) { display: none; }
       <fig-input-text id="logSuche" type="search" data-t-ph="log.suche"></fig-input-text>
     </div>
     <div class="log" id="log"></div>
-  </div>
+  </fig-group>
 </div>
 
 <!-- 30-bericht.html -->
@@ -1352,7 +1378,7 @@ fig-icon[size="small"] {
   const HANDLER = {};
   function bei(typ, fn) { (HANDLER[typ] = HANDLER[typ] || []).push(fn); }
 
-  const T = {"de":{"titel":"Icon Pipeline","tab.icon":"Icon","tab.cfg":"Einstellungen","tab.bericht":"Bericht","adapter.zds":"ZDS","adapter.frei":"Frei","auswahl.leer":"Icon auswählen …","auswahl.tip":"Klick: im Canvas zeigen","btn.vorschau":"Vorschau","btn.bauen":"Icon bauen","tip.snap":"Gerade Kanten und Kurven-Scheitel aufs eingestellte Raster. Das AA-Orakel behält automatisch die schärfere Fassung. Gilt fürs Durchziehen und für „Alle neu bauen“.","chk.snap":"Pixel-Snapping","tip.stroke":"Ungeplättete Fassung neben der Vorlage, kantenidentisch zum Ergebnis. Wird nicht publiziert.","chk.stroke":"Stroke-Fassung ablegen","klasse.label":"Klasse","klasse.geraten":"geraten","umf.icon":"Dieses Icon","umf.library":"Ganze Library","btn.audit":"Prüfen","btn.alle":"Alle bauen","btn.undo":"Rückgängig","btn.undoN":"Rückgängig ({n})","tip.undo":"Ein Schritt = ein Icon.","btn.abbrechen":"Abbrechen","btn.abbrechenLauf":"Lauf abbrechen","dlg.plan.titelAlle":"Alle Icons neu bauen?","dlg.plan.titelEins":"Icon bauen?","dlg.plan.textAlle":"Trockenlauf — noch wurde nichts verändert. Das steht an:","dlg.plan.textEins":"Trockenlauf — noch wurde nichts verändert.","dlg.plan.leer":"Nichts zu bauen.","plan.aendern":"ändern","plan.neu":"neu","plan.fehlen":"fehlt: {liste}","plan.fremd":"fremd: {liste}","plan.instanzen":"{n} Instanzen","plan.instanzenUnbekannt":"Instanzen ?","plan.gesperrt":"gesperrt","plan.summe":"{aendern} ändern · {neu} neu · {fehlen} Varianten fehlen · {gesperrt} gesperrt · {instanzen} Instanzen","plan.strokeHeim":"Ein Frame für Stroke-Fassungen wird angelegt.","btn.planBauen":"Bauen","chk.trockenlaufEinzel":"Trockenlauf beim Einzelbau überspringen","leer.karte":"Wähle eine Karte auf dem ZDS-Board aus.","leer.kurz":"Wähle eine Vorlage im Canvas — oder wechsle auf „Ganze Library“.","btn.beispiel":"Beispiel-Icon anlegen","diff.schaerfe":"weniger AA = schärfer","diff.weg":"nur alt","diff.dazu":"nur neu","diff.nuralt":"kein bestehendes Set","zoom.kleiner":"kleiner (−)","zoom.groesser":"größer (+)","zelle.keyline":"Keyline {ist}/{soll}","zelle.gerastet":"{n} Kanten gerastet","zelle.radius":"Radius {v}","zelle.neu":"neu","pixel.aa":"AA {aa} %","pixel.alt":"aktuell {aa} %","pixel.hint":"Hinting: {v}","hint.fehler":"Fehler −{d} %","hint.gleich":"gleichwertig","hint.ohne":"ohne Wirkung","log.titel":"Protokoll","btn.leeren":"Leeren","log.leer":"Noch nichts gelaufen.","log.zeigen":"zeigen","cfg.allgemein":"Allgemein","cfg.adapter":"Adapter","cfg.sprache":"Sprache","cfg.variantenProperty":"Variantenproperty","opt.auto":"automatisch","opt.zds":"ZDS","opt.frei":"Frei","opt.de":"Deutsch","opt.en":"Englisch","cfg.master":"Master","cfg.masterGroesse":"Größe","cfg.masterKontur":"Strichstärke (px)","cfg.keylines":"Keyline (Icon-Körper)","cfg.groessen":"Größen","cfg.N":"N (px)","cfg.kontur":"Strichstärke (px)","cfg.raster":"Kanten rasten auf","cfg.rasterGrob":"Ganze Pixel bevorzugen","cfg.radiusModus":"Eckenradien","cfg.radiusWert":"Radius (px)","cfg.radiusMin":"Mindestradius (px)","cfg.standard":"Standard","cfg.entfernen":"Größe entfernen","cfg.keylinesAuf":"Keyline (Icon-Körper)","cfg.keylinesProp":"proportional neu berechnen","cfg.keylinesLegende":"Kasten {N} px · Pixelraster · Formklassen: Square, Circular, Wide, Tall","cfg.keylinesHinweis":"Die Keyline ist die Größe des Icon-Körpers im {N}-px-Kasten. Sie folgt N automatisch, bis du sie von Hand änderst.","cfg.keylineUnplausibel":"Keyline {wert} passt nicht zu N = {N} (erwartet zwischen {min} und {N}).","btn.groesseHinzu":"Größe hinzufügen","opt.aus":"aus","radius.proportional":"proportional verkleinern","radius.fest":"fester Wert","radius.keine":"keine Rundung","cfg.farbe":"Farbe","farbe.source":"Wie Vorlage","farbe.hex":"Feste Farbe","farbe.variable":"Design-Token","farbe.suche":"Design-Token suchen …","farbe.lokal":"Tokens in diesem File","farbe.leer":"Keine Farb-Tokens gefunden. Library-Tokens erscheinen nur, wenn die Library in diesem File aktiviert ist (Assets → Libraries). Details im Protokoll.","farbe.aktualisieren":"Aktualisieren","farbe.laden":"Design-Tokens werden geladen …","farbe.angleichen":"Vorlage an diese Farbe binden","farbe.gewaehlt":"Gewählt","farbe.unaufloesbar":"Design-Token nicht auflösbar.","cfg.schreiben":"Schreiben","chk.frameUmwandeln":"Frames in Komponenten umwandeln","tip.frameUmwandeln":"Beim Bauen darf ein Frame im Master-Maß in eine Komponente umgewandelt werden. Aus ist konservativ: das Plugin meldet dann einen Fehler statt zu ändern.","chk.strokeHeimAnlegen":"Frame für Stroke-Fassungen anlegen","tip.strokeHeimAnlegen":"Legt bei Bedarf einen Frame „Icon Pipeline · Stroke“ neben der Vorlage an. Aus: Stroke-Fassungen werden übersprungen.","cfg.datei":"Konfigurationsdatei","btn.exportKonfig":"Exportieren","file.importKonfig":"Importieren","toast.exportiert":"Konfiguration exportiert","toast.importiert":"Konfiguration importiert","toast.importFehler":"Datei ist keine gültige Konfiguration","btn.vorschauMit":"Vorschau mit diesen Einstellungen","chip.ungespeichert":"ungespeichert","btn.speichern":"Speichern","btn.zuruecksetzen":"Zurücksetzen","dlg.reset.titel":"Einstellungen zurücksetzen","dlg.reset.text":"Auf welches Profil soll zurückgesetzt werden? Die aktuelle Konfiguration wird ersetzt.","profil.zds":"ZDS","profil.generic":"Allgemein","profil.material":"Material","profil.lucide":"Lucide","profil.apple":"Apple","btn.resetOk":"Zurücksetzen","fehler.kopf":"Angepasst beim Prüfen:","toast.gespeichert":"Einstellungen gespeichert","ber.aktionen":"Bericht","btn.bericht":"Bericht erstellen","btn.csv":"CSV","ber.leer":"Noch kein Bericht. „Bericht erstellen“ misst alle Icons der Library.","ber.zeit":"Stand {zeit}","ber.icons":"Icons","ber.ohneSet":"ohne Set","ber.veraltet":"Vorlage geändert","ber.treueMittel":"Rasterfehler ⌀","ber.keylineOk":"Maß stimmt","ber.spalteName":"Icon","ber.tipTreue":"Rasterfehler: Abweichung der echten Pixel vom Ideal. 0 = perfekt, unter 0,02 sehr gut, über 0,05 auffällig.","ber.chipOhneSet":"kein Set","ber.chipVeraltet":"Vorlage geändert","ber.keineDaten":"—","ber.sortieren":"Klick: nach dieser Spalte sortieren","ber.export":"Export","ber.umfang":"Umfang","ber.umfangAlle":"Alle","ber.umfangAuswahl":"Aktuelles Icon","chk.sprite":"Sprite zusätzlich","tip.sprite":"Legt zusätzlich eine sprite.svg mit einem <symbol> je Icon und Größe ins ZIP.","btn.svgExport":"SVG-Export","ber.exportFehlt":"Ohne Set — nicht exportiert:","ber.exportLeer":"Nichts zu exportieren.","toast.csv":"CSV heruntergeladen","toast.zip":"ZIP heruntergeladen","hilf.adapter":"Bestimmt, wie das Plugin Vorlage und Set in diesem File findet.","hilf.sprache":"Sprache der Oberfläche und der Set-Beschreibungen.","hilf.variantenProperty":"Name der Variantenproperty, unter der die Größen liegen.","hilf.masterGroesse":"Kantenlänge der Vorlage, aus der alle Größen gebaut werden.","hilf.masterKontur":"Strichstärke, auf die die Konturen der Vorlage normalisiert werden.","hilf.masterKeyline":"Sollmaß des Icon-Körpers in der Vorlage, je Formklasse.","hilf.N":"Kantenlänge dieser Zielgröße in Pixeln.","hilf.kontur":"Strichstärke der Konturen in dieser Größe.","hilf.raster":"Ganze Pixel (1), halbe Pixel (0,5) oder Viertelpixel (0,25).","hilf.rasterGrob":"Kanten wandern auf ganze Pixel, wenn der Weg höchstens 0,35 px ist.","hilf.radiusModus":"Wie die Eckenradien der Vorlage in diese Größe übertragen werden.","hilf.radiusWert":"Dieser Radius gilt für jede Ecke in dieser Größe.","hilf.radiusMin":"Kleinere Radien werden eckig.","hilf.standard":"Diese Variante bietet Figma beim Einfügen zuerst an.","hilf.keyline":"Das Maß, das der Icon-Körper im Kasten einnimmt.","tip.adapter":"Automatisch erkennt das ZDS-Board und fällt sonst auf den freien Modus zurück.","tip.sprache":"Automatisch folgt der Sprache von Figma.","tip.variantenProperty":"Die Varianten heißen dann zum Beispiel „Size=24“.","tip.masterGroesse":"Passt das Maß nicht zur Vorlage, meldet das Plugin einen Fehler statt zu bauen.","tip.masterKontur":"Beim Normalisieren bekommen alle Konturen der Vorlage genau diese Stärke.","tip.masterKeyline":"Aus diesem Maß wird die Skalierung jeder Zielgröße berechnet.","tip.N":"Jede Größe wird eine eigene Variante im Set.","tip.kontur":"Nach dem Verkleinern wird die Kontur exakt auf diesen Wert gesetzt.","tip.raster":"Gerade Kanten und Kurven-Scheitel landen auf diesem Raster.","tip.rasterGrob":"Ganze Pixel sind schärfer, kosten aber etwas Formtreue.","tip.radiusModus":"Proportional verkleinern hält die Optik, fester Wert hält die Kante.","tip.radiusWert":"Nur bei „fester Wert“ wirksam.","tip.radiusMin":"Verhindert Radien, die bei 1× nur noch als Unschärfe ankommen.","tip.standard":"Genau eine Größe im Set kann Standard sein.","tip.keyline":"Die Skizze zeigt die vier Formklassen im Kasten.","farbe.erklSource":"Die gebauten Größen behalten Farbe oder Variable der Vorlage.","farbe.erklHex":"Alle gebauten Größen bekommen diese feste Farbe.","farbe.erklVariable":"Alle gebauten Größen werden an dieses Farb-Token gebunden, Themes wirken dann automatisch.","tip.angleichen":"Setzt auch die Vorlage selbst auf diese Farbe, damit Vorlage und Ergebnis gleich aussehen.","tip.farbeModus":"Bestimmt, woher die Füllung der gebauten Größen kommt.","hilf.token":"Kollektion aufklappen, um die Farbwerte zu laden.","liz.titel":"Lizenz","liz.voll":"Vollversion","liz.test":"Testphase · {tage} Tage","liz.testAus":"Testphase beendet","liz.frei":"Kostenlos","liz.dev":"Entwicklermodus","liz.unbekannt":"Lizenz wird geprüft …","liz.modellEinmal":"Einmalzahlung, kein Abo.","liz.umfang":"In der Vollversion: {liste}.","liz.kaufen":"Vollversion kaufen","liz.status":"Status aktualisieren","liz.figma":"Gekauft wird über dein Figma-Konto. Ein Lizenzschlüssel ist nicht nötig.","toast.lizStatus":"Status wird geprüft …","liz.spaeter":"Später","liz.dlgTitel":"Das gehört zur Vollversion","liz.dlgFunktion":"Gesperrt: {funktion}","liz.debugTitel":"Status simulieren","liz.debugHinweis":"Entwicklermodus, nur lokal.","liz.fn.alle":"Alle Icons neu bauen","liz.fn.bericht":"Qualitätsbericht","liz.fn.exportieren":"SVG-Export","liz.fn.konfigImport":"Konfiguration importieren","ob.rundgang":"Rundgang","ob.ueberspringen":"Überspringen","ob.zurueck":"Zurück","ob.weiter":"Weiter","ob.los":"Los geht’s","ob.zaehler":"{i} von {n}","ob.punkt":"Schritt {i}","ob.1.titel":"Aus einer Vorlage alle Größen","ob.1.text":"Das Plugin baut jede Zielgröße als eigene Variante. Keyline, Strichstärke und Raster kommen aus deinen Einstellungen.","ob.2.titel":"Dein File, dein Modus: {modus}","ob.2.textZds":"Das ZDS-Board ist erkannt: Karten, Seiten und bestehendes Set. Ein anderes Profil kannst du hier übernehmen.","ob.2.textFrei":"Freier Modus: jede quadratische Komponente im Master-Maß kann Vorlage sein. Wähle ein Profil als Startpunkt.","ob.2.profil":"Profil übernehmen","ob.3.titel":"Auswählen, ansehen, bauen","ob.3.text":"Vorlage wählen, Vorschau prüfen, Icon bauen — ein Trockenlauf zeigt vorher, was passiert. Jeder Bau lässt sich rückgängig machen.","ob.4.titel":"Vollversion","ob.4.text":"In der Testphase ist alles frei. Danach brauchen alle Icons bauen, Bericht und Export die Vollversion.","liz.pwTitelTrial":"Noch {tage} Tage Testphase","liz.pwTitelAus":"Die Testphase ist vorbei","liz.pwTitelFn":"Das gehört zur Vollversion","liz.pwTextTrial":"In der Testphase ist alles freigeschaltet: alle Icons bauen, Qualitätsbericht, SVG-Export und der Import fertiger Konfigurationen. Danach bleiben Vorschau und Einzelbau kostenlos, der Rest braucht die Vollversion.","liz.pwTextAus":"Vorschau und Einzelbau bleiben kostenlos. Alle Icons bauen, Qualitätsbericht, SVG-Export und der Konfigurations-Import gehören zur Vollversion — einmal kaufen, dauerhaft nutzen.","liz.pwTextFn":"„{funktion}“ gehört zur Vollversion. Einmal kaufen, dauerhaft nutzen — Vorschau und Einzelbau bleiben in jedem Fall kostenlos.","liz.pwKaufenAus":"Vollversion freischalten","liz.pwKaufenTrial":"Jetzt kaufen","liz.pwSpaeterTrial":"Weiter testen","liz.pwSpaeterAus":"Später","liz.pwHinweis":"Einmalkauf, keine Laufzeit. Wenn etwas nicht passt, gibt es das Geld zurück.","start.titel":"Icons in diesem File","start.hinweis":"Wähle eine Vorlage im Canvas — oder klick hier auf ein Icon.","start.suche":"Icon suchen …","start.laden":"Icons werden gesucht …","start.leer":"Noch keine Icon-Vorlage gefunden.","start.summe":"{icons} Icons · {ohneSet} ohne Set · {veraltet} Vorlage geändert","start.treffer":"{n} von {m}","start.ok":"ok","start.ohneSet":"kein Set","start.veraltet":"Vorlage geändert","es.titel":"Erste Schritte","es.auswahl":"Icon auswählen","es.vorschau":"Vorschau ansehen","es.bauen":"Icon bauen","es.ausblenden":"ausblenden","v.titel":"Vorschau · {name}","modus.wischen":"Wischen","modus.neben":"Nebeneinander","tip.vergleich":"Nebeneinander: zwei Kacheln je Größe. Wischen: eine Kachel, der Griff zieht die neue Fassung über die alte.","dar.pixel":"Pixel","dar.vektor":"Vektor","tip.darstellung":"Pixel zeigt die echte Rasterung, pixelgenau hochgezogen. Vektor zeichnet die Geometrie glatt in jeder Zoomstufe.","v.markieren":"Änderungen markieren","tip.markieren":"Rahmt in der Nachher-Kachel jeden Bereich ein, dessen Pixel sich geändert haben.","v.verbesserung":"Verbesserung zeigen","tip.verbesserung":"Blendet mit dem Regler von vorher nach nachher über — so sieht man, wie die weichen Kanten hart werden.","v.scrubber":"Vorher → Nachher","v.grund":"Heller oder dunkler Grund","v.hoehe":"Höhe der Bühne ziehen","v.legende":"Markierte Bereiche: Pixel, die das Plugin verändert hat.","pill.vorher":"Vorher","pill.nachher":"Nachher","zoom.fit":"Fit","zoom.fitTitel":"Alle Größen einpassen (0)","urt.neu":"Neu — noch kein Vergleich","urt.besser":"Schärfer geworden","urt.gleich":"Praktisch unverändert","urt.schlechter":"Weicher geworden","urt.aa":"Weiche Pixel {alt} % → {neu} %","urt.aaNur":"Weiche Pixel {neu} %","urt.fehler":"Rasterfehler {v}","urt.fehlerVgl":"Rasterfehler {alt} → {neu}","urt.mass":"Maß stimmt in {n} von {m} Größen","urt.massAb":"Maß weicht ab in {n} von {m} Größen","urt.gerastet":"{n} Kanten gerastet","fuss.fehler":"Rasterfehler","fuss.aa":"Weiche Pixel","fuss.keyline":"Keyline","reg.kante":"Kante um {d} px {richtung} gerastet","reg.form":"Form verändert — {d} px Fläche","reg.links":"nach links","reg.rechts":"nach rechts","reg.oben":"nach oben","reg.unten":"nach unten","det.titel":"Details","det.vektor":"Vektor-Umriss","det.vektorHinweis":"Vorher grau, Nachher schwarz","det.pixel":"Pixelraster","det.differenz":"Differenz","zelle.massOk":"Maß stimmt","zelle.massAb":"Maß weicht ab","zelle.kontur":"{k} px Strich","zelle.raster":"Raster {r}","px.koord":"x {x} · y {y}","diff.nurNeu":"nur neu — kein bestehendes Set","ber.tipAa":"Weiche Pixel: Anteil halbtransparenter Randpixel. Niedriger ist schärfer, hängt von der Form ab (Kreise haben mehr).","ber.tipMass":"Maß stimmt: Das Icon füllt das vorgesehene Keyline-Maß.","ber.tipSpalte":"{n} px — Rasterfehler, weiche Pixel, Maß stimmt","ber.legende":"Rasterfehler = Abweichung der echten Pixel vom Ideal (0 ist perfekt) · weiche Pixel = Anteil halbtransparenter Randpixel · Maß stimmt = Icon füllt die Keyline.","ber.filter":"Filter","flt.alle":"Alle","flt.ohneSet":"ohne Set","flt.veraltet":"Vorlage geändert","flt.mass":"Maß-Fehler","flt.schlecht":"schlechteste 10 %","ber.zaehler":"{n} von {m}","ber.alleSichtbaren":"alle sichtbaren","ber.keineTreffer":"Kein Icon passt zu diesem Filter.","ber.umfangNamen":"Ausgewählte ({n})","ber.tipUmfang":"Ausgewählte: die angehakten Zeilen der Tabelle. Aktuelles Icon: die Auswahl im Canvas.","log.suche":"Protokoll durchsuchen …","log.allgemein":"Allgemein","log.keineTreffer":"Nichts passt zu Filter und Suche.","log.filterAlle":"Alle","log.filterFehler":"Fehler","log.filterWarn":"Warnungen","log.filterInfo":"Hinweise","log.filterOk":"OK","btn.kopieren":"Kopieren","toast.logKopiert":"Protokoll kopiert","toast.logNichts":"Nichts zu kopieren","log.groesse":"{n} px","log.gruppeTip":"{err} Fehler · {warn} Warnungen · {info} Hinweise","fort.baue":"Baue {i}/{n}","fort.rest":"noch ca. {zeit}","fort.sek":"{n} s","fort.min":"{n} min"},"en":{"titel":"Icon Pipeline","tab.icon":"Icon","tab.cfg":"Settings","tab.bericht":"Report","adapter.zds":"ZDS","adapter.frei":"Free","auswahl.leer":"Select an icon …","auswahl.tip":"Click: reveal on canvas","btn.vorschau":"Preview","btn.bauen":"Build icon","tip.snap":"Snaps straight edges and curve extrema to the configured grid. The AA oracle keeps whichever version is sharper. Applies to single builds and to “Rebuild all”.","chk.snap":"Pixel snapping","tip.stroke":"Unflattened version next to the source, edge-identical to the result. Not published.","chk.stroke":"Keep stroke version","klasse.label":"Class","klasse.geraten":"guessed","umf.icon":"This icon","umf.library":"Whole library","btn.audit":"Check","btn.alle":"Build all","btn.undo":"Undo","btn.undoN":"Undo ({n})","tip.undo":"One step = one icon.","btn.abbrechen":"Cancel","btn.abbrechenLauf":"Cancel run","dlg.plan.titelAlle":"Rebuild all icons?","dlg.plan.titelEins":"Build icon?","dlg.plan.textAlle":"Dry run — nothing has been changed yet. This is what will happen:","dlg.plan.textEins":"Dry run — nothing has been changed yet.","dlg.plan.leer":"Nothing to build.","plan.aendern":"update","plan.neu":"new","plan.fehlen":"missing: {liste}","plan.fremd":"foreign: {liste}","plan.instanzen":"{n} instances","plan.instanzenUnbekannt":"instances ?","plan.gesperrt":"locked","plan.summe":"{aendern} to update · {neu} new · {fehlen} variants missing · {gesperrt} locked · {instanzen} instances","plan.strokeHeim":"A frame for stroke versions will be created.","btn.planBauen":"Build","chk.trockenlaufEinzel":"Skip dry run for single builds","leer.karte":"Select a card on the ZDS board.","leer.kurz":"Select a source on the canvas — or switch to “Whole library”.","btn.beispiel":"Create example icon","diff.schaerfe":"less AA = sharper","diff.weg":"old only","diff.dazu":"new only","diff.nuralt":"no existing set","zoom.kleiner":"smaller (−)","zoom.groesser":"larger (+)","zelle.keyline":"keyline {ist}/{soll}","zelle.gerastet":"{n} edges snapped","zelle.radius":"radius {v}","zelle.neu":"new","pixel.aa":"AA {aa} %","pixel.alt":"current {aa} %","pixel.hint":"Hinting: {v}","hint.fehler":"error −{d} %","hint.gleich":"equivalent","hint.ohne":"no effect","log.titel":"Log","btn.leeren":"Clear","log.leer":"Nothing has run yet.","log.zeigen":"show","cfg.allgemein":"General","cfg.adapter":"Adapter","cfg.sprache":"Language","cfg.variantenProperty":"Variant property","opt.auto":"automatic","opt.zds":"ZDS","opt.frei":"Free","opt.de":"German","opt.en":"English","cfg.master":"Master","cfg.masterGroesse":"Size","cfg.masterKontur":"Stroke width (px)","cfg.keylines":"Keyline (icon body)","cfg.groessen":"Sizes","cfg.N":"N (px)","cfg.kontur":"Stroke width (px)","cfg.raster":"Snap edges to","cfg.rasterGrob":"Prefer whole pixels","cfg.radiusModus":"Corner radii","cfg.radiusWert":"Radius (px)","cfg.radiusMin":"Minimum radius (px)","cfg.standard":"Default","cfg.entfernen":"Remove size","cfg.keylinesAuf":"Keyline (icon body)","cfg.keylinesProp":"recompute proportionally","cfg.keylinesLegende":"Box {N} px · pixel grid · shape classes: Square, Circular, Wide, Tall","cfg.keylinesHinweis":"The keyline is the size of the icon body inside the {N} px box. It follows N automatically until you edit it by hand.","cfg.keylineUnplausibel":"Keyline {wert} does not fit N = {N} (expected between {min} and {N}).","btn.groesseHinzu":"Add size","opt.aus":"off","radius.proportional":"scale proportionally","radius.fest":"fixed value","radius.keine":"no rounding","cfg.farbe":"Color","farbe.source":"Like source","farbe.hex":"Fixed color","farbe.variable":"Design token","farbe.suche":"Search design token …","farbe.lokal":"Tokens in this file","farbe.leer":"No color tokens found. Library tokens only appear when the library is enabled in this file (Assets → Libraries). See the log for details.","farbe.aktualisieren":"Refresh","farbe.laden":"Loading design tokens …","farbe.angleichen":"Bind source to this color","farbe.gewaehlt":"Selected","farbe.unaufloesbar":"Design token cannot be resolved.","cfg.schreiben":"Writing","chk.frameUmwandeln":"Convert frames into components","tip.frameUmwandeln":"Allows a frame at master size to be converted into a component while building. Off is conservative: the plugin reports an error instead of changing anything.","chk.strokeHeimAnlegen":"Create frame for stroke versions","tip.strokeHeimAnlegen":"Creates a frame “Icon Pipeline · Stroke” next to the source when needed. Off: stroke versions are skipped.","cfg.datei":"Configuration file","btn.exportKonfig":"Export","file.importKonfig":"Import","toast.exportiert":"Configuration exported","toast.importiert":"Configuration imported","toast.importFehler":"File is not a valid configuration","btn.vorschauMit":"Preview with these settings","chip.ungespeichert":"unsaved","btn.speichern":"Save","btn.zuruecksetzen":"Reset","dlg.reset.titel":"Reset settings","dlg.reset.text":"Which profile should be restored? The current configuration is replaced.","profil.zds":"ZDS","profil.generic":"Generic","profil.material":"Material","profil.lucide":"Lucide","profil.apple":"Apple","btn.resetOk":"Reset","fehler.kopf":"Adjusted while checking:","toast.gespeichert":"Settings saved","ber.aktionen":"Report","btn.bericht":"Create report","btn.csv":"CSV","ber.leer":"No report yet. “Create report” measures every icon in the library.","ber.zeit":"As of {zeit}","ber.icons":"Icons","ber.ohneSet":"without set","ber.veraltet":"source changed","ber.treueMittel":"Raster error ⌀","ber.keylineOk":"Size ok","ber.spalteName":"Icon","ber.tipTreue":"Raster error: deviation of the real pixels from the ideal. 0 = perfect, below 0.02 very good, above 0.05 noticeable.","ber.chipOhneSet":"no set","ber.chipVeraltet":"source changed","ber.keineDaten":"—","ber.sortieren":"Click: sort by this column","ber.export":"Export","ber.umfang":"Scope","ber.umfangAlle":"All","ber.umfangAuswahl":"Current icon","chk.sprite":"Include sprite","tip.sprite":"Adds a sprite.svg with one <symbol> per icon and size to the ZIP.","btn.svgExport":"SVG export","ber.exportFehlt":"No set — not exported:","ber.exportLeer":"Nothing to export.","toast.csv":"CSV downloaded","toast.zip":"ZIP downloaded","hilf.adapter":"Determines how the plugin finds source and set in this file.","hilf.sprache":"Language of the interface and of the set descriptions.","hilf.variantenProperty":"Name of the variant property that holds the sizes.","hilf.masterGroesse":"Edge length of the source every size is built from.","hilf.masterKontur":"Stroke width the source outlines are normalised to.","hilf.masterKeyline":"Target size of the icon body in the source, per shape class.","hilf.N":"Edge length of this output size in pixels.","hilf.kontur":"Stroke width of the outlines at this size.","hilf.raster":"Whole pixels (1), half pixels (0.5) or quarter pixels (0.25).","hilf.rasterGrob":"Edges move to whole pixels when the distance is at most 0.35 px.","hilf.radiusModus":"How the source corner radii are carried over to this size.","hilf.radiusWert":"This radius applies to every corner at this size.","hilf.radiusMin":"Smaller radii become square.","hilf.standard":"Figma offers this variant first when inserting.","hilf.keyline":"The size the icon body occupies inside the box.","tip.adapter":"Automatic detects the ZDS board and otherwise falls back to free mode.","tip.sprache":"Automatic follows Figma’s language.","tip.variantenProperty":"Variants are then named for example “Size=24”.","tip.masterGroesse":"If the source does not match, the plugin reports an error instead of building.","tip.masterKontur":"While normalising, every source outline is set to exactly this width.","tip.masterKeyline":"The scale of every output size is derived from this measure.","tip.N":"Every size becomes its own variant in the set.","tip.kontur":"After scaling down the stroke is set to exactly this value.","tip.raster":"Straight edges and curve extrema land on this grid.","tip.rasterGrob":"Whole pixels are sharper but cost a little shape fidelity.","tip.radiusModus":"Scaling proportionally keeps the look, a fixed value keeps the edge.","tip.radiusWert":"Only effective with “fixed value”.","tip.radiusMin":"Prevents radii that end up as pure blur at 1×.","tip.standard":"Exactly one size in the set can be the default.","tip.keyline":"The sketch shows the four shape classes inside the box.","farbe.erklSource":"The built sizes keep the color or variable of the source.","farbe.erklHex":"Every built size gets this fixed color.","farbe.erklVariable":"Every built size is bound to this color token, so themes apply automatically.","tip.angleichen":"Also sets the source itself to this color so source and result match.","tip.farbeModus":"Determines where the fill of the built sizes comes from.","hilf.token":"Expand a collection to load its color values.","liz.titel":"License","liz.voll":"Full version","liz.test":"Trial · {tage} days","liz.testAus":"Trial ended","liz.frei":"Free","liz.dev":"Developer mode","liz.unbekannt":"Checking license …","liz.modellEinmal":"One-time payment, no subscription.","liz.umfang":"The full version adds: {liste}.","liz.kaufen":"Buy full version","liz.status":"Refresh status","liz.figma":"You buy through your Figma account. No license key needed.","toast.lizStatus":"Checking status …","liz.spaeter":"Later","liz.dlgTitel":"This is part of the full version","liz.dlgFunktion":"Locked: {funktion}","liz.debugTitel":"Simulate status","liz.debugHinweis":"Developer mode, local only.","liz.fn.alle":"Rebuild all icons","liz.fn.bericht":"Quality report","liz.fn.exportieren":"SVG export","liz.fn.konfigImport":"Import configuration","ob.rundgang":"Tour","ob.ueberspringen":"Skip","ob.zurueck":"Back","ob.weiter":"Next","ob.los":"Let’s go","ob.zaehler":"{i} of {n}","ob.punkt":"Step {i}","ob.1.titel":"One source, every size","ob.1.text":"The plugin builds every target size as its own variant. Keyline, stroke width and grid come from your settings.","ob.2.titel":"Your file, your mode: {modus}","ob.2.textZds":"The ZDS board is detected: cards, pages and the existing set. You can adopt another profile here.","ob.2.textFrei":"Free mode: any square component at master size can be a source. Pick a profile as a starting point.","ob.2.profil":"Adopt profile","ob.3.titel":"Select, review, build","ob.3.text":"Pick a source, check the preview, build the icon — a dry run shows what will happen. Every build can be undone.","ob.4.titel":"Full version","ob.4.text":"Everything is unlocked during the trial. After that, building all icons, the report and the export need the full version.","liz.pwTitelTrial":"{tage} days of trial left","liz.pwTitelAus":"Your trial has ended","liz.pwTitelFn":"This is part of the full version","liz.pwTextTrial":"Everything is unlocked during the trial: rebuild all icons, the quality report, SVG export and importing ready-made configurations. After that preview and single builds stay free, the rest needs the full version.","liz.pwTextAus":"Preview and single builds stay free. Rebuilding all icons, the quality report, SVG export and the configuration import belong to the full version — buy once, use forever.","liz.pwTextFn":"“{funktion}” belongs to the full version. Buy once, use forever — preview and single builds stay free either way.","liz.pwKaufenAus":"Unlock full version","liz.pwKaufenTrial":"Buy now","liz.pwSpaeterTrial":"Keep testing","liz.pwSpaeterAus":"Later","liz.pwHinweis":"One-time purchase, no runtime. If it does not fit, you get your money back.","start.titel":"Icons in this file","start.hinweis":"Select a source on the canvas — or pick an icon here.","start.suche":"Search icon …","start.laden":"Looking for icons …","start.leer":"No icon source found yet.","start.summe":"{icons} icons · {ohneSet} without set · {veraltet} source changed","start.treffer":"{n} of {m}","start.ok":"ok","start.ohneSet":"no set","start.veraltet":"source changed","es.titel":"First steps","es.auswahl":"Select an icon","es.vorschau":"Look at the preview","es.bauen":"Build the icon","es.ausblenden":"hide","v.titel":"Preview · {name}","modus.wischen":"Wipe","modus.neben":"Side by side","tip.vergleich":"Side by side: two tiles per size. Wipe: one tile, the handle pulls the new version over the old one.","dar.pixel":"Pixels","dar.vektor":"Vector","tip.darstellung":"Pixels shows the real rasterization, scaled up pixel-exact. Vector draws the geometry smoothly at any zoom.","v.markieren":"Highlight changes","tip.markieren":"Outlines every area in the after tile whose pixels changed.","v.verbesserung":"Show the improvement","tip.verbesserung":"Fades from before to after with the slider — you can watch the soft edges become crisp.","v.scrubber":"Before → after","v.grund":"Light or dark background","v.hoehe":"Drag to resize the stage","v.legende":"Highlighted areas: pixels the plugin changed.","pill.vorher":"Before","pill.nachher":"After","zoom.fit":"Fit","zoom.fitTitel":"Fit all sizes (0)","urt.neu":"New — nothing to compare yet","urt.besser":"Sharper now","urt.gleich":"Practically unchanged","urt.schlechter":"Softer now","urt.aa":"Soft pixels {alt} % → {neu} %","urt.aaNur":"Soft pixels {neu} %","urt.fehler":"Raster error {v}","urt.fehlerVgl":"Raster error {alt} → {neu}","urt.mass":"Size ok in {n} of {m} sizes","urt.massAb":"Size differs in {n} of {m} sizes","urt.gerastet":"{n} edges snapped","fuss.fehler":"Raster error","fuss.aa":"Soft pixels","fuss.keyline":"Keyline","reg.kante":"Edge snapped {d} px {richtung}","reg.form":"Shape changed — {d} px of area","reg.links":"left","reg.rechts":"right","reg.oben":"up","reg.unten":"down","det.titel":"Details","det.vektor":"Vector outline","det.vektorHinweis":"Before grey, after black","det.pixel":"Pixel grid","det.differenz":"Difference","zelle.massOk":"Size ok","zelle.massAb":"Size differs","zelle.kontur":"{k} px stroke","zelle.raster":"Snap {r}","px.koord":"x {x} · y {y}","diff.nurNeu":"new only — no existing set","ber.tipAa":"Soft pixels: share of semi-transparent edge pixels. Lower is sharper, depends on the shape (circles have more).","ber.tipMass":"Size ok: the icon fills the intended keyline size.","ber.tipSpalte":"{n} px — raster error, soft pixels, size ok","ber.legende":"Raster error = deviation of the real pixels from the ideal (0 is perfect) · soft pixels = share of semi-transparent edge pixels · size ok = the icon fills the keyline.","ber.filter":"Filter","flt.alle":"All","flt.ohneSet":"without set","flt.veraltet":"source changed","flt.mass":"size errors","flt.schlecht":"worst 10 %","ber.zaehler":"{n} of {m}","ber.alleSichtbaren":"all visible","ber.keineTreffer":"No icon matches this filter.","ber.umfangNamen":"Selected ({n})","ber.tipUmfang":"Selected: the ticked rows of the table. Current icon: the canvas selection.","log.suche":"Search the log …","log.allgemein":"General","log.keineTreffer":"Nothing matches filter and search.","log.filterAlle":"All","log.filterFehler":"Errors","log.filterWarn":"Warnings","log.filterInfo":"Notes","log.filterOk":"OK","btn.kopieren":"Copy","toast.logKopiert":"Log copied","toast.logNichts":"Nothing to copy","log.groesse":"{n} px","log.gruppeTip":"{err} errors · {warn} warnings · {info} notes","fort.baue":"Building {i}/{n}","fort.rest":"~{zeit} left","fort.sek":"{n} s","fort.min":"{n} min"}};
+  const T = {"de":{"titel":"Icon Pipeline","tab.icon":"Icon","tab.cfg":"Einstellungen","tab.bericht":"Bericht","adapter.zds":"ZDS","adapter.frei":"Frei","auswahl.leer":"Icon auswählen …","auswahl.tip":"Klick: im Canvas zeigen","btn.vorschau":"Vorschau","btn.bauen":"Icon bauen","tip.snap":"Gerade Kanten und Kurven-Scheitel aufs eingestellte Raster. Das AA-Orakel behält automatisch die schärfere Fassung. Gilt fürs Durchziehen und für „Alle neu bauen“.","chk.snap":"Pixel-Snapping","tip.stroke":"Ungeplättete Fassung neben der Vorlage, kantenidentisch zum Ergebnis. Wird nicht publiziert.","chk.stroke":"Stroke-Fassung ablegen","klasse.label":"Klasse","klasse.geraten":"geraten","umf.icon":"Dieses Icon","umf.library":"Ganze Library","btn.audit":"Prüfen","btn.alle":"Alle bauen","btn.undo":"Rückgängig","btn.undoN":"Rückgängig ({n})","tip.undo":"Ein Schritt = ein Icon.","btn.abbrechen":"Abbrechen","btn.abbrechenLauf":"Lauf abbrechen","dlg.plan.titelAlle":"Alle Icons neu bauen?","dlg.plan.titelEins":"Icon bauen?","dlg.plan.textAlle":"Trockenlauf — noch wurde nichts verändert. Das steht an:","dlg.plan.textEins":"Trockenlauf — noch wurde nichts verändert.","dlg.plan.leer":"Nichts zu bauen.","plan.aendern":"ändern","plan.neu":"neu","plan.fehlen":"fehlt: {liste}","plan.fremd":"fremd: {liste}","plan.instanzen":"{n} Instanzen","plan.instanzenUnbekannt":"Instanzen ?","plan.gesperrt":"gesperrt","plan.summe":"{aendern} ändern · {neu} neu · {fehlen} Varianten fehlen · {gesperrt} gesperrt · {instanzen} Instanzen","plan.strokeHeim":"Ein Frame für Stroke-Fassungen wird angelegt.","btn.planBauen":"Bauen","chk.trockenlaufEinzel":"Trockenlauf beim Einzelbau überspringen","leer.karte":"Wähle eine Karte auf dem ZDS-Board aus.","leer.kurz":"Wähle eine Vorlage im Canvas — oder wechsle auf „Ganze Library“.","btn.beispiel":"Beispiel-Icon anlegen","diff.schaerfe":"weniger AA = schärfer","diff.weg":"nur alt","diff.dazu":"nur neu","diff.nuralt":"kein bestehendes Set","zoom.kleiner":"kleiner (−)","zoom.groesser":"größer (+)","zelle.keyline":"Keyline {ist}/{soll}","zelle.gerastet":"{n} Kanten gerastet","zelle.radius":"Radius {v}","zelle.neu":"neu","pixel.aa":"AA {aa} %","pixel.alt":"aktuell {aa} %","pixel.hint":"Hinting: {v}","hint.fehler":"Fehler −{d} %","hint.gleich":"gleichwertig","hint.ohne":"ohne Wirkung","log.titel":"Protokoll","btn.leeren":"Leeren","log.leer":"Noch nichts gelaufen.","log.zeigen":"zeigen","cfg.allgemein":"Allgemein","cfg.adapter":"Adapter","cfg.sprache":"Sprache","cfg.variantenProperty":"Variantenproperty","opt.auto":"automatisch","opt.zds":"ZDS","opt.frei":"Frei","opt.de":"Deutsch","opt.en":"Englisch","cfg.master":"Master","cfg.masterGroesse":"Größe","cfg.masterKontur":"Strichstärke (px)","cfg.keylines":"Keyline (Icon-Körper)","cfg.groessen":"Größen","cfg.N":"N (px)","cfg.kontur":"Strichstärke (px)","cfg.raster":"Kanten rasten auf","cfg.rasterGrob":"Ganze Pixel bevorzugen","cfg.radiusModus":"Eckenradien","cfg.radiusWert":"Radius (px)","cfg.radiusMin":"Mindestradius (px)","cfg.standard":"Standard","cfg.entfernen":"Größe entfernen","cfg.keylinesAuf":"Keyline (Icon-Körper)","cfg.keylinesProp":"proportional neu berechnen","cfg.keylinesLegende":"Kasten {N} px · Pixelraster · Formklassen: Square, Circular, Wide, Tall","cfg.keylinesHinweis":"Die Keyline ist die Größe des Icon-Körpers im {N}-px-Kasten. Sie folgt N automatisch, bis du sie von Hand änderst.","cfg.keylineUnplausibel":"Keyline {wert} passt nicht zu N = {N} (erwartet zwischen {min} und {N}).","btn.groesseHinzu":"Größe hinzufügen","opt.aus":"aus","radius.proportional":"proportional verkleinern","radius.fest":"fester Wert","radius.keine":"keine Rundung","cfg.farbe":"Farbe","farbe.source":"Wie Vorlage","farbe.hex":"Feste Farbe","farbe.variable":"Design-Token","farbe.suche":"Design-Token suchen …","farbe.lokal":"Tokens in diesem File","farbe.leer":"Keine Farb-Tokens gefunden. Library-Tokens erscheinen nur, wenn die Library in diesem File aktiviert ist (Assets → Libraries). Details im Protokoll.","farbe.aktualisieren":"Aktualisieren","farbe.laden":"Design-Tokens werden geladen …","farbe.angleichen":"Vorlage an diese Farbe binden","farbe.gewaehlt":"Gewählt","farbe.unaufloesbar":"Design-Token nicht auflösbar.","cfg.schreiben":"Schreiben","chk.frameUmwandeln":"Frames in Komponenten umwandeln","tip.frameUmwandeln":"Beim Bauen darf ein Frame im Master-Maß in eine Komponente umgewandelt werden. Aus ist konservativ: das Plugin meldet dann einen Fehler statt zu ändern.","chk.strokeHeimAnlegen":"Frame für Stroke-Fassungen anlegen","tip.strokeHeimAnlegen":"Legt bei Bedarf einen Frame „Icon Pipeline · Stroke“ neben der Vorlage an. Aus: Stroke-Fassungen werden übersprungen.","cfg.datei":"Konfigurationsdatei","btn.exportKonfig":"Exportieren","file.importKonfig":"Importieren","toast.exportiert":"Konfiguration exportiert","toast.importiert":"Konfiguration importiert","toast.importFehler":"Datei ist keine gültige Konfiguration","btn.vorschauMit":"Vorschau mit diesen Einstellungen","chip.ungespeichert":"ungespeichert","btn.speichern":"Speichern","btn.zuruecksetzen":"Zurücksetzen","dlg.reset.titel":"Einstellungen zurücksetzen","dlg.reset.text":"Auf welches Profil soll zurückgesetzt werden? Die aktuelle Konfiguration wird ersetzt.","profil.zds":"ZDS","profil.generic":"Allgemein","profil.material":"Material","profil.lucide":"Lucide","profil.apple":"Apple","btn.resetOk":"Zurücksetzen","fehler.kopf":"Angepasst beim Prüfen:","toast.gespeichert":"Einstellungen gespeichert","ber.aktionen":"Bericht","btn.bericht":"Bericht erstellen","btn.csv":"CSV","ber.leer":"Noch kein Bericht. „Bericht erstellen“ misst alle Icons der Library.","ber.zeit":"Stand {zeit}","ber.icons":"Icons","ber.ohneSet":"ohne Set","ber.veraltet":"Vorlage geändert","ber.treueMittel":"Rasterfehler ⌀","ber.keylineOk":"Maß stimmt","ber.spalteName":"Icon","ber.tipTreue":"Rasterfehler: Abweichung der echten Pixel vom Ideal. 0 = perfekt, unter 0,02 sehr gut, über 0,05 auffällig.","ber.chipOhneSet":"kein Set","ber.chipVeraltet":"Vorlage geändert","ber.keineDaten":"—","ber.sortieren":"Klick: nach dieser Spalte sortieren","ber.export":"Export","ber.umfang":"Umfang","ber.umfangAlle":"Alle","ber.umfangAuswahl":"Aktuelles Icon","chk.sprite":"Sprite zusätzlich","tip.sprite":"Legt zusätzlich eine sprite.svg mit einem <symbol> je Icon und Größe ins ZIP.","btn.svgExport":"SVG-Export","ber.exportFehlt":"Ohne Set — nicht exportiert:","ber.exportLeer":"Nichts zu exportieren.","toast.csv":"CSV heruntergeladen","toast.zip":"ZIP heruntergeladen","hilf.adapter":"Bestimmt, wie das Plugin Vorlage und Set in diesem File findet.","hilf.sprache":"Sprache der Oberfläche und der Set-Beschreibungen.","hilf.variantenProperty":"Name der Variantenproperty, unter der die Größen liegen.","hilf.masterGroesse":"Kantenlänge der Vorlage, aus der alle Größen gebaut werden.","hilf.masterKontur":"Strichstärke, auf die die Konturen der Vorlage normalisiert werden.","hilf.masterKeyline":"Sollmaß des Icon-Körpers in der Vorlage, je Formklasse.","hilf.N":"Kantenlänge dieser Zielgröße in Pixeln.","hilf.kontur":"Strichstärke der Konturen in dieser Größe.","hilf.raster":"Ganze Pixel (1), halbe Pixel (0,5) oder Viertelpixel (0,25).","hilf.rasterGrob":"Kanten wandern auf ganze Pixel, wenn der Weg höchstens 0,35 px ist.","hilf.radiusModus":"Wie die Eckenradien der Vorlage in diese Größe übertragen werden.","hilf.radiusWert":"Dieser Radius gilt für jede Ecke in dieser Größe.","hilf.radiusMin":"Kleinere Radien werden eckig.","hilf.standard":"Diese Variante bietet Figma beim Einfügen zuerst an.","hilf.keyline":"Das Maß, das der Icon-Körper im Kasten einnimmt.","tip.adapter":"Automatisch erkennt das ZDS-Board und fällt sonst auf den freien Modus zurück.","tip.sprache":"Automatisch folgt der Sprache von Figma.","tip.variantenProperty":"Die Varianten heißen dann zum Beispiel „Size=24“.","tip.masterGroesse":"Passt das Maß nicht zur Vorlage, meldet das Plugin einen Fehler statt zu bauen.","tip.masterKontur":"Beim Normalisieren bekommen alle Konturen der Vorlage genau diese Stärke.","tip.masterKeyline":"Aus diesem Maß wird die Skalierung jeder Zielgröße berechnet.","tip.N":"Jede Größe wird eine eigene Variante im Set.","tip.kontur":"Nach dem Verkleinern wird die Kontur exakt auf diesen Wert gesetzt.","tip.raster":"Gerade Kanten und Kurven-Scheitel landen auf diesem Raster.","tip.rasterGrob":"Ganze Pixel sind schärfer, kosten aber etwas Formtreue.","tip.radiusModus":"Proportional verkleinern hält die Optik, fester Wert hält die Kante.","tip.radiusWert":"Nur bei „fester Wert“ wirksam.","tip.radiusMin":"Verhindert Radien, die bei 1× nur noch als Unschärfe ankommen.","tip.standard":"Genau eine Größe im Set kann Standard sein.","tip.keyline":"Die Skizze zeigt die vier Formklassen im Kasten.","farbe.erklSource":"Die gebauten Größen behalten Farbe oder Variable der Vorlage.","farbe.erklHex":"Alle gebauten Größen bekommen diese feste Farbe.","farbe.erklVariable":"Alle gebauten Größen werden an dieses Farb-Token gebunden, Themes wirken dann automatisch.","tip.angleichen":"Setzt auch die Vorlage selbst auf diese Farbe, damit Vorlage und Ergebnis gleich aussehen.","tip.farbeModus":"Bestimmt, woher die Füllung der gebauten Größen kommt.","hilf.token":"Kollektion aufklappen, um die Farbwerte zu laden.","liz.titel":"Lizenz","liz.voll":"Vollversion","liz.test":"Testphase · {tage} Tage","liz.testAus":"Testphase beendet","liz.frei":"Kostenlos","liz.dev":"Entwicklermodus","liz.unbekannt":"Lizenz wird geprüft …","liz.modellEinmal":"Einmalzahlung, kein Abo.","liz.umfang":"In der Vollversion: {liste}.","liz.kaufen":"Vollversion kaufen","liz.status":"Status aktualisieren","liz.figma":"Gekauft wird über dein Figma-Konto. Ein Lizenzschlüssel ist nicht nötig.","toast.lizStatus":"Status wird geprüft …","liz.spaeter":"Später","liz.dlgTitel":"Das gehört zur Vollversion","liz.dlgFunktion":"Gesperrt: {funktion}","liz.debugTitel":"Status simulieren","liz.debugHinweis":"Entwicklermodus, nur lokal.","liz.fn.alle":"Alle Icons neu bauen","liz.fn.bericht":"Qualitätsbericht","liz.fn.exportieren":"SVG-Export","liz.fn.konfigImport":"Konfiguration importieren","ob.rundgang":"Rundgang","ob.ueberspringen":"Überspringen","ob.zurueck":"Zurück","ob.weiter":"Weiter","ob.los":"Los geht’s","ob.zaehler":"{i} von {n}","ob.punkt":"Schritt {i}","ob.1.titel":"Aus einer Vorlage alle Größen","ob.1.text":"Das Plugin baut jede Zielgröße als eigene Variante. Keyline, Strichstärke und Raster kommen aus deinen Einstellungen.","ob.2.titel":"Dein File, dein Modus: {modus}","ob.2.textZds":"Das ZDS-Board ist erkannt: Karten, Seiten und bestehendes Set. Ein anderes Profil kannst du hier übernehmen.","ob.2.textFrei":"Freier Modus: jede quadratische Komponente im Master-Maß kann Vorlage sein. Wähle ein Profil als Startpunkt.","ob.2.profil":"Profil übernehmen","ob.3.titel":"Auswählen, ansehen, bauen","ob.3.text":"Vorlage wählen, Vorschau prüfen, Icon bauen — ein Trockenlauf zeigt vorher, was passiert. Jeder Bau lässt sich rückgängig machen.","ob.4.titel":"Vollversion","ob.4.text":"In der Testphase ist alles frei. Danach brauchen alle Icons bauen, Bericht und Export die Vollversion.","liz.pwTitelTrial":"Noch {tage} Tage Testphase","liz.pwTitelAus":"Die Testphase ist vorbei","liz.pwTitelFn":"Das gehört zur Vollversion","liz.pwTextTrial":"In der Testphase ist alles freigeschaltet: alle Icons bauen, Qualitätsbericht, SVG-Export und der Import fertiger Konfigurationen. Danach bleiben Vorschau und Einzelbau kostenlos, der Rest braucht die Vollversion.","liz.pwTextAus":"Vorschau und Einzelbau bleiben kostenlos. Alle Icons bauen, Qualitätsbericht, SVG-Export und der Konfigurations-Import gehören zur Vollversion — einmal kaufen, dauerhaft nutzen.","liz.pwTextFn":"„{funktion}“ gehört zur Vollversion. Einmal kaufen, dauerhaft nutzen — Vorschau und Einzelbau bleiben in jedem Fall kostenlos.","liz.pwKaufenAus":"Vollversion freischalten","liz.pwKaufenTrial":"Jetzt kaufen","liz.pwSpaeterTrial":"Weiter testen","liz.pwSpaeterAus":"Später","liz.pwHinweis":"Einmalkauf, keine Laufzeit. Wenn etwas nicht passt, gibt es das Geld zurück.","start.titel":"Icons in diesem File","start.hinweis":"Wähle eine Vorlage im Canvas — oder klick hier auf ein Icon.","start.suche":"Icon suchen …","start.laden":"Icons werden gesucht …","start.leer":"Noch keine Icon-Vorlage gefunden.","start.summe":"{icons} Icons · {ohneSet} ohne Set · {veraltet} Vorlage geändert","start.treffer":"{n} von {m}","start.ok":"ok","start.ohneSet":"kein Set","start.veraltet":"Vorlage geändert","es.titel":"Erste Schritte","es.auswahl":"Icon auswählen","es.vorschau":"Vorschau ansehen","es.bauen":"Icon bauen","es.ausblenden":"ausblenden","v.titel":"Vorschau · {name}","modus.wischen":"◧","modus.neben":"◫","modus.ueberlagern":"◉","tip.neben":"Nebeneinander: zwei Kacheln je Größe, Vorher links, Nachher rechts.","tip.wischen":"Wischen: eine Kachel, der Griff zieht die neue Fassung über die alte.","tip.ueberlagern":"Überlagern: beide Fassungen übereinander — Unterschiede farbig, Deckung grau.","dar.pixel":"Pixel","dar.vektor":"Vektor","tip.darstellung":"Pixel zeigt die echte Rasterung, pixelgenau hochgezogen. Vektor zeichnet die Geometrie glatt in jeder Zoomstufe.","v.markieren":"Änderungen markieren","tip.markieren":"Rahmt in der Nachher-Kachel jeden Bereich ein, dessen Pixel sich geändert haben.","v.verbesserung":"Verbesserung zeigen","tip.verbesserung":"Blendet mit dem Regler von vorher nach nachher über — so sieht man, wie die weichen Kanten hart werden.","v.scrubber":"Vorher → Nachher","v.grund":"Heller oder dunkler Grund","v.hoehe":"Höhe der Bühne ziehen","v.legende":"Markierte Bereiche: Pixel, die das Plugin verändert hat.","pill.vorher":"Vorher","pill.nachher":"Nachher","pill.beide":"Überlagert","leg.weg":"Entfernt","leg.dazu":"Hinzugekommen","leg.beide":"Unverändert","v.mehr":"Weitere Schalter","zoom.fitKurz":"Fit","zoom.fit":"Fit","zoom.fitTitel":"Alle Größen einpassen (0)","urt.neu":"Neu — noch kein Vergleich","urt.besser":"Schärfer: weiche Pixel {alt} → {neu}","urt.gleich":"Weiche Pixel unverändert ({neu})","urt.schlechter":"Weicher: weiche Pixel {alt} → {neu}","urt.aa":"Weiche Pixel {alt} % → {neu} %","urt.aaNur":"Weiche Pixel {neu} %","urt.fehler":"Rasterfehler {v}","urt.fehlerVgl":"Rasterfehler {alt} → {neu}","urt.mass":"Maß {n}/{m}","urt.massAb":"Maß {n}/{m}","urt.gerastet":"{n} Kanten gerastet","fuss.fehler":"Rasterfehler","fuss.aa":"Weiche Pixel","fuss.keyline":"Keyline","fuss.veraendert":"Veränderte Pixel","fuss.veraendertWert":"{n} ({weg} entfernt, {dazu} neu)","tip.veraendert":"Pixel, deren Deckung sich geändert hat — gesamt, davon entfernt und hinzugekommen.","reg.kante":"Kante um {d} px {richtung} gerastet","reg.form":"Form verändert — {d} px Fläche","reg.links":"nach links","reg.rechts":"nach rechts","reg.oben":"nach oben","reg.unten":"nach unten","det.titel":"Details","det.vektor":"Vektor-Umriss","det.vektorHinweis":"Vorher grau, Nachher schwarz","det.pixel":"Pixelraster","det.differenz":"Differenz","zelle.massOk":"Maß stimmt","zelle.massAb":"Maß weicht ab","zelle.kontur":"{k} px Strich","zelle.raster":"Raster {r}","px.koord":"x {x} · y {y}","diff.nurNeu":"nur neu — kein bestehendes Set","ber.tipAa":"Weiche Pixel: Anteil halbtransparenter Randpixel. Niedriger ist schärfer, hängt von der Form ab (Kreise haben mehr).","ber.tipMass":"Maß stimmt: Das Icon füllt das vorgesehene Keyline-Maß.","ber.tipSpalte":"{n} px — Rasterfehler, weiche Pixel, Maß stimmt","ber.legende":"Rasterfehler = Abweichung der echten Pixel vom Ideal (0 ist perfekt) · weiche Pixel = Anteil halbtransparenter Randpixel · Maß stimmt = Icon füllt die Keyline.","ber.filter":"Filter","flt.alle":"Alle","flt.ohneSet":"ohne Set","flt.veraltet":"Vorlage geändert","flt.mass":"Maß-Fehler","flt.schlecht":"schlechteste 10 %","ber.zaehler":"{n} von {m}","ber.alleSichtbaren":"alle sichtbaren","ber.keineTreffer":"Kein Icon passt zu diesem Filter.","ber.umfangNamen":"Ausgewählte ({n})","ber.tipUmfang":"Ausgewählte: die angehakten Zeilen der Tabelle. Aktuelles Icon: die Auswahl im Canvas.","log.suche":"Protokoll durchsuchen …","log.allgemein":"Allgemein","log.keineTreffer":"Nichts passt zu Filter und Suche.","log.filterAlle":"Alle","log.filterFehler":"Fehler","log.filterWarn":"Warnungen","log.filterInfo":"Hinweise","log.filterOk":"OK","btn.kopieren":"Kopieren","toast.logKopiert":"Protokoll kopiert","toast.logNichts":"Nichts zu kopieren","log.groesse":"{n} px","log.gruppeTip":"{err} Fehler · {warn} Warnungen · {info} Hinweise","fort.baue":"Baue {i}/{n}","fort.rest":"noch ca. {zeit}","fort.sek":"{n} s","fort.min":"{n} min"},"en":{"titel":"Icon Pipeline","tab.icon":"Icon","tab.cfg":"Settings","tab.bericht":"Report","adapter.zds":"ZDS","adapter.frei":"Free","auswahl.leer":"Select an icon …","auswahl.tip":"Click: reveal on canvas","btn.vorschau":"Preview","btn.bauen":"Build icon","tip.snap":"Snaps straight edges and curve extrema to the configured grid. The AA oracle keeps whichever version is sharper. Applies to single builds and to “Rebuild all”.","chk.snap":"Pixel snapping","tip.stroke":"Unflattened version next to the source, edge-identical to the result. Not published.","chk.stroke":"Keep stroke version","klasse.label":"Class","klasse.geraten":"guessed","umf.icon":"This icon","umf.library":"Whole library","btn.audit":"Check","btn.alle":"Build all","btn.undo":"Undo","btn.undoN":"Undo ({n})","tip.undo":"One step = one icon.","btn.abbrechen":"Cancel","btn.abbrechenLauf":"Cancel run","dlg.plan.titelAlle":"Rebuild all icons?","dlg.plan.titelEins":"Build icon?","dlg.plan.textAlle":"Dry run — nothing has been changed yet. This is what will happen:","dlg.plan.textEins":"Dry run — nothing has been changed yet.","dlg.plan.leer":"Nothing to build.","plan.aendern":"update","plan.neu":"new","plan.fehlen":"missing: {liste}","plan.fremd":"foreign: {liste}","plan.instanzen":"{n} instances","plan.instanzenUnbekannt":"instances ?","plan.gesperrt":"locked","plan.summe":"{aendern} to update · {neu} new · {fehlen} variants missing · {gesperrt} locked · {instanzen} instances","plan.strokeHeim":"A frame for stroke versions will be created.","btn.planBauen":"Build","chk.trockenlaufEinzel":"Skip dry run for single builds","leer.karte":"Select a card on the ZDS board.","leer.kurz":"Select a source on the canvas — or switch to “Whole library”.","btn.beispiel":"Create example icon","diff.schaerfe":"less AA = sharper","diff.weg":"old only","diff.dazu":"new only","diff.nuralt":"no existing set","zoom.kleiner":"smaller (−)","zoom.groesser":"larger (+)","zelle.keyline":"keyline {ist}/{soll}","zelle.gerastet":"{n} edges snapped","zelle.radius":"radius {v}","zelle.neu":"new","pixel.aa":"AA {aa} %","pixel.alt":"current {aa} %","pixel.hint":"Hinting: {v}","hint.fehler":"error −{d} %","hint.gleich":"equivalent","hint.ohne":"no effect","log.titel":"Log","btn.leeren":"Clear","log.leer":"Nothing has run yet.","log.zeigen":"show","cfg.allgemein":"General","cfg.adapter":"Adapter","cfg.sprache":"Language","cfg.variantenProperty":"Variant property","opt.auto":"automatic","opt.zds":"ZDS","opt.frei":"Free","opt.de":"German","opt.en":"English","cfg.master":"Master","cfg.masterGroesse":"Size","cfg.masterKontur":"Stroke width (px)","cfg.keylines":"Keyline (icon body)","cfg.groessen":"Sizes","cfg.N":"N (px)","cfg.kontur":"Stroke width (px)","cfg.raster":"Snap edges to","cfg.rasterGrob":"Prefer whole pixels","cfg.radiusModus":"Corner radii","cfg.radiusWert":"Radius (px)","cfg.radiusMin":"Minimum radius (px)","cfg.standard":"Default","cfg.entfernen":"Remove size","cfg.keylinesAuf":"Keyline (icon body)","cfg.keylinesProp":"recompute proportionally","cfg.keylinesLegende":"Box {N} px · pixel grid · shape classes: Square, Circular, Wide, Tall","cfg.keylinesHinweis":"The keyline is the size of the icon body inside the {N} px box. It follows N automatically until you edit it by hand.","cfg.keylineUnplausibel":"Keyline {wert} does not fit N = {N} (expected between {min} and {N}).","btn.groesseHinzu":"Add size","opt.aus":"off","radius.proportional":"scale proportionally","radius.fest":"fixed value","radius.keine":"no rounding","cfg.farbe":"Color","farbe.source":"Like source","farbe.hex":"Fixed color","farbe.variable":"Design token","farbe.suche":"Search design token …","farbe.lokal":"Tokens in this file","farbe.leer":"No color tokens found. Library tokens only appear when the library is enabled in this file (Assets → Libraries). See the log for details.","farbe.aktualisieren":"Refresh","farbe.laden":"Loading design tokens …","farbe.angleichen":"Bind source to this color","farbe.gewaehlt":"Selected","farbe.unaufloesbar":"Design token cannot be resolved.","cfg.schreiben":"Writing","chk.frameUmwandeln":"Convert frames into components","tip.frameUmwandeln":"Allows a frame at master size to be converted into a component while building. Off is conservative: the plugin reports an error instead of changing anything.","chk.strokeHeimAnlegen":"Create frame for stroke versions","tip.strokeHeimAnlegen":"Creates a frame “Icon Pipeline · Stroke” next to the source when needed. Off: stroke versions are skipped.","cfg.datei":"Configuration file","btn.exportKonfig":"Export","file.importKonfig":"Import","toast.exportiert":"Configuration exported","toast.importiert":"Configuration imported","toast.importFehler":"File is not a valid configuration","btn.vorschauMit":"Preview with these settings","chip.ungespeichert":"unsaved","btn.speichern":"Save","btn.zuruecksetzen":"Reset","dlg.reset.titel":"Reset settings","dlg.reset.text":"Which profile should be restored? The current configuration is replaced.","profil.zds":"ZDS","profil.generic":"Generic","profil.material":"Material","profil.lucide":"Lucide","profil.apple":"Apple","btn.resetOk":"Reset","fehler.kopf":"Adjusted while checking:","toast.gespeichert":"Settings saved","ber.aktionen":"Report","btn.bericht":"Create report","btn.csv":"CSV","ber.leer":"No report yet. “Create report” measures every icon in the library.","ber.zeit":"As of {zeit}","ber.icons":"Icons","ber.ohneSet":"without set","ber.veraltet":"source changed","ber.treueMittel":"Raster error ⌀","ber.keylineOk":"Size ok","ber.spalteName":"Icon","ber.tipTreue":"Raster error: deviation of the real pixels from the ideal. 0 = perfect, below 0.02 very good, above 0.05 noticeable.","ber.chipOhneSet":"no set","ber.chipVeraltet":"source changed","ber.keineDaten":"—","ber.sortieren":"Click: sort by this column","ber.export":"Export","ber.umfang":"Scope","ber.umfangAlle":"All","ber.umfangAuswahl":"Current icon","chk.sprite":"Include sprite","tip.sprite":"Adds a sprite.svg with one <symbol> per icon and size to the ZIP.","btn.svgExport":"SVG export","ber.exportFehlt":"No set — not exported:","ber.exportLeer":"Nothing to export.","toast.csv":"CSV downloaded","toast.zip":"ZIP downloaded","hilf.adapter":"Determines how the plugin finds source and set in this file.","hilf.sprache":"Language of the interface and of the set descriptions.","hilf.variantenProperty":"Name of the variant property that holds the sizes.","hilf.masterGroesse":"Edge length of the source every size is built from.","hilf.masterKontur":"Stroke width the source outlines are normalised to.","hilf.masterKeyline":"Target size of the icon body in the source, per shape class.","hilf.N":"Edge length of this output size in pixels.","hilf.kontur":"Stroke width of the outlines at this size.","hilf.raster":"Whole pixels (1), half pixels (0.5) or quarter pixels (0.25).","hilf.rasterGrob":"Edges move to whole pixels when the distance is at most 0.35 px.","hilf.radiusModus":"How the source corner radii are carried over to this size.","hilf.radiusWert":"This radius applies to every corner at this size.","hilf.radiusMin":"Smaller radii become square.","hilf.standard":"Figma offers this variant first when inserting.","hilf.keyline":"The size the icon body occupies inside the box.","tip.adapter":"Automatic detects the ZDS board and otherwise falls back to free mode.","tip.sprache":"Automatic follows Figma’s language.","tip.variantenProperty":"Variants are then named for example “Size=24”.","tip.masterGroesse":"If the source does not match, the plugin reports an error instead of building.","tip.masterKontur":"While normalising, every source outline is set to exactly this width.","tip.masterKeyline":"The scale of every output size is derived from this measure.","tip.N":"Every size becomes its own variant in the set.","tip.kontur":"After scaling down the stroke is set to exactly this value.","tip.raster":"Straight edges and curve extrema land on this grid.","tip.rasterGrob":"Whole pixels are sharper but cost a little shape fidelity.","tip.radiusModus":"Scaling proportionally keeps the look, a fixed value keeps the edge.","tip.radiusWert":"Only effective with “fixed value”.","tip.radiusMin":"Prevents radii that end up as pure blur at 1×.","tip.standard":"Exactly one size in the set can be the default.","tip.keyline":"The sketch shows the four shape classes inside the box.","farbe.erklSource":"The built sizes keep the color or variable of the source.","farbe.erklHex":"Every built size gets this fixed color.","farbe.erklVariable":"Every built size is bound to this color token, so themes apply automatically.","tip.angleichen":"Also sets the source itself to this color so source and result match.","tip.farbeModus":"Determines where the fill of the built sizes comes from.","hilf.token":"Expand a collection to load its color values.","liz.titel":"License","liz.voll":"Full version","liz.test":"Trial · {tage} days","liz.testAus":"Trial ended","liz.frei":"Free","liz.dev":"Developer mode","liz.unbekannt":"Checking license …","liz.modellEinmal":"One-time payment, no subscription.","liz.umfang":"The full version adds: {liste}.","liz.kaufen":"Buy full version","liz.status":"Refresh status","liz.figma":"You buy through your Figma account. No license key needed.","toast.lizStatus":"Checking status …","liz.spaeter":"Later","liz.dlgTitel":"This is part of the full version","liz.dlgFunktion":"Locked: {funktion}","liz.debugTitel":"Simulate status","liz.debugHinweis":"Developer mode, local only.","liz.fn.alle":"Rebuild all icons","liz.fn.bericht":"Quality report","liz.fn.exportieren":"SVG export","liz.fn.konfigImport":"Import configuration","ob.rundgang":"Tour","ob.ueberspringen":"Skip","ob.zurueck":"Back","ob.weiter":"Next","ob.los":"Let’s go","ob.zaehler":"{i} of {n}","ob.punkt":"Step {i}","ob.1.titel":"One source, every size","ob.1.text":"The plugin builds every target size as its own variant. Keyline, stroke width and grid come from your settings.","ob.2.titel":"Your file, your mode: {modus}","ob.2.textZds":"The ZDS board is detected: cards, pages and the existing set. You can adopt another profile here.","ob.2.textFrei":"Free mode: any square component at master size can be a source. Pick a profile as a starting point.","ob.2.profil":"Adopt profile","ob.3.titel":"Select, review, build","ob.3.text":"Pick a source, check the preview, build the icon — a dry run shows what will happen. Every build can be undone.","ob.4.titel":"Full version","ob.4.text":"Everything is unlocked during the trial. After that, building all icons, the report and the export need the full version.","liz.pwTitelTrial":"{tage} days of trial left","liz.pwTitelAus":"Your trial has ended","liz.pwTitelFn":"This is part of the full version","liz.pwTextTrial":"Everything is unlocked during the trial: rebuild all icons, the quality report, SVG export and importing ready-made configurations. After that preview and single builds stay free, the rest needs the full version.","liz.pwTextAus":"Preview and single builds stay free. Rebuilding all icons, the quality report, SVG export and the configuration import belong to the full version — buy once, use forever.","liz.pwTextFn":"“{funktion}” belongs to the full version. Buy once, use forever — preview and single builds stay free either way.","liz.pwKaufenAus":"Unlock full version","liz.pwKaufenTrial":"Buy now","liz.pwSpaeterTrial":"Keep testing","liz.pwSpaeterAus":"Later","liz.pwHinweis":"One-time purchase, no runtime. If it does not fit, you get your money back.","start.titel":"Icons in this file","start.hinweis":"Select a source on the canvas — or pick an icon here.","start.suche":"Search icon …","start.laden":"Looking for icons …","start.leer":"No icon source found yet.","start.summe":"{icons} icons · {ohneSet} without set · {veraltet} source changed","start.treffer":"{n} of {m}","start.ok":"ok","start.ohneSet":"no set","start.veraltet":"source changed","es.titel":"First steps","es.auswahl":"Select an icon","es.vorschau":"Look at the preview","es.bauen":"Build the icon","es.ausblenden":"hide","v.titel":"Preview · {name}","modus.wischen":"◧","modus.neben":"◫","modus.ueberlagern":"◉","tip.neben":"Side by side: two tiles per size, before on the left, after on the right.","tip.wischen":"Wipe: one tile, the handle pulls the new version over the old one.","tip.ueberlagern":"Overlay: both versions on top of each other — differences in color, overlap grey.","dar.pixel":"Pixels","dar.vektor":"Vector","tip.darstellung":"Pixels shows the real rasterization, scaled up pixel-exact. Vector draws the geometry smoothly at any zoom.","v.markieren":"Highlight changes","tip.markieren":"Outlines every area in the after tile whose pixels changed.","v.verbesserung":"Show the improvement","tip.verbesserung":"Fades from before to after with the slider — you can watch the soft edges become crisp.","v.scrubber":"Before → after","v.grund":"Light or dark background","v.hoehe":"Drag to resize the stage","v.legende":"Highlighted areas: pixels the plugin changed.","pill.vorher":"Before","pill.nachher":"After","pill.beide":"Overlay","leg.weg":"Removed","leg.dazu":"Added","leg.beide":"Unchanged","v.mehr":"More switches","zoom.fitKurz":"Fit","zoom.fit":"Fit","zoom.fitTitel":"Fit all sizes (0)","urt.neu":"New — nothing to compare yet","urt.besser":"Sharper: soft pixels {alt} → {neu}","urt.gleich":"Soft pixels unchanged ({neu})","urt.schlechter":"Softer: soft pixels {alt} → {neu}","urt.aa":"Soft pixels {alt} % → {neu} %","urt.aaNur":"Soft pixels {neu} %","urt.fehler":"Raster error {v}","urt.fehlerVgl":"Raster error {alt} → {neu}","urt.mass":"Size {n}/{m}","urt.massAb":"Size {n}/{m}","urt.gerastet":"{n} edges snapped","fuss.fehler":"Raster error","fuss.aa":"Soft pixels","fuss.keyline":"Keyline","fuss.veraendert":"Changed pixels","fuss.veraendertWert":"{n} ({weg} removed, {dazu} new)","tip.veraendert":"Pixels whose coverage changed — total, of those removed and added.","reg.kante":"Edge snapped {d} px {richtung}","reg.form":"Shape changed — {d} px of area","reg.links":"left","reg.rechts":"right","reg.oben":"up","reg.unten":"down","det.titel":"Details","det.vektor":"Vector outline","det.vektorHinweis":"Before grey, after black","det.pixel":"Pixel grid","det.differenz":"Difference","zelle.massOk":"Size ok","zelle.massAb":"Size differs","zelle.kontur":"{k} px stroke","zelle.raster":"Snap {r}","px.koord":"x {x} · y {y}","diff.nurNeu":"new only — no existing set","ber.tipAa":"Soft pixels: share of semi-transparent edge pixels. Lower is sharper, depends on the shape (circles have more).","ber.tipMass":"Size ok: the icon fills the intended keyline size.","ber.tipSpalte":"{n} px — raster error, soft pixels, size ok","ber.legende":"Raster error = deviation of the real pixels from the ideal (0 is perfect) · soft pixels = share of semi-transparent edge pixels · size ok = the icon fills the keyline.","ber.filter":"Filter","flt.alle":"All","flt.ohneSet":"without set","flt.veraltet":"source changed","flt.mass":"size errors","flt.schlecht":"worst 10 %","ber.zaehler":"{n} of {m}","ber.alleSichtbaren":"all visible","ber.keineTreffer":"No icon matches this filter.","ber.umfangNamen":"Selected ({n})","ber.tipUmfang":"Selected: the ticked rows of the table. Current icon: the canvas selection.","log.suche":"Search the log …","log.allgemein":"General","log.keineTreffer":"Nothing matches filter and search.","log.filterAlle":"All","log.filterFehler":"Errors","log.filterWarn":"Warnings","log.filterInfo":"Notes","log.filterOk":"OK","btn.kopieren":"Copy","toast.logKopiert":"Log copied","toast.logNichts":"Nothing to copy","log.groesse":"{n} px","log.gruppeTip":"{err} errors · {warn} warnings · {info} notes","fort.baue":"Building {i}/{n}","fort.rest":"~{zeit} left","fort.sek":"{n} s","fort.min":"{n} min"}};
   const KLASSEN = ['Square', 'Circular', 'Wide', 'Tall'];
   const RASTER_WERTE = [1, 0.5, 0.25];
 
@@ -2121,7 +2147,9 @@ fig-icon[size="small"] {
 
   const ZOOM_STUFEN = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64];
   const Z_MIN = 1, Z_MAX = 64;
-  const MODI = ['neben', 'wischen'];
+  const MODI = ['neben', 'wischen', 'ueberlagern'];
+  // Modi mit nur einer Kachel je Karte
+  function einKachelModus() { return vglModus === 'wischen' || vglModus === 'ueberlagern'; }
   const W_LUECKE = 4;        // Weltabstand zwischen Vorher- und Nachher-Kachel
   const W_KARTE = 12;        // Weltabstand zwischen den Größenkarten
   const W_POLSTER = 3;       // Kartenrahmen um die Kacheln
@@ -2252,13 +2280,16 @@ fig-icon[size="small"] {
   function regionenFinden(A, B) {
     const w = Math.min(A.w, B.w), h = Math.min(A.h, B.h);
     const maske = new Uint8Array(w * h);
-    let treffer = 0;
+    let treffer = 0, weg = 0, dazu = 0;
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
       const a = A.data[((y * A.w) + x) * 4 + 3];
       const b = B.data[((y * B.w) + x) * 4 + 3];
-      if (Math.abs(a - b) > MARK_SCHWELLE) { maske[y * w + x] = 1; treffer++; }
+      if (Math.abs(a - b) > MARK_SCHWELLE) {
+        maske[y * w + x] = 1; treffer++;
+        if (a > b) weg++; else dazu++;
+      }
     }
-    if (!treffer) return { regionen: [], pixel: 0 };
+    if (!treffer) return { regionen: [], pixel: 0, weg: 0, dazu: 0 };
     const regionen = [], stapel = [];
     for (let s = 0; s < maske.length; s++) {
       if (maske[s] !== 1) continue;
@@ -2292,7 +2323,7 @@ fig-icon[size="small"] {
       });
     }
     regionen.sort((a, b) => (b.w * b.h) - (a.w * a.h));
-    return { regionen: regionen.slice(0, MARK_MAX), pixel: treffer };
+    return { regionen: regionen.slice(0, MARK_MAX), pixel: treffer, weg: weg, dazu: dazu };
   }
   // Heuristik für den Hover-Text: schmale, langgestreckte Regionen sind
   // gerasterte Kanten; der Weg kommt aus dem Schwerpunkt alt → neu.
@@ -2328,7 +2359,8 @@ fig-icon[size="small"] {
     ANA = [];
     for (const c of (letzterDiff ? letzterDiff.zellen : [])) {
       const e = { N: c.N, zelle: c, bildAlt: null, bildNeu: null, vekAlt: null, vekNeu: null,
-        aaAlt: null, aaNeu: null, regionen: [], andersPixel: 0 };
+        aaAlt: null, aaNeu: null, regionen: [], andersPixel: 0, weg: 0, dazu: 0,
+        misch: null, mischSig: '' };
       if (c.pngNeu) { const r = await analysiere(c.pngNeu, false, dunkel); e.bildNeu = r.c; e.aaNeu = r.aa; }
       if (c.pngAlt) { const r = await analysiere(c.pngAlt, false, dunkel); e.bildAlt = r.c; e.aaAlt = r.aa; }
       if (c.neu) e.vekNeu = await svgCanvas(c.neu, umrissFarbe(), c.N);
@@ -2338,6 +2370,7 @@ fig-icon[size="small"] {
         const B = await bitmapDaten(c.pngNeu);
         const d = regionenFinden(A, B);
         e.regionen = d.regionen; e.andersPixel = d.pixel;
+        e.weg = d.weg; e.dazu = d.dazu;
       }
       const g = gueteNeu(c);
       e.fehlerNeu = g && isFinite(g.fehler) ? g.fehler : null;
@@ -2360,13 +2393,32 @@ fig-icon[size="small"] {
     if (c.ist == null || c.soll == null) return null;
     return Math.abs(Number(c.ist) - Number(c.soll)) <= 0.5;
   }
-  function fehlerText(v) { return v == null ? null : zahl(v.toFixed(3)); }
-  function deltaText(alt, neu) {
-    if (alt == null || neu == null || !(alt > 0)) return null;
-    const d = Math.round((neu - alt) / alt * 100);
+  // Eine Stelle für alle Zahlen: Rasterfehler immer drei Nachkommastellen,
+  // Prozent ganzzahlig, Maße zwei Stellen, Dezimaltrennzeichen aus zahl().
+  function fmt(art, v) {
+    if (v == null || !isFinite(Number(v))) return t('ber.keineDaten');
+    const n = Number(v);
+    if (art === 'fehler') return zahl(n.toFixed(3));
+    if (art === 'prozent') return Math.round(n) + ' %';
+    if (art === 'mass') return zahl(n.toFixed(2));
+    return zahl(String(n));
+  }
+  // Vergleichswert: bei Gleichstand nur EINE Zahl statt „0,012 → 0,012“.
+  function fmtVgl(art, alt, neu) {
+    if (neu == null || !isFinite(Number(neu))) return t('ber.keineDaten');
+    const a = alt == null || !isFinite(Number(alt)) ? null : fmt(art, alt);
+    const n = fmt(art, neu);
+    return (a == null || a === n) ? n : a + ' → ' + n;
+  }
+  // Delta mit Vorzeichen und Prozent; null, wenn sich nichts geändert hat.
+  function fmtDelta(alt, neu) {
+    if (alt == null || neu == null || !(Number(alt) > 0)) return null;
+    const d = Math.round((Number(neu) - Number(alt)) / Number(alt) * 100);
     if (!isFinite(d) || d === 0) return null;
     return (d < 0 ? '−' : '+') + Math.abs(d) + ' %';
   }
+  function fehlerText(v) { return v == null ? null : fmt('fehler', v); }
+  function deltaText(alt, neu) { return fmtDelta(alt, neu); }
   function radiusText(c) {
     if (c.radius == null) return null;
     if (typeof c.radius !== 'object') return zahl(c.radius);
@@ -2424,9 +2476,9 @@ fig-icon[size="small"] {
     return s;
   }
   function urteilZeichnen(A) {
-    const karte = $('urteil'), txt = $('urteilText'), pillen = $('urteilPills');
+    const zeile = $('urteil'), txt = $('urteilText'), pillen = $('urteilPills');
     pillen.textContent = '';
-    if (!A.length) { karte.className = 'urteil'; txt.textContent = ''; return; }
+    if (!A.length) { zeile.className = 'urteilzeile'; txt.textContent = ''; return; }
     let aaAltS = 0, aaAltN = 0, aaNeuS = 0, aaNeuN = 0;
     let feAltS = 0, feAltN = 0, feNeuS = 0, feNeuN = 0;
     let massOk = 0, massGes = 0, gerastet = 0, mitAlt = 0;
@@ -2446,32 +2498,49 @@ fig-icon[size="small"] {
     const feNeu = feNeuN ? feNeuS / feNeuN : null;
     const massAlle = massGes > 0 && massOk === massGes;
 
+    // Ein Satz in Klartext; bei Gleichstand keine zwei gleichen Zahlen.
     let art = 'neutral';
-    if (!mitAlt) txt.textContent = t('urt.neu');
-    else if (aaAlt != null && aaNeu != null && aaNeu < aaAlt - 0.5) { txt.textContent = t('urt.besser'); art = 'gut'; }
-    else if (aaAlt != null && aaNeu != null && aaNeu > aaAlt + 0.5) { txt.textContent = t('urt.schlechter'); art = 'warn'; }
-    else txt.textContent = t('urt.gleich');
+    if (!mitAlt) {
+      txt.textContent = t('urt.neu');
+    } else if (aaAlt != null && aaNeu != null && aaNeu < aaAlt - 0.5) {
+      txt.textContent = t('urt.besser', { alt: fmt('prozent', aaAlt), neu: fmt('prozent', aaNeu) });
+      art = 'gut';
+    } else if (aaAlt != null && aaNeu != null && aaNeu > aaAlt + 0.5) {
+      txt.textContent = t('urt.schlechter', { alt: fmt('prozent', aaAlt), neu: fmt('prozent', aaNeu) });
+      art = 'warn';
+    } else {
+      txt.textContent = t('urt.gleich', { neu: aaNeu == null ? fmt('fehler', feNeu) : fmt('prozent', aaNeu) });
+    }
     if (massGes && !massAlle) art = 'warn';
-    karte.className = 'urteil ' + art;
+    zeile.className = 'urteilzeile ' + art;
 
-    if (aaAlt != null && aaNeu != null && mitAlt) {
-      const d = deltaText(aaAlt, aaNeu);
-      pillen.appendChild(pille(t('urt.aa', { alt: aaAlt, neu: aaNeu }) + (d ? ' (' + d + ')' : ''),
-        d && d.charAt(0) === '−' ? 'gut' : ''));
-    } else if (feNeu != null) {
-      pillen.appendChild(pille(t('urt.fehler', { v: fehlerText(feNeu) })));
-    } else if (aaNeu != null) {
-      pillen.appendChild(pille(t('urt.aaNur', { neu: aaNeu })));
-    }
-    if (feAlt != null && feNeu != null) {
-      const d = deltaText(feAlt, feNeu);
-      pillen.appendChild(pille(t('urt.fehlerVgl', { alt: fehlerText(feAlt), neu: fehlerText(feNeu) })
-        + (d ? ' (' + d + ')' : ''), d && d.charAt(0) === '−' ? 'gut' : ''));
-    }
-    if (massGes) pillen.appendChild(pille(
-      massAlle ? t('urt.mass', { n: massOk, m: massGes }) : t('urt.massAb', { n: massGes - massOk, m: massGes }),
-      massAlle ? 'gut' : 'warn'));
-    if (gerastet && pillen.childNodes.length < 3) pillen.appendChild(pille(t('urt.gerastet', { n: gerastet })));
+    // Höchstens zwei kurze Pills: erst das Delta, dann Maß bzw. gerastete Kanten.
+    const d = mitAlt ? fmtDelta(aaAlt, aaNeu) : null;
+    const kandidaten = [];
+    if (d) kandidaten.push([d, d.charAt(0) === '−' ? 'gut' : 'warn']);
+    if (massGes) kandidaten.push([
+      t('urt.mass', { n: massOk, m: massGes }) + (massAlle ? ' ✓' : ' △'), massAlle ? 'gut' : 'warn']);
+    if (gerastet) kandidaten.push([t('urt.gerastet', { n: gerastet }), '']);
+    if (!kandidaten.length && feNeu != null) kandidaten.push([t('urt.fehler', { v: fmt('fehler', feNeu) }), '']);
+    kandidaten.slice(0, 2).forEach(k => pillen.appendChild(pille(k[0], k[1])));
+  }
+
+  // Legende: im Überlagern-Modus drei Farbfelder statt des Merksatzes.
+  function legendeZeichnen() {
+    const box = $('vLegende');
+    box.textContent = '';
+    if (vglModus !== 'ueberlagern') { box.textContent = t('v.legende'); return; }
+    [['weg', t('leg.weg')], ['dazu', t('leg.dazu')], ['beide', t('leg.beide')]].forEach(x => {
+      const s = document.createElement('span');
+      s.className = 'legstueck';
+      const i = document.createElement('i');
+      i.className = 'legfeld ' + x[0];
+      s.appendChild(i);
+      const b = document.createElement('span');
+      b.textContent = x[1];
+      s.appendChild(b);
+      box.appendChild(s);
+    });
   }
 
   // ---- Kennzahlen-Fuß (DOM, eine Spalte je Größe) -------------------------
@@ -2492,20 +2561,21 @@ fig-icon[size="small"] {
     });
     tab.appendChild(kopf);
     const zeilen = [
-      { label: t('fuss.fehler'), tip: t('ber.tipTreue'), wert: e => {
-        const fe = fehlerText(e.fehlerNeu), feA = fehlerText(e.fehlerAlt);
-        return fe == null ? t('ber.keineDaten') : (feA ? feA + ' → ' + fe : fe);
-      } },
-      { label: t('fuss.aa'), tip: t('ber.tipAa'), wert: e =>
-        e.aaNeu == null ? t('ber.keineDaten')
-          : (e.aaAlt != null ? e.aaAlt + ' % → ' + e.aaNeu + ' %' : e.aaNeu + ' %') },
+      { label: t('fuss.fehler'), tip: t('ber.tipTreue'),
+        wert: e => fmtVgl('fehler', e.fehlerAlt, e.fehlerNeu) },
+      { label: t('fuss.aa'), tip: t('ber.tipAa'),
+        wert: e => fmtVgl('prozent', e.aaAlt, e.aaNeu) },
       { label: t('fuss.keyline'), tip: t('ber.tipMass'), wert: e => {
         const c = e.zelle, ok = massStimmt(c);
         return c.soll == null ? t('ber.keineDaten')
-          : zahl(c.ist == null ? '?' : Number(c.ist).toFixed(2)) + ' / ' + zahl(c.soll)
-            + (ok == null ? '' : ok ? ' ✓' : ' △');
+          : fmt('mass', c.ist) + ' / ' + zahl(c.soll) + (ok == null ? '' : ok ? ' ✓' : ' △');
       } }
     ];
+    // Im Überlagern-Modus zählt zusätzlich, wie viele Pixel sich geändert haben.
+    if (vglModus === 'ueberlagern') zeilen.push({
+      label: t('fuss.veraendert'), tip: t('tip.veraendert'),
+      wert: e => e.andersPixel ? t('fuss.veraendertWert',
+        { n: e.andersPixel, weg: e.weg || 0, dazu: e.dazu || 0 }) : t('ber.keineDaten') });
     zeilen.forEach(z => {
       const tr = document.createElement('tr');
       const td = document.createElement('td');
@@ -2535,7 +2605,7 @@ fig-icon[size="small"] {
     A.forEach((e, i) => {
       const N = e.N || 1;
       if (N > maxN) maxN = N;
-      const breite = vglModus === 'neben' ? 2 * N + W_LUECKE : N;
+      const breite = einKachelModus() ? N : 2 * N + W_LUECKE;
       LAYOUT.push({ e: e, i: i, N: N, x: x, y: -N / 2, breite: breite });
       x += breite + W_KARTE;
     });
@@ -2543,6 +2613,7 @@ fig-icon[size="small"] {
     WELT = { x0: -rand, y0: -maxN / 2 - rand, x1: Math.max(0, x - W_KARTE) + rand, y1: maxN / 2 + rand };
   }
   function kacheln(k) {
+    if (vglModus === 'ueberlagern') return [{ x: k.x, y: k.y, welche: 'misch' }];
     if (vglModus === 'wischen') return [{ x: k.x, y: k.y, welche: 'wisch' }];
     return [{ x: k.x, y: k.y, welche: 'alt' }, { x: k.x + k.N + W_LUECKE, y: k.y, welche: 'neu' }];
   }
@@ -2630,7 +2701,6 @@ fig-icon[size="small"] {
     const k = LAYOUT[Math.max(0, Math.min(LAYOUT.length - 1, i))];
     if (!k) return;
     aktiveKarte = k.i;
-    sprungAktiv();
     kameraSetzen(k.x + k.breite / 2 - vpBreite() / 2 / ZIEL.z,
       k.y + k.N / 2 - vpHoehe() / 2 / ZIEL.z, ZIEL.z, mitLerp !== false);
   }
@@ -2638,7 +2708,6 @@ fig-icon[size="small"] {
     const k = LAYOUT[Math.max(0, Math.min(LAYOUT.length - 1, i))];
     if (!k) return;
     aktiveKarte = k.i;
-    sprungAktiv();
     const rand = 16 * dpr(), obenRaum = 18 * dpr();
     const z = Math.max(Z_MIN, Math.min(Z_MAX, Math.min(
       (vpBreite() - 2 * rand) / (k.breite + 2 * W_POLSTER),
@@ -2678,6 +2747,75 @@ fig-icon[size="small"] {
     g.fillText(text, x + 4 * p, y + h / 2 + 0.5 * p);
     return b;
   }
+  // ---- Überlagern: farbige Onionskin ---------------------------------------
+  // Deckung neutral, Unterschiede farbig. Je Pixel aus den Alphawerten:
+  // gemeinsam = min(alt, neu) → Grau, nur alt → Orange, nur neu → Akzentblau,
+  // Teildeckung mischt proportional. Der Überblend-Regler gewichtet die beiden
+  // Differenzanteile (0 % = nur Vorher, 100 % = nur Nachher).
+  const MISCH_GRAU = { hell: [58, 58, 68], dunkel: [217, 217, 222] };
+  const MISCH_WEG  = { hell: [245, 166, 35], dunkel: [255, 184, 77] };
+  function alphaFeld(bild, R) {
+    const c = document.createElement('canvas');
+    c.width = R; c.height = R;
+    const g = c.getContext('2d');
+    g.imageSmoothingEnabled = R !== bild.width;
+    g.clearRect(0, 0, R, R);
+    g.drawImage(bild, 0, 0, R, R);
+    const d = g.getImageData(0, 0, R, R).data;
+    const a = new Uint8ClampedArray(R * R);
+    for (let i = 0; i < a.length; i++) a[i] = d[i * 4 + 3];
+    return a;
+  }
+  function mischCanvas(e) {
+    // Auflösung: Pixelansicht zeigt die echte Rasterung (N), die Vektoransicht
+    // rastert feiner (N × 8). Der Regler wirkt in 5-%-Stufen, damit das Ziehen
+    // nicht jedes Bild neu rechnet.
+    const R = darstellung === 'vektor' ? e.N * 8 : e.N;
+    const stufe = Math.round(blend / 5) * 5;
+    const sig = darstellung + '|' + R + '|' + stufe + '|' + (dunkel ? 'd' : 'h');
+    if (e.mischSig === sig && e.misch) return e.misch;
+    const qAlt = darstellung === 'vektor' ? (e.vekAlt || e.bildAlt) : e.bildAlt;
+    const qNeu = darstellung === 'vektor' ? (e.vekNeu || e.bildNeu) : e.bildNeu;
+    if (!qNeu && !qAlt) return null;
+    const A = qAlt ? alphaFeld(qAlt, R) : null;
+    const B = qNeu ? alphaFeld(qNeu, R) : null;
+    const c = document.createElement('canvas');
+    c.width = R; c.height = R;
+    const g = c.getContext('2d');
+    const bild = g.createImageData(R, R);
+    const d = bild.data;
+    const grau = dunkel ? MISCH_GRAU.dunkel : MISCH_GRAU.hell;
+    const weg = dunkel ? MISCH_WEG.dunkel : MISCH_WEG.hell;
+    const dazu = akzentRgb();
+    const gNeu = stufe / 100, gAlt = 1 - gNeu;
+    // Ohne Alt-Variante gibt es nichts zu vergleichen: alles neutral.
+    const vergleich = !!(A && B);
+    for (let i = 0; i < R * R; i++) {
+      const a = A ? A[i] / 255 : 0, b = B ? B[i] / 255 : 0;
+      if (!vergleich) {
+        const v = Math.max(a, b);
+        if (v <= 0.004) continue;
+        const k0 = i * 4;
+        d[k0] = grau[0]; d[k0 + 1] = grau[1]; d[k0 + 2] = grau[2];
+        d[k0 + 3] = Math.round(v * 255);
+        continue;
+      }
+      const gem = Math.min(a, b);
+      const nurA = Math.max(0, a - b) * gAlt;
+      const nurB = Math.max(0, b - a) * gNeu;
+      const summe = gem + nurA + nurB;
+      if (summe <= 0.004) continue;
+      const k = i * 4;
+      d[k]     = (grau[0] * gem + weg[0] * nurA + dazu[0] * nurB) / summe;
+      d[k + 1] = (grau[1] * gem + weg[1] * nurA + dazu[1] * nurB) / summe;
+      d[k + 2] = (grau[2] * gem + weg[2] * nurA + dazu[2] * nurB) / summe;
+      d[k + 3] = Math.round(Math.min(1, summe) * 255);
+    }
+    g.putImageData(bild, 0, 0);
+    e.misch = c; e.mischSig = sig;
+    return c;
+  }
+
   function bildZeichnen(g, bild, x, y, s, alpha) {
     if (!bild) return;
     g.save();
@@ -2686,8 +2824,9 @@ fig-icon[size="small"] {
     g.drawImage(bild, x, y, s, s);
     g.restore();
   }
+  function markenAn() { return markieren && vglModus !== 'ueberlagern'; }
   function markenZeichnen(g, regionen, x, y, N, s, p) {
-    if (!markieren || !regionen || !regionen.length) return;
+    if (!markenAn() || !regionen || !regionen.length) return;
     const e = s / N;
     const f = akzentRgb();
     g.save();
@@ -2714,7 +2853,16 @@ fig-icon[size="small"] {
     g.fillStyle = kachelGrund();
     g.fillRect(x, y, s, s);
     const e = k.e;
-    if (welche === 'wisch') {
+    if (welche === 'misch') {
+      const m = mischCanvas(e);
+      if (m) {
+        g.save();
+        g.imageSmoothingEnabled = darstellung === 'vektor';
+        g.drawImage(m, x, y, s, s);
+        g.restore();
+      }
+      pillZeichnen(g, t('pill.beide'), x + 4 * p, y + 4 * p, p);
+    } else if (welche === 'wisch') {
       bildZeichnen(g, bildVon(e, 'alt'), x, y, s);
       const w = Math.max(0, Math.min(s, s * wischPos));
       g.save();
@@ -2791,7 +2939,10 @@ fig-icon[size="small"] {
       g.fillStyle = textFarbe();
       const titel = zahl(k.N) + ' px';
       g.fillText(titel, x, ty);
-      let tx = x + g.measureText(titel).width + 6 * p;
+      const tb = g.measureText(titel).width;
+      // Der Titel ist anklickbar: er zentriert seine Karte.
+      k.titelFeld = { x: x - 4 * p, y: ty - 13 * p, w: tb + 8 * p, h: 18 * p };
+      let tx = x + tb + 6 * p;
       const ok = massStimmt(k.e.zelle);
       if (ok != null) {
         g.fillStyle = ok ? '#12a76a' : '#c98a12';
@@ -2809,6 +2960,13 @@ fig-icon[size="small"] {
   }
 
   // ---- Hit-Test und Hover --------------------------------------------------
+  function titelUnter(devX, devY) {
+    for (const k of LAYOUT) {
+      const f = k.titelFeld;
+      if (f && devX >= f.x && devY >= f.y && devX < f.x + f.w && devY < f.y + f.h) return k;
+    }
+    return null;
+  }
   function kachelUnter(devX, devY) {
     const wx = weltX(devX), wy = weltY(devY);
     for (const k of LAYOUT) {
@@ -2845,23 +3003,6 @@ fig-icon[size="small"] {
   }
 
   // ---- Bühne aufbauen ------------------------------------------------------
-  function sprungAktiv() {
-    $('sprungleiste').querySelectorAll('.sprung').forEach((b, k) => b.classList.toggle('an', k === aktiveKarte));
-  }
-  function sprungleisteZeichnen(A) {
-    const box = $('sprungleiste');
-    box.textContent = '';
-    box.hidden = A.length < 2;
-    if (A.length < 2) return;
-    A.forEach((e, i) => {
-      const b = document.createElement('fig-button');
-      b.setAttribute('variant', 'ghost');
-      b.className = 'sprung' + (i === aktiveKarte ? ' an' : '');
-      b.textContent = zahl(e.N) + ' px';
-      b.addEventListener('click', () => karteMittig(i, true));
-      box.appendChild(b);
-    });
-  }
   function zoomPilleSetzen() {
     $('zoomWertAnzeige').textContent = Math.round(ZIEL.z * 100) + ' %';
   }
@@ -2872,7 +3013,6 @@ fig-icon[size="small"] {
     urteilZeichnen(A);
     kennzahlenZeichnen(A);
     layoutRechnen(A);
-    sprungleisteZeichnen(A);
     leinwandMessen();
     if (fitQuelle !== letzterDiff) { fitQuelle = letzterDiff; zoomFit(false); }
     else { klemmen(ZIEL); kameraSetzen(ZIEL.x, ZIEL.y, ZIEL.z, false); }
@@ -3051,6 +3191,7 @@ fig-icon[size="small"] {
     try { $('segDarstellung').setAttribute('value', darstellung); } catch (e) {}
     $('vTitel').textContent = t('v.titel', { name: (letzterDiff && letzterDiff.name) || '' });
     $('scrubberZeile').hidden = !verbesserung;
+    legendeZeichnen();
     zoomPilleSetzen();
   }
   function renderDiff() {
@@ -3083,11 +3224,21 @@ fig-icon[size="small"] {
 
   function hoeheSetzen(h, melden) {
     buehneHoehe = Math.max(200, Math.min(600, Math.round(h)));
-    $('buehne').style.height = buehneHoehe + 'px';
+    const el = $('buehne');
+    el.style.height = buehneHoehe + 'px';
+    el.style.flex = 'none';
     if (leinwandMessen()) { klemmen(ZIEL); anstossen(false); }
     if (melden) send({ type: 'merkerSetzen', schluessel: 'buehneHoehe', wert: buehneHoehe });
   }
-  hoeheSetzen(buehneHoehe);
+  // Die Bühne misst sich selbst nach, wenn das Panel sie wachsen lässt.
+  if (typeof ResizeObserver === 'function') {
+    try {
+      new ResizeObserver(() => {
+        if (!letzterDiff) return;
+        if (leinwandMessen()) { klemmen(ZIEL); anstossen(false); }
+      }).observe($('buehne'));
+    } catch (e) {}
+  }
 
   // ---- Bedienung -----------------------------------------------------------
   $('segModus').addEventListener('change', e => {
@@ -3104,6 +3255,7 @@ fig-icon[size="small"] {
   $('chkVerbesserung').addEventListener('change', e => {
     verbesserung = !!e.target.checked;
     $('scrubberZeile').hidden = !verbesserung;
+    legendeZeichnen();
     blend = verbesserung ? Number($('blendRegler').value || 100) : 100;
     anstossen(false);
   });
@@ -3142,6 +3294,19 @@ fig-icon[size="small"] {
   });
   document.addEventListener('click', e => {
     if (!$('zoomPille').contains(e.target)) $('zoomMenu').hidden = true;
+  }, true);
+
+  // „⋯“ öffnet die beiden Schalter als fig-popup an seinem Knopf.
+  function mehrMenuSetzen(auf) {
+    const m = $('mehrMenu');
+    try { m.open = auf; } catch (e) { if (auf) m.setAttribute('open', 'true'); else m.removeAttribute('open'); }
+  }
+  $('btnMehr').addEventListener('click', e => {
+    e.stopPropagation();
+    mehrMenuSetzen(!$('mehrMenu').open);
+  });
+  document.addEventListener('click', e => {
+    if ($('mehrMenu').open && !$('mehrMenu').contains(e.target) && e.target !== $('btnMehr')) mehrMenuSetzen(false);
   }, true);
 
   // Höhengriff: 200–600 px, Merker `buehneHoehe`.
@@ -3233,8 +3398,10 @@ fig-icon[size="small"] {
       px = e.clientX; py = e.clientY; kx = ZIEL.x; ky = ZIEL.y;
       box.classList.add('zieht');
       box.setPointerCapture(e.pointerId);
+      const tk = titelUnter(d.x, d.y);
+      if (tk) { karteMittig(tk.i, true); e.preventDefault(); return; }
       const tr = kachelUnter(d.x, d.y);
-      if (tr) { aktiveKarte = tr.k.i; sprungAktiv(); anstossen(false); }
+      if (tr) { aktiveKarte = tr.k.i; anstossen(false); }
       e.preventDefault();
     });
     box.addEventListener('pointermove', e => {
@@ -3256,7 +3423,7 @@ fig-icon[size="small"] {
         const tr = kachelUnter(d.x, d.y);
         if (!tr) { hoverSetzen(null); return; }
         let text = t('px.koord', { x: tr.px, y: tr.py }), region = null;
-        if (markieren && (tr.ka.welche === 'neu' || tr.ka.welche === 'wisch')) {
+        if (markenAn() && (tr.ka.welche === 'neu' || tr.ka.welche === 'wisch')) {
           region = (tr.k.e.regionen || []).filter(r =>
             tr.px >= r.x && tr.py >= r.y && tr.px < r.x + r.w && tr.py < r.y + r.h)[0] || null;
           if (region) text = regionText(region);

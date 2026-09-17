@@ -133,3 +133,9 @@ The original single-file script (`code.v1.js`, kept as a reference).
 - Rückgängig-Button nach jedem Bau (Batch zählt je Icon herunter), Hauptthread nutzt figma.triggerUndo
 - Onboarding gekürzt, Illustrationen in Akzent + Grau, Slide 4 erklärt Kauf über das Figma-Konto (kein Lizenzschlüssel)
 - Lizenz-Block: „Status aktualisieren“; Rasterfehler der bestehenden Variante wird mitgemessen (gueteAlt)
+
+## Runde 5b — 2026-09-17
+
+- Vorschau kompakt: Werkzeugleiste eine Zeile, Bühne wächst mit dem Panel, Urteil und Kennzahlen unter der Bühne, Protokoll zugeklappt
+- Dritter Vergleichsmodus „Überlagern“: farbige Onionskin (unverändert grau, entfernt orange, hinzugekommen blau), Legende, Zeile „Veränderte Pixel“
+- Zahlenformat zentral (3 Nachkommastellen, Prozent ganzzahlig, Gleichstand als „unverändert“)

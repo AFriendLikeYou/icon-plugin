@@ -7,50 +7,33 @@
   /* ---- Fortschritt ------------------------------------------------------ */
   .fortschritt .zahl.rest { color: var(--figma-color-text-tertiary, #9a9aa0); }
 
-  /* ---- Vorschau: Kopf ---------------------------------------------------- */
-  /* Genau drei Textgrößen: 12 fett (Titel), 11 (Werte), 9,5 sekundär.
-     Abstände 12 und 8, Karten 1 px Rahmen und 8 px Radius. */
-  #diff .vkopf { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex: none; }
-  #diff .vkopf.zwei { gap: 8px; margin-top: 8px; }
-  #diff .vtitel { font-size: 12px; font-weight: 700; margin-right: auto;
+  /* ---- Vorschau: eine Werkzeugzeile (28 px) ------------------------------ */
+  /* Genau drei Textgrößen: 11 px fett (Titel), 10,5 px (Steuerung), 9,5 px
+     sekundär. Die Bühne ist der Hauptteil, alles andere bleibt schmal. */
+  #diff { gap: 4px; }
+  .vwerkzeug { display: flex; align-items: center; gap: 6px; height: 28px; flex: none; }
+  .vwerkzeug .vtitel { font-size: 11px; font-weight: 700; min-width: 40px;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  #diff .vkopf > fig-tooltip { display: inline-flex; }
-  #diff .vkopf fig-switch { font-size: 9.5px; white-space: nowrap; }
-  #segModus, #segDarstellung { flex: none; }
-  #diff .zoom { display: flex; align-items: center; gap: 4px; flex: none; }
-  #diff .zoom fig-button { min-width: 22px; font-size: 10px; }
-  #diff .grundknopf { min-width: 22px; }
-
-  .sprungleiste { display: flex; gap: 8px; flex: none; margin-top: 8px; flex-wrap: wrap; }
-  .sprungleiste[hidden] { display: none; }
-  .sprungleiste fig-button.sprung { font-size: 9.5px; height: 20px; border-radius: 10px; }
-  .sprungleiste fig-button.sprung.an {
-    background: var(--figma-color-bg-brand-tertiary, rgba(13,153,255,.14));
-    color: var(--figma-color-text-brand, #0d99ff); font-weight: 700; }
-
-  /* ---- Urteil-Zeile ------------------------------------------------------ */
-  fig-card.urteil { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-    cursor: default; flex: none; margin-top: 12px; padding: 12px;
+  .vwerkzeug .vfueller { flex: 1; min-width: 4px; }
+  .vwerkzeug > fig-tooltip { display: inline-flex; flex: none; }
+  .vwerkzeug fig-segmented-control { flex: none; height: 24px; font-size: 10.5px; }
+  .vwerkzeug fig-segment { font-size: 10.5px; white-space: nowrap; }
+  .vwerkzeug .iknopf { flex: none; width: 24px; min-width: 24px; height: 24px;
+    padding: 0; font-size: 11px; }
+  dialog.mehrmenu { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px;
     border: 1px solid var(--figma-color-border, #e3e3e6); border-radius: 8px;
-    background: var(--figma-color-bg, #fff); }
-  fig-card.urteil .utext { font-size: 11px; font-weight: 700; }
-  fig-card.urteil .upills { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
-  fig-card.urteil.gut { border-color: rgba(18,167,106,.5); background: rgba(18,167,106,.07); }
-  fig-card.urteil.gut .utext { color: #0e8a57; }
-  fig-card.urteil.warn { border-color: rgba(201,138,18,.5); background: rgba(201,138,18,.09); }
-  fig-card.urteil.warn .utext { color: #8a6208; }
-  .upill { font-size: 9.5px; font-weight: 700; padding: 2px 9px; border-radius: 10px;
-    white-space: nowrap; font-variant-numeric: tabular-nums;
-    background: var(--figma-color-bg-secondary, #f0f0f3);
-    color: var(--figma-color-text-secondary, #6e6e76); }
-  .upill.gut { background: rgba(18,167,106,.14); color: #0e8a57; }
-  .upill.warn { background: rgba(201,138,18,.16); color: #8a6208; }
+    background: var(--figma-color-bg, #fff); box-shadow: 0 4px 14px rgba(0,0,0,.18);
+    max-width: 240px; }
+  dialog.mehrmenu:not([open]) { display: none; }
+  dialog.mehrmenu fig-switch { font-size: 9.5px; white-space: nowrap; }
+  dialog.mehrmenu fig-tooltip { display: block; }
 
-  /* ---- Bühne: Canvas-Viewport -------------------------------------------- */
-  .buehne { position: relative; flex: none; margin-top: 12px; overflow: hidden;
-    border-radius: 8px; border: 1px solid var(--figma-color-border, #e3e3e6);
+  /* ---- Bühne: Canvas-Viewport, wächst mit dem Panel ---------------------- */
+  .buehne { position: relative; flex: 1 1 auto; min-height: 280px;
+    overflow: hidden; border-radius: 8px;
+    border: 1px solid var(--figma-color-border, #e3e3e6);
     background: var(--figma-color-bg-secondary, #fafafc);
-    touch-action: none; user-select: none; height: 320px; }
+    touch-action: none; user-select: none; }
   .buehne canvas { display: block; width: 100%; height: 100%; }
   .buehne.zieht { cursor: grabbing; }
   .buehne.raum { cursor: grab; }
@@ -77,29 +60,58 @@
     width: 26px; height: 3px; margin-left: -13px; border-radius: 2px;
     background: var(--figma-color-border, #d9d9de); }
 
-  .scrubberzeile { display: flex; align-items: center; gap: 12px; flex: none; margin-top: 8px; }
+  /* ---- Unter der Bühne: Regler, Urteil, Kennzahlen, Legende -------------- */
+  .scrubberzeile { display: flex; align-items: center; gap: 8px; flex: none; height: 22px; }
   .scrubberzeile[hidden] { display: none; }
-  .scrubberzeile .slabel { font-size: 9.5px; color: var(--figma-color-text-secondary, #6e6e76); }
+  .scrubberzeile .slabel { font-size: 9.5px; white-space: nowrap;
+    color: var(--figma-color-text-secondary, #6e6e76); }
   .scrubberzeile fig-slider { flex: 1; }
 
-  /* ---- Kennzahlen unter der Bühne ---------------------------------------- */
-  .kennzahlen { flex: none; margin-top: 12px; overflow-x: auto; }
-  table.kztab { border-collapse: collapse; font-size: 11px;
+  .urteilzeile { display: flex; align-items: center; gap: 8px; flex: none; height: 24px; }
+  .urteilzeile .upunkt { width: 7px; height: 7px; border-radius: 50%; flex: none;
+    background: var(--figma-color-text-tertiary, #9a9aa0); }
+  .urteilzeile.gut .upunkt { background: #12a76a; }
+  .urteilzeile.warn .upunkt { background: #c98a12; }
+  .urteilzeile .utext { font-size: 11px; font-weight: 700; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .urteilzeile.gut .utext { color: #0e8a57; }
+  .urteilzeile.warn .utext { color: #8a6208; }
+  .urteilzeile .upills { display: flex; gap: 6px; margin-left: auto; flex: none; }
+  .upill { font-size: 9.5px; font-weight: 700; padding: 1px 8px; border-radius: 9px;
+    white-space: nowrap; font-variant-numeric: tabular-nums;
+    background: var(--figma-color-bg-secondary, #f0f0f3);
+    color: var(--figma-color-text-secondary, #6e6e76); }
+  .upill.gut { background: rgba(18,167,106,.14); color: #0e8a57; }
+  .upill.warn { background: rgba(201,138,18,.16); color: #8a6208; }
+
+  .kennzahlen { flex: none; overflow-x: auto; }
+  table.kztab { border-collapse: collapse; font-size: 10px;
     font-variant-numeric: tabular-nums; width: 100%; }
-  table.kztab th { text-align: right; padding: 4px 8px; font-size: 11px; font-weight: 700;
-    color: var(--figma-color-text, #1c1c22);
+  table.kztab th { text-align: right; padding: 0 8px; height: 20px; font-size: 10px;
+    font-weight: 700; color: var(--figma-color-text, #1c1c22);
     border-bottom: 1px solid var(--figma-color-border, #e3e3e6); white-space: nowrap; }
   table.kztab th.gut { color: #0e8a57; } table.kztab th.warn { color: #8a6208; }
-  table.kztab td { text-align: right; padding: 4px 8px; white-space: nowrap;
+  table.kztab td { text-align: right; padding: 0 8px; height: 22px; white-space: nowrap;
     border-bottom: 1px solid color-mix(in srgb, var(--figma-color-border, #e3e3e6) 45%, transparent); }
   table.kztab td.kzlabel { text-align: left; font-size: 9.5px;
     color: var(--figma-color-text-secondary, #6e6e76); }
   table.kztab td.kzlabel fig-tooltip { display: inline-flex; }
-  .vlegende { flex: none; margin-top: 8px; font-size: 9.5px;
-    color: var(--figma-color-text-tertiary, #9a9aa0); }
+
+  .vlegende { flex: none; height: 16px; display: flex; align-items: center; gap: 12px;
+    font-size: 9.5px; color: var(--figma-color-text-tertiary, #9a9aa0); }
+  .vlegende .legstueck { display: inline-flex; align-items: center; gap: 5px; }
+  .vlegende .legfeld { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+  .vlegende .legfeld.weg { background: #f5a623; }
+  .vlegende .legfeld.dazu { background: var(--figma-color-bg-brand, #0d99ff); }
+  .vlegende .legfeld.beide { background: #3a3a44; }
+  #diff.dunkel .vlegende .legfeld.weg { background: #ffb84d; }
+  #diff.dunkel .vlegende .legfeld.beide { background: #d9d9de; }
+
 
   /* ---- Details ------------------------------------------------------------ */
-  fig-group.diffgruppe { margin: 12px 0 0; flex: none; }
+  fig-group.diffgruppe { margin: 0; flex: none; }
+  fig-group.diffgruppe > fig-header { padding: 2px 10px; min-height: 22px; }
+  fig-group.diffgruppe h3 { margin: 0; font-size: 10px; }
   .detailband { overflow-x: auto; padding-bottom: 4px; }
   .zelle .schau { border-radius: 6px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
   /* Pixelraster erst ab Zoom 6 — darunter wäre es nur Grau. */
@@ -119,7 +131,8 @@
   .pxzelle .wrap, .dfzelle .wrap { border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
 
   /* ---- Protokoll --------------------------------------------------------- */
-  .logkopf .logaktionen { display: flex; gap: 8px; align-items: center; }
+  .logaktionen { display: flex; gap: 6px; align-items: center; }
+  .logaktionen fig-button { font-size: 9px; height: 18px; letter-spacing: 0; text-transform: none; }
   .logfilter { display: flex; align-items: center; gap: 8px; padding: 0 2px 8px; }
   .logfilter #segLog { flex: none; }
   .logfilter fig-input-text { flex: 1; min-width: 0; }
