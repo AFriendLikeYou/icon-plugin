@@ -24,11 +24,10 @@
   .titelzeile #auswahl[hidden] { display: none; }
   .chip.klassechip.klickbar { cursor: pointer; }
   .chip.klassechip.klickbar:hover { background: var(--figma-color-bg-hover, #ebebef); }
-  dialog.klassemenu { display: flex; flex-direction: column; gap: 2px; padding: 8px;
-    border: 1px solid var(--figma-color-border, #e3e3e6); border-radius: 8px;
-    background: var(--figma-color-bg, #fff); box-shadow: 0 4px 14px rgba(0,0,0,.18);
-    max-width: 240px; }
-  dialog.klassemenu:not([open]) { display: none; }
+  /* Rahmen, Radius, Grund und Schatten kommen aus figui3 (--fig-popup-*);
+     hier steht nur das Innenleben. */
+  dialog.klassemenu { padding: 8px; max-width: 240px; }
+  dialog.klassemenu[open]:not([open=false]) { display: flex; flex-direction: column; gap: 2px; }
   dialog.klassemenu .kmkopf { font-size: 9.5px; line-height: 1.45; padding: 2px 4px 6px;
     color: var(--figma-color-text-secondary, #6e6e76); }
   dialog.klassemenu fig-button { justify-content: flex-start; height: 22px; font-size: 10.5px; }
@@ -40,16 +39,16 @@
   .aktionsreihe .iknopf { flex: none; width: 28px; min-width: 28px; height: 28px;
     padding: 0; font-size: 12px; }
   .iknopf { width: 24px; min-width: 24px; height: 24px; padding: 0; font-size: 11px; }
-  .iknopf.an { background: var(--figma-color-bg-brand-tertiary, rgba(13,153,255,.16));
-    color: var(--figma-color-text-brand, #0d99ff); }
+  /* figui3 setzt fuer [icon] flex-basis: var(--spacer-4) — unsere Maße dagegenhalten. */
+  fig-button.iknopf[icon] { width: 24px; min-width: 24px; flex-basis: 24px; }
+  .aktionsreihe fig-button.iknopf[icon] { width: 28px; min-width: 28px; flex-basis: 28px; }
+  .zoompille > fig-button[icon] { width: 22px; min-width: 22px; flex-basis: 22px; }
+  .logaktionen fig-button[icon] { width: 18px; min-width: 18px; flex-basis: 18px; }
   .iknopf[hidden] { display: none; }
   .abschnitt.optzeile { flex-direction: row; align-items: center; gap: 16px;
     height: auto; overflow: visible; }
-  dialog.mehrmenu { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px;
-    border: 1px solid var(--figma-color-border, #e3e3e6); border-radius: 8px;
-    background: var(--figma-color-bg, #fff); box-shadow: 0 4px 14px rgba(0,0,0,.18);
-    max-width: 240px; }
-  dialog.mehrmenu:not([open]) { display: none; }
+  dialog.mehrmenu { padding: 10px 12px; max-width: 240px; }
+  dialog.mehrmenu[open]:not([open=false]) { display: flex; flex-direction: column; gap: 8px; }
   dialog.mehrmenu fig-switch { font-size: 9.5px; white-space: nowrap; }
   dialog.mehrmenu fig-tooltip { display: block; }
   dialog.mehrmenu fig-button { justify-content: flex-start; height: 22px; font-size: 10.5px; }
@@ -86,12 +85,9 @@
   .ovl-ul fig-button { border-radius: 9px; font-variant-numeric: tabular-nums; }
   .zoompille > fig-button { font-size: 9.5px; height: 22px; border-radius: 9px;
     font-variant-numeric: tabular-nums; min-width: 22px; }
-  .zoommenu { position: absolute; right: 0; bottom: 30px; display: flex; flex-direction: column;
-    gap: 2px; padding: 4px; border-radius: 8px; min-width: 88px;
-    border: 1px solid var(--figma-color-border, #e3e3e6);
-    background: var(--figma-color-bg, #fff); box-shadow: 0 4px 14px rgba(0,0,0,.18); }
-  .zoommenu[hidden] { display: none; }
-  .zoommenu fig-button { font-size: 9.5px; height: 20px; justify-content: flex-start; }
+  dialog.zoommenu { padding: 4px; min-width: 88px; }
+  dialog.zoommenu[open]:not([open=false]) { display: flex; flex-direction: column; gap: 2px; }
+  dialog.zoommenu fig-button { font-size: 9.5px; height: 20px; justify-content: flex-start; }
   .bhgriff { position: absolute; left: 0; right: 0; bottom: 0; height: 8px;
     cursor: ns-resize; z-index: 3; }
   .bhgriff::after { content: ""; position: absolute; left: 50%; bottom: 2px;
@@ -111,19 +107,21 @@
 
   .urteilzeile .upunkt { width: 7px; height: 7px; border-radius: 50%; flex: none;
     background: var(--figma-color-text-tertiary, #9a9aa0); }
-  .urteilzeile.gut .upunkt { background: #12a76a; }
-  .urteilzeile.warn .upunkt { background: #c98a12; }
+  .urteilzeile.gut .upunkt { background: var(--figma-color-icon-success, #12a76a); }
+  .urteilzeile.warn .upunkt { background: var(--figma-color-icon-warning, #c98a12); }
   .urteilzeile .utext { font-size: 11px; font-weight: 700; min-width: 0;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .urteilzeile.gut .utext { color: #0e8a57; }
-  .urteilzeile.warn .utext { color: #8a6208; }
+  .urteilzeile.gut .utext { color: var(--figma-color-text-success, #0e8a57); }
+  .urteilzeile.warn .utext { color: var(--figma-color-text-warning, #8a6208); }
   .urteilzeile .upills { display: flex; gap: 6px; margin-left: auto; flex: none; }
   .upill { font-size: 9.5px; font-weight: 700; padding: 1px 8px; border-radius: 9px;
     white-space: nowrap; font-variant-numeric: tabular-nums;
     background: var(--figma-color-bg-secondary, #f0f0f3);
     color: var(--figma-color-text-secondary, #6e6e76); }
-  .upill.gut { background: rgba(18,167,106,.14); color: #0e8a57; }
-  .upill.warn { background: rgba(201,138,18,.16); color: #8a6208; }
+  .upill.gut { background: var(--figma-color-bg-success-tertiary, rgba(18,167,106,.14));
+    color: var(--figma-color-text-success, #0e8a57); }
+  .upill.warn { background: var(--figma-color-bg-warning-tertiary, rgba(201,138,18,.16));
+    color: var(--figma-color-text-warning, #8a6208); }
 
   .kennzahlen { display: block; overflow-x: auto; }
   table.kztab { border-collapse: collapse; font-size: 10px;
@@ -131,7 +129,8 @@
   table.kztab th { text-align: right; padding: 0 8px; height: 20px; font-size: 10px;
     font-weight: 700; color: var(--figma-color-text, #1c1c22);
     border-bottom: 1px solid var(--figma-color-border, #e3e3e6); white-space: nowrap; }
-  table.kztab th.gut { color: #0e8a57; } table.kztab th.warn { color: #8a6208; }
+  table.kztab th.gut { color: var(--figma-color-text-success, #0e8a57); }
+  table.kztab th.warn { color: var(--figma-color-text-warning, #8a6208); }
   table.kztab td { text-align: right; padding: 0 8px; height: 22px; white-space: nowrap;
     border-bottom: 1px solid color-mix(in srgb, var(--figma-color-border, #e3e3e6) 45%, transparent); }
   table.kztab td.kzlabel { text-align: left; font-size: 9.5px;
@@ -160,7 +159,7 @@
 
   /* ---- Hinting (aufklappbar, Standard zu) -------------------------------- */
   fig-group.hintgruppe { margin: 0; flex: none; }
-  fig-group.hintgruppe > fig-header { padding: 2px 10px; min-height: 22px; }
+  fig-group.hintgruppe > fig-header { --fig-header-height: 22px; padding: 2px 10px; }
   fig-group.hintgruppe h3 { margin: 0; font-size: 10px; }
   .hintband { overflow-x: auto; padding: 0 2px 4px; }
   .hintband table.kztab td { height: 20px; }
@@ -171,32 +170,33 @@
   .logfilter { display: flex; align-items: center; gap: 8px; padding: 0 2px 8px; }
   .logfilter #segLog { flex: none; }
   .logfilter fig-input-text { flex: 1; min-width: 0; }
-  .log { font: 10.5px/1.6 Inter, "Inter var", system-ui, sans-serif;
-    padding: 8px; white-space: normal; }
+  .log { font: 10.5px/1.6 var(--font-family); padding: 8px; white-space: normal; }
   .log > div + div { border-top: none; }
   fig-group.loggruppe { margin: 0 0 8px; box-shadow: none;
     border: 1px solid var(--figma-color-border, #e3e3e6); border-radius: 8px;
     background: var(--figma-color-bg, #fff); padding: 0; }
   fig-group.loggruppe:last-child { margin-bottom: 0; }
-  fig-group.loggruppe > fig-header { padding: 6px 10px; box-shadow: none;
-    display: flex; align-items: center; gap: 8px; min-height: 28px; }
+  /* Trennlinie unter dem Kopf faellt weg — das erledigt das borderless-Attribut. */
+  fig-group.loggruppe > fig-header { --fig-header-height: 28px; padding: 6px 10px; }
   fig-group.loggruppe h3.lgname { font-size: 10.5px; font-weight: 700; margin: 0;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   fig-group.loggruppe .lgzaehler { margin-left: auto; display: flex; gap: 4px; flex: none; }
   .lgchip { font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 9px;
     background: var(--figma-color-bg-secondary, #f0f0f3);
     color: var(--figma-color-text-secondary, #6e6e76); white-space: nowrap; }
-  .lgchip.err { background: rgba(194,64,42,.12); color: #c2402a; }
-  .lgchip.warn { background: rgba(201,138,18,.16); color: #8a6208; }
+  .lgchip.err { background: var(--figma-color-bg-danger-tertiary, rgba(194,64,42,.12));
+    color: var(--figma-color-text-danger, #c2402a); }
+  .lgchip.warn { background: var(--figma-color-bg-warning-tertiary, rgba(201,138,18,.16));
+    color: var(--figma-color-text-warning, #8a6208); }
   .logzeile { padding: 4px 10px 5px; }
   .logzeile + .logzeile { border-top: 1px solid color-mix(in srgb, var(--figma-color-border, #e3e3e6) 45%, transparent); }
   .logzeile .lztext { display: flex; align-items: baseline; gap: 6px; }
   .logzeile .lztext .txt { flex: 1; min-width: 0; word-break: break-word; }
   .logzeile .lzn { flex: none; }
   .logzeile .zeigen { flex: none; }
-  .logzeile.ok > .lztext > .txt::before   { content: "\2713 "; color: #12a76a; }
-  .logzeile.warn > .lztext > .txt::before { content: "\25B3 "; color: #c98a12; }
-  .logzeile.err > .lztext > .txt::before  { content: "\2715 "; color: #c2402a; }
+  .logzeile.ok > .lztext > .txt::before   { content: "\2713 "; color: var(--figma-color-icon-success, #12a76a); }
+  .logzeile.warn > .lztext > .txt::before { content: "\25B3 "; color: var(--figma-color-icon-warning, #c98a12); }
+  .logzeile.err > .lztext > .txt::before  { content: "\2715 "; color: var(--figma-color-icon-danger, #c2402a); }
   .logzeile .hinw { color: var(--figma-color-text-tertiary, #9a9aa0);
     padding-left: 14px; margin-top: 1px; }
 
@@ -209,9 +209,6 @@
   .filterzeile { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 2px; }
   .filterzeile[hidden] { display: none; }
   .filterzeile fig-button { font-size: 9.5px; height: 22px; border-radius: 11px; }
-  .filterzeile fig-button.fltaktiv {
-    background: var(--figma-color-bg-brand-tertiary, rgba(13,153,255,.14));
-    color: var(--figma-color-text-brand, #0d99ff); font-weight: 700; }
   .tabkopf { display: flex; align-items: center; gap: 12px; padding: 0 2px; }
   .tabkopf[hidden] { display: none; }
   .tabkopf fig-checkbox { font-size: 9.5px; }

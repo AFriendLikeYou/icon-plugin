@@ -158,7 +158,7 @@
 
     BER_FILTER.forEach(f => {
       const b = $(f[1]);
-      b.classList.toggle('fltaktiv', berichtFilter === f[0]);
+      b.toggleAttribute('selected', berichtFilter === f[0]);   // figui3: fig-button[selected]
     });
 
     const sichtbar = berichtSichtbar();

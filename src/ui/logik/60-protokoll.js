@@ -115,6 +115,7 @@
       grp.setAttribute('collapsible', '');
       grp.setAttribute('open', logZu[g.name] ? 'false' : 'true');
       const kopf = document.createElement('fig-header');
+      kopf.setAttribute('borderless', '');      // Trennlinie liefert der Gruppenrahmen
       const h3 = document.createElement('h3');
       h3.className = 'lgname';
       h3.textContent = g.name;

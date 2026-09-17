@@ -9,7 +9,7 @@
     overflow: hidden;
   }
   ::-webkit-scrollbar { width: 8px; height: 8px; }
-  ::-webkit-scrollbar-thumb { background: var(--figma-color-border, #e3e3e6); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb { background: var(--figma-color-bg-tertiary, #e3e3e6); border-radius: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
 
   .kopf { display: flex; align-items: center; gap: 10px; flex: none; }
@@ -34,13 +34,16 @@
   body > fig-tooltip { display: block; }
   .chip { flex: none; display: none; font-size: 9.5px; font-weight: 700;
     padding: 2px 9px; border-radius: 10px; white-space: nowrap; }
-  .chip.gruen { display: inline-block; background: #12a76a; color: #fff; }
-  .chip.rot { display: inline-block; background: #c2402a; color: #fff; }
+  .chip.gruen { display: inline-block; background: var(--figma-color-bg-success, #12a76a);
+    color: var(--figma-color-text-onsuccess, #fff); }
+  .chip.rot { display: inline-block; background: var(--figma-color-bg-danger, #c2402a);
+    color: var(--figma-color-text-ondanger, #fff); }
   .chip.blau { display: inline-block; background: var(--figma-color-bg-brand, #0d99ff);
     color: var(--figma-color-text-onbrand, #fff); }
   .chip.grau { display: inline-block; background: var(--figma-color-bg-secondary, #f0f0f3);
     color: var(--figma-color-text-secondary, #6e6e76); }
-  .chip.geraten { display: inline-block; background: rgba(201,138,18,.16); color: #8a6208; }
+  .chip.geraten { display: inline-block; background: var(--figma-color-bg-warning-tertiary, rgba(201,138,18,.16));
+    color: var(--figma-color-text-warning, #8a6208); }
 
   .reihe { display: flex; gap: 8px; }
   .reihe fig-button { flex: 1; }
@@ -69,8 +72,10 @@
   .fazit { display: none; border-radius: 6px; padding: 2px 8px; font-weight: 600;
     font-size: 10.5px; line-height: 18px; flex: none;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .fazit.gruen { display: block; background: rgba(18,167,106,.1); color: #0e8a57; }
-  .fazit.rot { display: block; background: rgba(194,64,42,.1); color: #c2402a; }
+  .fazit.gruen { display: block; background: var(--figma-color-bg-success-tertiary, rgba(18,167,106,.1));
+    color: var(--figma-color-text-success, #0e8a57); }
+  .fazit.rot { display: block; background: var(--figma-color-bg-danger-tertiary, rgba(194,64,42,.1));
+    color: var(--figma-color-text-danger, #c2402a); }
 
   /* Die Vorschau ist kein Kasten mehr, sondern eine Folge flacher Zeilen. */
   #diff { display: none; padding: 8px 0 0; }
@@ -81,16 +86,14 @@
   #diff.dunkel .buehne { background: #1e1e1e; }
   #diff.dunkel .ctlLabel { color: #b9b9c2; }
 
-  dialog[is="fig-dialog"] { max-width: 330px; border: none; border-radius: 10px; padding: 0; }
+  dialog[is="fig-dialog"] { --dialog-max-width: 330px; }
   dialog[is="fig-dialog"] p { margin: 0; line-height: 1.55; color: var(--figma-color-text-secondary, #6e6e76); }
   .dlg-text { padding: 4px 12px 8px; }
-  .dlg-aktionen { display: flex; gap: 8px; justify-content: flex-end; padding: 4px 12px 12px; }
   .dlg-wahl { display: flex; flex-direction: column; gap: 6px; padding: 8px 12px 4px; }
 
   fig-group.logblock { flex: none; margin: 0; border: 1px solid var(--figma-color-border, #e3e3e6);
     border-radius: 8px; background: var(--figma-color-bg, #fff); padding: 0; }
-  fig-group.logblock > fig-header { padding: 2px 10px; min-height: 22px;
-    display: flex; align-items: center; gap: 8px; }
+  fig-group.logblock > fig-header { --fig-header-height: 22px; padding: 2px 10px; }
   fig-group.logblock h3.logtitel { margin: 0; font-size: 9px; font-weight: 700;
     letter-spacing: .07em; text-transform: uppercase;
     color: var(--figma-color-text-secondary, #6e6e76); }
@@ -104,14 +107,14 @@
     white-space: pre-wrap; word-break: break-word;
   }
   .log > div + div { border-top: 1px solid color-mix(in srgb, var(--figma-color-border, #e3e3e6) 45%, transparent); }
-  .log .ok > .txt::before   { content: "\2713 "; color: #12a76a; }
-  .log .warn > .txt::before { content: "\25B3 "; color: #c98a12; }
-  .log .err > .txt::before  { content: "\2715 "; color: #c2402a; }
+  .log .ok > .txt::before   { content: "\2713 "; color: var(--figma-color-icon-success, #12a76a); }
+  .log .warn > .txt::before { content: "\25B3 "; color: var(--figma-color-icon-warning, #c98a12); }
+  .log .err > .txt::before  { content: "\2715 "; color: var(--figma-color-icon-danger, #c2402a); }
   .log .hinw { color: var(--figma-color-text-tertiary, #9a9aa0); padding-left: 14px; }
   .log .zeigen { color: var(--figma-color-text-brand, #0d99ff); cursor: pointer;
-    text-decoration: underline; margin-left: 6px; font-family: Inter, sans-serif; }
+    text-decoration: underline; margin-left: 6px; font-family: var(--font-family); }
   .log .leermeldung { color: var(--figma-color-text-tertiary, #9a9aa0); font-style: italic;
-    font-family: Inter, sans-serif; border: none; }
+    font-family: var(--font-family); border: none; }
 
   /* ---- Einstellungen ---------------------------------------------------- */
   .cfgblock { display: flex; flex-direction: column; gap: 8px;
@@ -136,7 +139,8 @@
   .keyblock { border-top: 1px dashed var(--figma-color-border, #e3e3e6); padding-top: 6px; }
   .keyzeile { display: flex; align-items: center; gap: 6px; }
   .keyviz { display: flex; gap: 12px; align-items: flex-start; margin: 2px 0 8px; }
-  .keyviz svg { flex: none; border-radius: 4px; border: 1px solid var(--figma-color-border, #e3e3e6); background: #fff; }
+  .keyviz svg { flex: none; border-radius: 4px; border: 1px solid var(--figma-color-border, #e3e3e6);
+    background: var(--figma-color-bg, #fff); }
   .keyviz .legende { display: flex; flex-direction: column; gap: 3px; font-size: 9.5px;
     color: var(--figma-color-text-secondary, #6e6e76); font-variant-numeric: tabular-nums; }
   .keyviz .legende span { display: flex; align-items: center; gap: 6px; }
@@ -145,12 +149,13 @@
   .keyzeile .keykurz { font-size: 9.5px; color: var(--figma-color-text-secondary, #6e6e76); font-variant-numeric: tabular-nums; }
   .keyhinweis { font-size: 9.5px; color: var(--figma-color-text-secondary, #6e6e76); margin: 2px 0 6px; line-height: 1.4; }
   .keyprop { font-size: 9.5px; align-self: flex-start; }
-  fig-input-number.unplausibel { outline: 1px solid #c98a12; border-radius: 4px; }
-  .ungueltig { outline: 1px solid #c2402a; outline-offset: 1px; border-radius: 4px; }
-  .warnung { outline: 1px solid #c98a12; outline-offset: 1px; border-radius: 4px; }
-  li.warnung { color: #c98a12; }
+  fig-input-number.unplausibel { outline: 1px solid var(--figma-color-border-warning-strong, #c98a12); border-radius: 4px; }
+  .ungueltig { outline: 1px solid var(--figma-color-border-danger-strong, #c2402a); outline-offset: 1px; border-radius: 4px; }
+  .warnung { outline: 1px solid var(--figma-color-border-warning-strong, #c98a12); outline-offset: 1px; border-radius: 4px; }
+  li.warnung { color: var(--figma-color-text-warning, #8a6208); }
   .fehlerbox { border-radius: 6px; padding: 7px 10px; font-size: 10px;
-    background: rgba(201,138,18,.12); color: #8a6208; }
+    background: var(--figma-color-bg-warning-tertiary, rgba(201,138,18,.12));
+    color: var(--figma-color-text-warning, #8a6208); }
   .fehlerbox ul { margin: 4px 0 0; padding-left: 16px; }
   .cfgaktionen { display: flex; gap: 8px; padding-bottom: 4px; }
   .cfgaktionen fig-button { flex: 1; }
@@ -170,7 +175,7 @@
   fig-group.kollektion { margin-bottom: 0; }
 
   /* ---- Trockenlauf-Dialog ------------------------------------------------ */
-  dialog[is="fig-dialog"].breit { max-width: 400px; }
+  dialog[is="fig-dialog"].breit { --dialog-max-width: 400px; }
   .plan-liste { max-height: 232px; overflow-y: auto; display: flex; flex-direction: column;
     gap: 4px; padding: 4px 12px 2px; }
   .plan-zeile { display: flex; align-items: baseline; gap: 7px; padding: 4px 7px;
@@ -179,7 +184,7 @@
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .plan-zeile .pdetail { flex: 1; min-width: 0; font-size: 9.5px;
     color: var(--figma-color-text-secondary, #6e6e76); }
-  .plan-zeile .pwarn { color: #8a6208; font-size: 9.5px; }
+  .plan-zeile .pwarn { color: var(--figma-color-text-warning, #8a6208); font-size: 9.5px; }
   .plan-zeile .pschloss { flex: none; }
   .plan-summe { padding: 7px 12px 0; font-size: 10px;
     color: var(--figma-color-text-secondary, #6e6e76); line-height: 1.5; }
@@ -210,8 +215,8 @@
   .kachelzahl { font-size: 15px; font-weight: 700; padding: 3px 4px 0;
     font-variant-numeric: tabular-nums; white-space: nowrap; }
   .trend { font-size: 10px; margin-left: 3px; }
-  .trend.gut { color: #12a76a; }
-  .trend.schlecht { color: #c2402a; }
+  .trend.gut { color: var(--figma-color-text-success, #12a76a); }
+  .trend.schlecht { color: var(--figma-color-text-danger, #c2402a); }
   .btabWrap { max-height: 330px; overflow: auto; flex: none;
     border: 1px solid var(--figma-color-border, #e3e3e6); border-radius: 8px; }
   .btabelle { width: 100%; border-collapse: collapse; font-size: 10px;
@@ -229,11 +234,13 @@
   .btabelle .treuewert { display: inline-block; min-width: 34px; padding: 1px 4px;
     border-radius: 3px; font-weight: 600; }
   .btabelle .aawert { color: var(--figma-color-text-secondary, #6e6e76); margin-left: 4px; }
-  .btabelle .keyja { color: #12a76a; } .btabelle .keynein { color: #c2402a; }
+  .btabelle .keyja { color: var(--figma-color-icon-success, #12a76a); }
+  .btabelle .keynein { color: var(--figma-color-icon-danger, #c2402a); }
   .berichtleer { color: var(--figma-color-text-tertiary, #9a9aa0); font-style: italic; padding: 4px 2px; }
   .berichtzeit { font-size: 9.5px; color: var(--figma-color-text-tertiary, #9a9aa0); }
   .warnliste { border-radius: 6px; padding: 7px 10px; font-size: 10px;
-    background: rgba(201,138,18,.12); color: #8a6208; }
+    background: var(--figma-color-bg-warning-tertiary, rgba(201,138,18,.12));
+    color: var(--figma-color-text-warning, #8a6208); }
   .warnliste ul { margin: 4px 0 0; padding-left: 16px; }
   .exportzeile { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .dateizeile { display: flex; align-items: center; gap: 8px; }

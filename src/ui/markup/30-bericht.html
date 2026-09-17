@@ -18,7 +18,7 @@
   <div class="legende" id="berichtLegende" hidden data-t="ber.legende"></div>
 
   <div class="filterzeile" id="berichtFilterZeile" hidden>
-    <fig-button id="fltAlle" variant="ghost" class="fltaktiv" data-t="flt.alle"></fig-button>
+    <fig-button id="fltAlle" variant="ghost" selected data-t="flt.alle"></fig-button>
     <fig-button id="fltOhneSet" variant="ghost" data-t="flt.ohneSet"></fig-button>
     <fig-button id="fltVeraltet" variant="ghost" data-t="flt.veraltet"></fig-button>
     <fig-button id="fltMass" variant="ghost" data-t="flt.mass"></fig-button>
@@ -47,7 +47,7 @@
         </fig-segmented-control>
       </fig-tooltip>
       <fig-tooltip data-t-text="tip.sprite" delay="400">
-        <fig-switch id="chkSprite"><span data-t="chk.sprite"></span></fig-switch>
+        <fig-switch id="chkSprite"><label data-t="chk.sprite"></label></fig-switch>
       </fig-tooltip>
     </div>
     <fig-button id="btnExport" variant="secondary" data-t="btn.svgExport"></fig-button>

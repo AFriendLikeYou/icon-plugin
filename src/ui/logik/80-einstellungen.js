@@ -53,8 +53,8 @@
     if (!cfgLokal.schreiben) cfgLokal.schreiben = {};
     cfgLokal.schreiben[name] = !!an;
   }
-  $('chkFrameUmwandeln').addEventListener('change', e => schreibenFeld('frameUmwandeln', e.target.checked));
-  $('chkStrokeHeim').addEventListener('change', e => schreibenFeld('strokeHeimAnlegen', e.target.checked));
+  $('chkFrameUmwandeln').addEventListener('change', e => schreibenFeld('frameUmwandeln', gehakt(e, 'chkFrameUmwandeln')));
+  $('chkStrokeHeim').addEventListener('change', e => schreibenFeld('strokeHeimAnlegen', gehakt(e, 'chkStrokeHeim')));
 
   // ---- Profil-Chooser ------------------------------------------------------
   function profilListeZeichnen() {
@@ -192,10 +192,10 @@
         + '<div class="rechts">'
         + '<fig-tooltip text="' + esc(t('tip.standard')) + '" delay="400">'
         + '<fig-radio name="std" class="rStd" value="' + i + '" data-pfad="' + pf + '.standard"'
-        + (g.standard ? ' checked' : '') + '><span>' + esc(t('cfg.standard')) + '</span></fig-radio>'
+        + (g.standard ? ' checked' : '') + '><label>' + esc(t('cfg.standard')) + '</label></fig-radio>'
         + '</fig-tooltip>'
-        + '<fig-button class="bWeg" variant="ghost" title="' + esc(t('cfg.entfernen')) + '"'
-        + (cfgLokal.groessen.length < 2 ? ' disabled' : '') + '>✕</fig-button>'
+        + '<fig-button class="bWeg" variant="ghost" icon title="' + esc(t('cfg.entfernen')) + '"'
+        + (cfgLokal.groessen.length < 2 ? ' disabled' : '') + '><fig-icon name="close"></fig-icon></fig-button>'
         + '</div></div>'
         + '<div class="gzeilen">'
         + gfeld(t('cfg.N'), 'tip.N', 'hilf.N',
@@ -286,7 +286,7 @@
         radiusSicht(karte, g);          // live: Radius/Mindestradius ein- und ausblenden
       });
       karte.querySelector('.rStd').addEventListener('change', e => {
-        if (!e.target.checked) return;
+        if (!(e && e.detail ? e.detail.checked : e.target.checked)) return;
         cfgLokal.groessen.forEach(x => { x.standard = false; });
         g.standard = true;
         groessenZeichnen();
@@ -585,7 +585,7 @@
     if (v && cfgLokal) cfgLokal.farbe.hex = String(v).slice(0, 7).toLowerCase();
   });
   $('chkAngleichen').addEventListener('change', e => {
-    if (cfgLokal) cfgLokal.farbe.sourceAngleichen = !!e.target.checked;
+    if (cfgLokal) cfgLokal.farbe.sourceAngleichen = gehakt(e, 'chkAngleichen');
   });
   $('varSuche').addEventListener('input', e => {
     farbSuche = String((e && e.detail != null) ? e.detail : $('varSuche').value || '');

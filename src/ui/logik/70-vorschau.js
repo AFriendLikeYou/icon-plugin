@@ -1214,7 +1214,7 @@
     try { $('segBasis').setAttribute('value', vglBasis); } catch (e) {}
     $('basisZeile').hidden = !(diffHatOhne() && nachQuelle() === 'neu');
     $('btnRetina').hidden = darstellung !== 'pixel';
-    $('btnRetina').classList.toggle('an', retina);
+    $('btnRetina').toggleAttribute('selected', retina);   // figui3: fig-button[selected]
     anhaken($('chkPunkte'), punkteAn);
     anhaken($('chkFlaechen'), flaechenAn);
     reglerZeichnen();
@@ -1365,19 +1365,26 @@
   $('zoomMinus').addEventListener('click', () => zoomMitte(stufeNehmen(-1), true));
   $('zoomPlus').addEventListener('click', () => zoomMitte(stufeNehmen(1), true));
   $('zoomFit').addEventListener('click', () => zoomFit(true));
-  $('zoomWertAnzeige').addEventListener('click', () => {
+  // Zoom-Stufen als fig-popup am Prozentknopf (wie die übrigen Menüs).
+  function zoomMenuSetzen(auf) {
     const m = $('zoomMenu');
-    m.hidden = !m.hidden;
+    try { m.open = auf; } catch (e) { if (auf) m.setAttribute('open', 'true'); else m.removeAttribute('open'); }
+  }
+  $('zoomWertAnzeige').addEventListener('click', e => {
+    e.stopPropagation();
+    zoomMenuSetzen(!$('zoomMenu').open);
   });
   $('zoomMenu').addEventListener('click', e => {
     const b = e.target.closest('[data-zoom]');
     if (!b) return;
-    $('zoomMenu').hidden = true;
+    zoomMenuSetzen(false);
     const v = b.getAttribute('data-zoom');
     if (v === 'fit') zoomFit(true); else zoomMitte(Number(v), true);
   });
   document.addEventListener('click', e => {
-    if (!$('zoomPille').contains(e.target)) $('zoomMenu').hidden = true;
+    if ($('zoomMenu').open && !$('zoomMenu').contains(e.target) && e.target !== $('zoomWertAnzeige')) {
+      zoomMenuSetzen(false);
+    }
   }, true);
 
   // „⋯“ öffnet die beiden Schalter als fig-popup an seinem Knopf.

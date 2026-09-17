@@ -59,6 +59,13 @@
     el.toggleAttribute('checked', !!an);
     try { el.checked = !!an; } catch (e) {}
   }
+  // figui3 meldet bei fig-checkbox/-radio/-switch über e.detail.checked;
+  // der Host-Getter dient nur als Rückfall.
+  function gehakt(e, id) {
+    if (e && e.detail && typeof e.detail.checked === 'boolean') return e.detail.checked;
+    const el = e && e.target ? e.target : $(id);
+    return !!(el && el.checked);
+  }
   function esc(s) {
     return String(s == null ? '' : s)
       .split('&').join('&amp;').split('<').join('&lt;')

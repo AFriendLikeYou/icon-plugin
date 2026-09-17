@@ -14,7 +14,7 @@ html,:host{width:100%;height:100%;color:var(--figma-color-text);-webkit-font-smo
     overflow: hidden;
   }
   ::-webkit-scrollbar { width: 8px; height: 8px; }
-  ::-webkit-scrollbar-thumb { background: var(--figma-color-border, #e3e3e6); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb { background: var(--figma-color-bg-tertiary, #e3e3e6); border-radius: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
 
   .kopf { display: flex; align-items: center; gap: 10px; flex: none; }
@@ -39,13 +39,16 @@ html,:host{width:100%;height:100%;color:var(--figma-color-text);-webkit-font-smo
   body > fig-tooltip { display: block; }
   .chip { flex: none; display: none; font-size: 9.5px; font-weight: 700;
     padding: 2px 9px; border-radius: 10px; white-space: nowrap; }
-  .chip.gruen { display: inline-block; background: #12a76a; color: #fff; }
-  .chip.rot { display: inline-block; background: #c2402a; color: #fff; }
+  .chip.gruen { display: inline-block; background: var(--figma-color-bg-success, #12a76a);
+    color: var(--figma-color-text-onsuccess, #fff); }
+  .chip.rot { display: inline-block; background: var(--figma-color-bg-danger, #c2402a);
+    color: var(--figma-color-text-ondanger, #fff); }
   .chip.blau { display: inline-block; background: var(--figma-color-bg-brand, #0d99ff);
     color: var(--figma-color-text-onbrand, #fff); }
   .chip.grau { display: inline-block; background: var(--figma-color-bg-secondary, #f0f0f3);
     color: var(--figma-color-text-secondary, #6e6e76); }
-  .chip.geraten { display: inline-block; background: rgba(201,138,18,.16); color: #8a6208; }
+  .chip.geraten { display: inline-block; background: var(--figma-color-bg-warning-tertiary, rgba(201,138,18,.16));
+    color: var(--figma-color-text-warning, #8a6208); }
 
   .reihe { display: flex; gap: 8px; }
   .reihe fig-button { flex: 1; }
@@ -74,8 +77,10 @@ html,:host{width:100%;height:100%;color:var(--figma-color-text);-webkit-font-smo
   .fazit { display: none; border-radius: 6px; padding: 2px 8px; font-weight: 600;
     font-size: 10.5px; line-height: 18px; flex: none;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .fazit.gruen { display: block; background: rgba(18,167,106,.1); color: #0e8a57; }
-  .fazit.rot { display: block; background: rgba(194,64,42,.1); color: #c2402a; }
+  .fazit.gruen { display: block; background: var(--figma-color-bg-success-tertiary, rgba(18,167,106,.1));
+    color: var(--figma-color-text-success, #0e8a57); }
+  .fazit.rot { display: block; background: var(--figma-color-bg-danger-tertiary, rgba(194,64,42,.1));
+    color: var(--figma-color-text-danger, #c2402a); }
 
   /* Die Vorschau ist kein Kasten mehr, sondern eine Folge flacher Zeilen. */
   #diff { display: none; padding: 8px 0 0; }
@@ -86,16 +91,14 @@ html,:host{width:100%;height:100%;color:var(--figma-color-text);-webkit-font-smo
   #diff.dunkel .buehne { background: #1e1e1e; }
   #diff.dunkel .ctlLabel { color: #b9b9c2; }
 
-  dialog[is="fig-dialog"] { max-width: 330px; border: none; border-radius: 10px; padding: 0; }
+  dialog[is="fig-dialog"] { --dialog-max-width: 330px; }
   dialog[is="fig-dialog"] p { margin: 0; line-height: 1.55; color: var(--figma-color-text-secondary, #6e6e76); }
   .dlg-text { padding: 4px 12px 8px; }
-  .dlg-aktionen { display: flex; gap: 8px; justify-content: flex-end; padding: 4px 12px 12px; }
   .dlg-wahl { display: flex; flex-direction: column; gap: 6px; padding: 8px 12px 4px; }
 
   fig-group.logblock { flex: none; margin: 0; border: 1px solid var(--figma-color-border, #e3e3e6);
     border-radius: 8px; background: var(--figma-color-bg, #fff); padding: 0; }
-  fig-group.logblock > fig-header { padding: 2px 10px; min-height: 22px;
-    display: flex; align-items: center; gap: 8px; }
+  fig-group.logblock > fig-header { --fig-header-height: 22px; padding: 2px 10px; }
   fig-group.logblock h3.logtitel { margin: 0; font-size: 9px; font-weight: 700;
     letter-spacing: .07em; text-transform: uppercase;
     color: var(--figma-color-text-secondary, #6e6e76); }
@@ -109,14 +112,14 @@ html,:host{width:100%;height:100%;color:var(--figma-color-text);-webkit-font-smo
     white-space: pre-wrap; word-break: break-word;
   }
   .log > div + div { border-top: 1px solid color-mix(in srgb, var(--figma-color-border, #e3e3e6) 45%, transparent); }
-  .log .ok > .txt::before   { content: "\2713 "; color: #12a76a; }
-  .log .warn > .txt::before { content: "\25B3 "; color: #c98a12; }
-  .log .err > .txt::before  { content: "\2715 "; color: #c2402a; }
+  .log .ok > .txt::before   { content: "\2713 "; color: var(--figma-color-icon-success, #12a76a); }
+  .log .warn > .txt::before { content: "\25B3 "; color: var(--figma-color-icon-warning, #c98a12); }
+  .log .err > .txt::before  { content: "\2715 "; color: var(--figma-color-icon-danger, #c2402a); }
   .log .hinw { color: var(--figma-color-text-tertiary, #9a9aa0); padding-left: 14px; }
   .log .zeigen { color: var(--figma-color-text-brand, #0d99ff); cursor: pointer;
-    text-decoration: underline; margin-left: 6px; font-family: Inter, sans-serif; }
+    text-decoration: underline; margin-left: 6px; font-family: var(--font-family); }
   .log .leermeldung { color: var(--figma-color-text-tertiary, #9a9aa0); font-style: italic;
-    font-family: Inter, sans-serif; border: none; }
+    font-family: var(--font-family); border: none; }
 
   /* ---- Einstellungen ---------------------------------------------------- */
   .cfgblock { display: flex; flex-direction: column; gap: 8px;
@@ -141,7 +144,8 @@ html,:host{width:100%;height:100%;color:var(--figma-color-text);-webkit-font-smo
   .keyblock { border-top: 1px dashed var(--figma-color-border, #e3e3e6); padding-top: 6px; }
   .keyzeile { display: flex; align-items: center; gap: 6px; }
   .keyviz { display: flex; gap: 12px; align-items: flex-start; margin: 2px 0 8px; }
-  .keyviz svg { flex: none; border-radius: 4px; border: 1px solid var(--figma-color-border, #e3e3e6); background: #fff; }
+  .keyviz svg { flex: none; border-radius: 4px; border: 1px solid var(--figma-color-border, #e3e3e6);
+    background: var(--figma-color-bg, #fff); }
   .keyviz .legende { display: flex; flex-direction: column; gap: 3px; font-size: 9.5px;
     color: var(--figma-color-text-secondary, #6e6e76); font-variant-numeric: tabular-nums; }
   .keyviz .legende span { display: flex; align-items: center; gap: 6px; }
@@ -150,12 +154,13 @@ html,:host{width:100%;height:100%;color:var(--figma-color-text);-webkit-font-smo
   .keyzeile .keykurz { font-size: 9.5px; color: var(--figma-color-text-secondary, #6e6e76); font-variant-numeric: tabular-nums; }
   .keyhinweis { font-size: 9.5px; color: var(--figma-color-text-secondary, #6e6e76); margin: 2px 0 6px; line-height: 1.4; }
   .keyprop { font-size: 9.5px; align-self: flex-start; }
-  fig-input-number.unplausibel { outline: 1px solid #c98a12; border-radius: 4px; }
-  .ungueltig { outline: 1px solid #c2402a; outline-offset: 1px; border-radius: 4px; }
-  .warnung { outline: 1px solid #c98a12; outline-offset: 1px; border-radius: 4px; }
-  li.warnung { color: #c98a12; }
+  fig-input-number.unplausibel { outline: 1px solid var(--figma-color-border-warning-strong, #c98a12); border-radius: 4px; }
+  .ungueltig { outline: 1px solid var(--figma-color-border-danger-strong, #c2402a); outline-offset: 1px; border-radius: 4px; }
+  .warnung { outline: 1px solid var(--figma-color-border-warning-strong, #c98a12); outline-offset: 1px; border-radius: 4px; }
+  li.warnung { color: var(--figma-color-text-warning, #8a6208); }
   .fehlerbox { border-radius: 6px; padding: 7px 10px; font-size: 10px;
-    background: rgba(201,138,18,.12); color: #8a6208; }
+    background: var(--figma-color-bg-warning-tertiary, rgba(201,138,18,.12));
+    color: var(--figma-color-text-warning, #8a6208); }
   .fehlerbox ul { margin: 4px 0 0; padding-left: 16px; }
   .cfgaktionen { display: flex; gap: 8px; padding-bottom: 4px; }
   .cfgaktionen fig-button { flex: 1; }
@@ -175,7 +180,7 @@ html,:host{width:100%;height:100%;color:var(--figma-color-text);-webkit-font-smo
   fig-group.kollektion { margin-bottom: 0; }
 
   /* ---- Trockenlauf-Dialog ------------------------------------------------ */
-  dialog[is="fig-dialog"].breit { max-width: 400px; }
+  dialog[is="fig-dialog"].breit { --dialog-max-width: 400px; }
   .plan-liste { max-height: 232px; overflow-y: auto; display: flex; flex-direction: column;
     gap: 4px; padding: 4px 12px 2px; }
   .plan-zeile { display: flex; align-items: baseline; gap: 7px; padding: 4px 7px;
@@ -184,7 +189,7 @@ html,:host{width:100%;height:100%;color:var(--figma-color-text);-webkit-font-smo
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .plan-zeile .pdetail { flex: 1; min-width: 0; font-size: 9.5px;
     color: var(--figma-color-text-secondary, #6e6e76); }
-  .plan-zeile .pwarn { color: #8a6208; font-size: 9.5px; }
+  .plan-zeile .pwarn { color: var(--figma-color-text-warning, #8a6208); font-size: 9.5px; }
   .plan-zeile .pschloss { flex: none; }
   .plan-summe { padding: 7px 12px 0; font-size: 10px;
     color: var(--figma-color-text-secondary, #6e6e76); line-height: 1.5; }
@@ -215,8 +220,8 @@ html,:host{width:100%;height:100%;color:var(--figma-color-text);-webkit-font-smo
   .kachelzahl { font-size: 15px; font-weight: 700; padding: 3px 4px 0;
     font-variant-numeric: tabular-nums; white-space: nowrap; }
   .trend { font-size: 10px; margin-left: 3px; }
-  .trend.gut { color: #12a76a; }
-  .trend.schlecht { color: #c2402a; }
+  .trend.gut { color: var(--figma-color-text-success, #12a76a); }
+  .trend.schlecht { color: var(--figma-color-text-danger, #c2402a); }
   .btabWrap { max-height: 330px; overflow: auto; flex: none;
     border: 1px solid var(--figma-color-border, #e3e3e6); border-radius: 8px; }
   .btabelle { width: 100%; border-collapse: collapse; font-size: 10px;
@@ -234,11 +239,13 @@ html,:host{width:100%;height:100%;color:var(--figma-color-text);-webkit-font-smo
   .btabelle .treuewert { display: inline-block; min-width: 34px; padding: 1px 4px;
     border-radius: 3px; font-weight: 600; }
   .btabelle .aawert { color: var(--figma-color-text-secondary, #6e6e76); margin-left: 4px; }
-  .btabelle .keyja { color: #12a76a; } .btabelle .keynein { color: #c2402a; }
+  .btabelle .keyja { color: var(--figma-color-icon-success, #12a76a); }
+  .btabelle .keynein { color: var(--figma-color-icon-danger, #c2402a); }
   .berichtleer { color: var(--figma-color-text-tertiary, #9a9aa0); font-style: italic; padding: 4px 2px; }
   .berichtzeit { font-size: 9.5px; color: var(--figma-color-text-tertiary, #9a9aa0); }
   .warnliste { border-radius: 6px; padding: 7px 10px; font-size: 10px;
-    background: rgba(201,138,18,.12); color: #8a6208; }
+    background: var(--figma-color-bg-warning-tertiary, rgba(201,138,18,.12));
+    color: var(--figma-color-text-warning, #8a6208); }
   .warnliste ul { margin: 4px 0 0; padding-left: 16px; }
   .exportzeile { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .dateizeile { display: flex; align-items: center; gap: 8px; }
@@ -258,9 +265,12 @@ html,:host{width:100%;height:100%;color:var(--figma-color-text);-webkit-font-smo
 .chip.lizchip { display: none; }
 .chip.lizchip.an { display: inline-block; background: var(--figma-color-bg-secondary, #f0f0f3);
   color: var(--figma-color-text-secondary, #6e6e76); }
-.chip.lizchip.voll { background: rgba(18,167,106,.14); color: #0e8a57; }
-.chip.lizchip.test { background: rgba(201,138,18,.16); color: #8a6208; }
-.chip.lizchip.aus { background: rgba(194,64,42,.12); color: #c2402a; }
+.chip.lizchip.voll { background: var(--figma-color-bg-success-tertiary, rgba(18,167,106,.14));
+  color: var(--figma-color-text-success, #0e8a57); }
+.chip.lizchip.test { background: var(--figma-color-bg-warning-tertiary, rgba(201,138,18,.16));
+  color: var(--figma-color-text-warning, #8a6208); }
+.chip.lizchip.aus { background: var(--figma-color-bg-danger-tertiary, rgba(194,64,42,.12));
+  color: var(--figma-color-text-danger, #c2402a); }
 
 /* ---- Felder mit Hilfezeile ---------------------------------------------- */
 .feldgruppe { display: flex; flex-direction: column; gap: 3px; }
@@ -341,7 +351,9 @@ fig-group.kollektion .varzeile { padding-left: 8px; }
   border: 1px solid var(--figma-color-border, #cfcfd6); display: flex;
   align-items: center; justify-content: center; font-size: 8px; color: transparent; }
 .eszeile.fertig { color: var(--figma-color-text, #1c1c22); }
-.eszeile.fertig .haken { background: #12a76a; border-color: #12a76a; color: #fff; }
+.eszeile.fertig .haken { background: var(--figma-color-bg-success, #12a76a);
+  border-color: var(--figma-color-border-success-strong, #12a76a);
+  color: var(--figma-color-text-onsuccess, #fff); }
 
 /* ---- Bühne: Onboarding-Slideshow und Lizenz-Screen ---------------------- */
 dialog[is="fig-dialog"].buehne-dlg {
@@ -404,7 +416,7 @@ dialog[is="fig-dialog"].buehne-dlg.welcome .bh-bild { height: 240px; padding: 0;
   background: var(--figma-color-bg-secondary, #fafafc);
   font-size: 10px; line-height: 1.5; color: var(--figma-color-text-secondary, #6e6e76); }
 .bh-hinweis .punkt { width: 7px; height: 7px; border-radius: 50%; flex: none;
-  margin-top: 4px; background: #12a76a; }
+  margin-top: 4px; background: var(--figma-color-bg-success, #12a76a); }
 
 /* ---- Umfang-Umschalter, Fazit, Rückgängig (Runde 5, §34/§35) ------------ */
 .umfang { flex: none; width: 100%; height: 24px; }
@@ -450,11 +462,10 @@ dialog[is="fig-dialog"].buehne-dlg.welcome .bh-bild { height: 240px; padding: 0;
   .titelzeile #auswahl[hidden] { display: none; }
   .chip.klassechip.klickbar { cursor: pointer; }
   .chip.klassechip.klickbar:hover { background: var(--figma-color-bg-hover, #ebebef); }
-  dialog.klassemenu { display: flex; flex-direction: column; gap: 2px; padding: 8px;
-    border: 1px solid var(--figma-color-border, #e3e3e6); border-radius: 8px;
-    background: var(--figma-color-bg, #fff); box-shadow: 0 4px 14px rgba(0,0,0,.18);
-    max-width: 240px; }
-  dialog.klassemenu:not([open]) { display: none; }
+  /* Rahmen, Radius, Grund und Schatten kommen aus figui3 (--fig-popup-*);
+     hier steht nur das Innenleben. */
+  dialog.klassemenu { padding: 8px; max-width: 240px; }
+  dialog.klassemenu[open]:not([open=false]) { display: flex; flex-direction: column; gap: 2px; }
   dialog.klassemenu .kmkopf { font-size: 9.5px; line-height: 1.45; padding: 2px 4px 6px;
     color: var(--figma-color-text-secondary, #6e6e76); }
   dialog.klassemenu fig-button { justify-content: flex-start; height: 22px; font-size: 10.5px; }
@@ -466,16 +477,16 @@ dialog[is="fig-dialog"].buehne-dlg.welcome .bh-bild { height: 240px; padding: 0;
   .aktionsreihe .iknopf { flex: none; width: 28px; min-width: 28px; height: 28px;
     padding: 0; font-size: 12px; }
   .iknopf { width: 24px; min-width: 24px; height: 24px; padding: 0; font-size: 11px; }
-  .iknopf.an { background: var(--figma-color-bg-brand-tertiary, rgba(13,153,255,.16));
-    color: var(--figma-color-text-brand, #0d99ff); }
+  /* figui3 setzt fuer [icon] flex-basis: var(--spacer-4) — unsere Maße dagegenhalten. */
+  fig-button.iknopf[icon] { width: 24px; min-width: 24px; flex-basis: 24px; }
+  .aktionsreihe fig-button.iknopf[icon] { width: 28px; min-width: 28px; flex-basis: 28px; }
+  .zoompille > fig-button[icon] { width: 22px; min-width: 22px; flex-basis: 22px; }
+  .logaktionen fig-button[icon] { width: 18px; min-width: 18px; flex-basis: 18px; }
   .iknopf[hidden] { display: none; }
   .abschnitt.optzeile { flex-direction: row; align-items: center; gap: 16px;
     height: auto; overflow: visible; }
-  dialog.mehrmenu { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px;
-    border: 1px solid var(--figma-color-border, #e3e3e6); border-radius: 8px;
-    background: var(--figma-color-bg, #fff); box-shadow: 0 4px 14px rgba(0,0,0,.18);
-    max-width: 240px; }
-  dialog.mehrmenu:not([open]) { display: none; }
+  dialog.mehrmenu { padding: 10px 12px; max-width: 240px; }
+  dialog.mehrmenu[open]:not([open=false]) { display: flex; flex-direction: column; gap: 8px; }
   dialog.mehrmenu fig-switch { font-size: 9.5px; white-space: nowrap; }
   dialog.mehrmenu fig-tooltip { display: block; }
   dialog.mehrmenu fig-button { justify-content: flex-start; height: 22px; font-size: 10.5px; }
@@ -512,12 +523,9 @@ dialog[is="fig-dialog"].buehne-dlg.welcome .bh-bild { height: 240px; padding: 0;
   .ovl-ul fig-button { border-radius: 9px; font-variant-numeric: tabular-nums; }
   .zoompille > fig-button { font-size: 9.5px; height: 22px; border-radius: 9px;
     font-variant-numeric: tabular-nums; min-width: 22px; }
-  .zoommenu { position: absolute; right: 0; bottom: 30px; display: flex; flex-direction: column;
-    gap: 2px; padding: 4px; border-radius: 8px; min-width: 88px;
-    border: 1px solid var(--figma-color-border, #e3e3e6);
-    background: var(--figma-color-bg, #fff); box-shadow: 0 4px 14px rgba(0,0,0,.18); }
-  .zoommenu[hidden] { display: none; }
-  .zoommenu fig-button { font-size: 9.5px; height: 20px; justify-content: flex-start; }
+  dialog.zoommenu { padding: 4px; min-width: 88px; }
+  dialog.zoommenu[open]:not([open=false]) { display: flex; flex-direction: column; gap: 2px; }
+  dialog.zoommenu fig-button { font-size: 9.5px; height: 20px; justify-content: flex-start; }
   .bhgriff { position: absolute; left: 0; right: 0; bottom: 0; height: 8px;
     cursor: ns-resize; z-index: 3; }
   .bhgriff::after { content: ""; position: absolute; left: 50%; bottom: 2px;
@@ -537,19 +545,21 @@ dialog[is="fig-dialog"].buehne-dlg.welcome .bh-bild { height: 240px; padding: 0;
 
   .urteilzeile .upunkt { width: 7px; height: 7px; border-radius: 50%; flex: none;
     background: var(--figma-color-text-tertiary, #9a9aa0); }
-  .urteilzeile.gut .upunkt { background: #12a76a; }
-  .urteilzeile.warn .upunkt { background: #c98a12; }
+  .urteilzeile.gut .upunkt { background: var(--figma-color-icon-success, #12a76a); }
+  .urteilzeile.warn .upunkt { background: var(--figma-color-icon-warning, #c98a12); }
   .urteilzeile .utext { font-size: 11px; font-weight: 700; min-width: 0;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .urteilzeile.gut .utext { color: #0e8a57; }
-  .urteilzeile.warn .utext { color: #8a6208; }
+  .urteilzeile.gut .utext { color: var(--figma-color-text-success, #0e8a57); }
+  .urteilzeile.warn .utext { color: var(--figma-color-text-warning, #8a6208); }
   .urteilzeile .upills { display: flex; gap: 6px; margin-left: auto; flex: none; }
   .upill { font-size: 9.5px; font-weight: 700; padding: 1px 8px; border-radius: 9px;
     white-space: nowrap; font-variant-numeric: tabular-nums;
     background: var(--figma-color-bg-secondary, #f0f0f3);
     color: var(--figma-color-text-secondary, #6e6e76); }
-  .upill.gut { background: rgba(18,167,106,.14); color: #0e8a57; }
-  .upill.warn { background: rgba(201,138,18,.16); color: #8a6208; }
+  .upill.gut { background: var(--figma-color-bg-success-tertiary, rgba(18,167,106,.14));
+    color: var(--figma-color-text-success, #0e8a57); }
+  .upill.warn { background: var(--figma-color-bg-warning-tertiary, rgba(201,138,18,.16));
+    color: var(--figma-color-text-warning, #8a6208); }
 
   .kennzahlen { display: block; overflow-x: auto; }
   table.kztab { border-collapse: collapse; font-size: 10px;
@@ -557,7 +567,8 @@ dialog[is="fig-dialog"].buehne-dlg.welcome .bh-bild { height: 240px; padding: 0;
   table.kztab th { text-align: right; padding: 0 8px; height: 20px; font-size: 10px;
     font-weight: 700; color: var(--figma-color-text, #1c1c22);
     border-bottom: 1px solid var(--figma-color-border, #e3e3e6); white-space: nowrap; }
-  table.kztab th.gut { color: #0e8a57; } table.kztab th.warn { color: #8a6208; }
+  table.kztab th.gut { color: var(--figma-color-text-success, #0e8a57); }
+  table.kztab th.warn { color: var(--figma-color-text-warning, #8a6208); }
   table.kztab td { text-align: right; padding: 0 8px; height: 22px; white-space: nowrap;
     border-bottom: 1px solid color-mix(in srgb, var(--figma-color-border, #e3e3e6) 45%, transparent); }
   table.kztab td.kzlabel { text-align: left; font-size: 9.5px;
@@ -586,7 +597,7 @@ dialog[is="fig-dialog"].buehne-dlg.welcome .bh-bild { height: 240px; padding: 0;
 
   /* ---- Hinting (aufklappbar, Standard zu) -------------------------------- */
   fig-group.hintgruppe { margin: 0; flex: none; }
-  fig-group.hintgruppe > fig-header { padding: 2px 10px; min-height: 22px; }
+  fig-group.hintgruppe > fig-header { --fig-header-height: 22px; padding: 2px 10px; }
   fig-group.hintgruppe h3 { margin: 0; font-size: 10px; }
   .hintband { overflow-x: auto; padding: 0 2px 4px; }
   .hintband table.kztab td { height: 20px; }
@@ -597,32 +608,33 @@ dialog[is="fig-dialog"].buehne-dlg.welcome .bh-bild { height: 240px; padding: 0;
   .logfilter { display: flex; align-items: center; gap: 8px; padding: 0 2px 8px; }
   .logfilter #segLog { flex: none; }
   .logfilter fig-input-text { flex: 1; min-width: 0; }
-  .log { font: 10.5px/1.6 Inter, "Inter var", system-ui, sans-serif;
-    padding: 8px; white-space: normal; }
+  .log { font: 10.5px/1.6 var(--font-family); padding: 8px; white-space: normal; }
   .log > div + div { border-top: none; }
   fig-group.loggruppe { margin: 0 0 8px; box-shadow: none;
     border: 1px solid var(--figma-color-border, #e3e3e6); border-radius: 8px;
     background: var(--figma-color-bg, #fff); padding: 0; }
   fig-group.loggruppe:last-child { margin-bottom: 0; }
-  fig-group.loggruppe > fig-header { padding: 6px 10px; box-shadow: none;
-    display: flex; align-items: center; gap: 8px; min-height: 28px; }
+  /* Trennlinie unter dem Kopf faellt weg — das erledigt das borderless-Attribut. */
+  fig-group.loggruppe > fig-header { --fig-header-height: 28px; padding: 6px 10px; }
   fig-group.loggruppe h3.lgname { font-size: 10.5px; font-weight: 700; margin: 0;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   fig-group.loggruppe .lgzaehler { margin-left: auto; display: flex; gap: 4px; flex: none; }
   .lgchip { font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 9px;
     background: var(--figma-color-bg-secondary, #f0f0f3);
     color: var(--figma-color-text-secondary, #6e6e76); white-space: nowrap; }
-  .lgchip.err { background: rgba(194,64,42,.12); color: #c2402a; }
-  .lgchip.warn { background: rgba(201,138,18,.16); color: #8a6208; }
+  .lgchip.err { background: var(--figma-color-bg-danger-tertiary, rgba(194,64,42,.12));
+    color: var(--figma-color-text-danger, #c2402a); }
+  .lgchip.warn { background: var(--figma-color-bg-warning-tertiary, rgba(201,138,18,.16));
+    color: var(--figma-color-text-warning, #8a6208); }
   .logzeile { padding: 4px 10px 5px; }
   .logzeile + .logzeile { border-top: 1px solid color-mix(in srgb, var(--figma-color-border, #e3e3e6) 45%, transparent); }
   .logzeile .lztext { display: flex; align-items: baseline; gap: 6px; }
   .logzeile .lztext .txt { flex: 1; min-width: 0; word-break: break-word; }
   .logzeile .lzn { flex: none; }
   .logzeile .zeigen { flex: none; }
-  .logzeile.ok > .lztext > .txt::before   { content: "\2713 "; color: #12a76a; }
-  .logzeile.warn > .lztext > .txt::before { content: "\25B3 "; color: #c98a12; }
-  .logzeile.err > .lztext > .txt::before  { content: "\2715 "; color: #c2402a; }
+  .logzeile.ok > .lztext > .txt::before   { content: "\2713 "; color: var(--figma-color-icon-success, #12a76a); }
+  .logzeile.warn > .lztext > .txt::before { content: "\25B3 "; color: var(--figma-color-icon-warning, #c98a12); }
+  .logzeile.err > .lztext > .txt::before  { content: "\2715 "; color: var(--figma-color-icon-danger, #c2402a); }
   .logzeile .hinw { color: var(--figma-color-text-tertiary, #9a9aa0);
     padding-left: 14px; margin-top: 1px; }
 
@@ -635,9 +647,6 @@ dialog[is="fig-dialog"].buehne-dlg.welcome .bh-bild { height: 240px; padding: 0;
   .filterzeile { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 2px; }
   .filterzeile[hidden] { display: none; }
   .filterzeile fig-button { font-size: 9.5px; height: 22px; border-radius: 11px; }
-  .filterzeile fig-button.fltaktiv {
-    background: var(--figma-color-bg-brand-tertiary, rgba(13,153,255,.14));
-    color: var(--figma-color-text-brand, #0d99ff); font-weight: 700; }
   .tabkopf { display: flex; align-items: center; gap: 12px; padding: 0 2px; }
   .tabkopf[hidden] { display: none; }
   .tabkopf fig-checkbox { font-size: 9.5px; }
@@ -689,7 +698,7 @@ dialog[is="fig-dialog"].buehne-dlg.welcome .bh-bild { height: 240px; padding: 0;
     <div class="titelzeile" id="titelzeile">
       <span class="tname" id="auswahlText"></span>
       <span class="chip grau klassechip" id="klasseChip"></span>
-      <dialog is="fig-popup" id="klasseMenu" anchor="#klasseChip" position="bottom-start" class="klassemenu">
+      <dialog is="fig-popup" id="klasseMenu" anchor="#klasseChip" position="bottom left" class="klassemenu">
         <div class="kmkopf" data-t="klasse.erkl"></div>
         <fig-button variant="ghost" data-klasse="Square">Square</fig-button>
         <fig-button variant="ghost" data-klasse="Circular">Circular</fig-button>
@@ -713,10 +722,10 @@ dialog[is="fig-dialog"].buehne-dlg.welcome .bh-bild { height: 240px; padding: 0;
         <fig-button id="btnAudit" variant="secondary" data-t="btn.audit"></fig-button>
       </span>
       <fig-tooltip data-t-text="tip.undo" delay="400">
-        <fig-button id="btnUndo" variant="secondary" class="iknopf" disabled>↶</fig-button>
+        <fig-button id="btnUndo" variant="secondary" class="iknopf" icon disabled><fig-icon name="reset"></fig-icon></fig-button>
       </fig-tooltip>
-      <fig-button id="btnMehrIcon" variant="ghost" class="iknopf" data-t-title="v.mehr">⋯</fig-button>
-      <dialog is="fig-popup" id="mehrIconMenu" anchor="#btnMehrIcon" position="bottom-end" class="mehrmenu">
+      <fig-button id="btnMehrIcon" variant="ghost" class="iknopf" icon data-t-title="v.mehr"><fig-icon name="more"></fig-icon></fig-button>
+      <dialog is="fig-popup" id="mehrIconMenu" anchor="#btnMehrIcon" position="bottom right" class="mehrmenu">
         <fig-button id="btnBeispielMenu" variant="ghost" data-t="btn.beispiel"></fig-button>
         <fig-button id="btnRundgangMenu" variant="ghost" data-t="ob.rundgang"></fig-button>
       </dialog>
@@ -726,10 +735,10 @@ dialog[is="fig-dialog"].buehne-dlg.welcome .bh-bild { height: 240px; padding: 0;
   <!-- (d) Schnellschalter ------------------------------------------------- -->
   <div class="abschnitt optzeile">
     <fig-tooltip data-t-text="tip.snap" delay="400">
-      <fig-switch id="chkSnap"><span data-t="chk.snap"></span></fig-switch>
+      <fig-switch id="chkSnap"><label data-t="chk.snap"></label></fig-switch>
     </fig-tooltip>
     <fig-tooltip data-t-text="tip.stroke" delay="400">
-      <fig-switch id="chkStroke"><span data-t="chk.stroke"></span></fig-switch>
+      <fig-switch id="chkStroke"><label data-t="chk.stroke"></label></fig-switch>
     </fig-tooltip>
   </div>
 
@@ -772,33 +781,33 @@ dialog[is="fig-dialog"].buehne-dlg.welcome .bh-bild { height: 240px; padding: 0;
         <fig-button id="zoomFit" variant="ghost" class="iknopf" data-t-title="zoom.fitTitel" data-t="zoom.fitKurz"></fig-button>
         <fig-button id="btnGrund" variant="ghost" class="iknopf" data-t-title="v.grund">◐</fig-button>
         <fig-button id="btnRetina" variant="ghost" class="iknopf" data-t-title="tip.retina">2×</fig-button>
-        <fig-button id="btnMehr" variant="ghost" class="iknopf" data-t-title="v.mehr">⋯</fig-button>
-        <dialog is="fig-popup" id="mehrMenu" anchor="#btnMehr" position="bottom-end" class="mehrmenu">
+        <fig-button id="btnMehr" variant="ghost" class="iknopf" icon data-t-title="v.mehr"><fig-icon name="more"></fig-icon></fig-button>
+        <dialog is="fig-popup" id="mehrMenu" anchor="#btnMehr" position="bottom right" class="mehrmenu">
           <fig-tooltip data-t-text="tip.punkte" delay="400">
-            <fig-switch id="chkPunkte" checked><span data-t="v.punkte"></span></fig-switch>
+            <fig-switch id="chkPunkte" checked><label data-t="v.punkte"></label></fig-switch>
           </fig-tooltip>
           <fig-tooltip data-t-text="tip.flaechen" delay="400">
-            <fig-switch id="chkFlaechen"><span data-t="v.flaechen"></span></fig-switch>
+            <fig-switch id="chkFlaechen"><label data-t="v.flaechen"></label></fig-switch>
           </fig-tooltip>
         </dialog>
       </div>
 
       <div class="ovl ovl-ul" id="undoPille" hidden>
-        <fig-button id="btnUndoBuehne" variant="ghost"></fig-button>
+        <fig-button id="btnUndoBuehne" variant="ghost"><fig-icon slot="prepend" name="reset" size="small"></fig-icon><span id="btnUndoBuehneText"></span></fig-button>
       </div>
 
       <div class="ovl ovl-ur zoompille" id="zoomPille">
-        <fig-button id="zoomMinus" variant="ghost" data-t-title="zoom.kleiner">−</fig-button>
+        <fig-button id="zoomMinus" variant="ghost" icon data-t-title="zoom.kleiner"><fig-icon name="minus" size="small"></fig-icon></fig-button>
         <fig-button id="zoomWertAnzeige" variant="ghost">100 %</fig-button>
-        <fig-button id="zoomPlus" variant="ghost" data-t-title="zoom.groesser">+</fig-button>
-        <div class="zoommenu" id="zoomMenu" hidden>
-          <fig-button variant="ghost" data-zoom="fit" data-t="zoom.fit"></fig-button>
-          <fig-button variant="ghost" data-zoom="1">100 %</fig-button>
-          <fig-button variant="ghost" data-zoom="2">200 %</fig-button>
-          <fig-button variant="ghost" data-zoom="4">400 %</fig-button>
-          <fig-button variant="ghost" data-zoom="8">800 %</fig-button>
-        </div>
+        <fig-button id="zoomPlus" variant="ghost" icon data-t-title="zoom.groesser"><fig-icon name="add" size="small"></fig-icon></fig-button>
       </div>
+      <dialog is="fig-popup" id="zoomMenu" anchor="#zoomWertAnzeige" position="top right" class="zoommenu">
+        <fig-button variant="ghost" data-zoom="fit" data-t="zoom.fit"></fig-button>
+        <fig-button variant="ghost" data-zoom="1">100 %</fig-button>
+        <fig-button variant="ghost" data-zoom="2">200 %</fig-button>
+        <fig-button variant="ghost" data-zoom="4">400 %</fig-button>
+        <fig-button variant="ghost" data-zoom="8">800 %</fig-button>
+      </dialog>
 
       <div class="bhgriff" id="bhGriff" data-t-title="v.hoehe"></div>
     </div>
@@ -838,7 +847,7 @@ dialog[is="fig-dialog"].buehne-dlg.welcome .bh-bild { height: 240px; padding: 0;
       <h3 class="logtitel" data-t="log.titel"></h3>
       <span class="logaktionen" id="logAktionen">
         <fig-tooltip data-t-text="tip.undo" delay="400">
-          <fig-button id="btnUndoLog" variant="ghost" hidden>↶</fig-button>
+          <fig-button id="btnUndoLog" variant="ghost" icon hidden><fig-icon name="reset" size="small"></fig-icon></fig-button>
         </fig-tooltip>
         <fig-button id="btnKopieren" variant="ghost" data-t="btn.kopieren"></fig-button>
         <fig-button id="btnLeeren" variant="ghost" data-t="btn.leeren"></fig-button>
@@ -879,7 +888,7 @@ dialog[is="fig-dialog"].buehne-dlg.welcome .bh-bild { height: 240px; padding: 0;
   <div class="legende" id="berichtLegende" hidden data-t="ber.legende"></div>
 
   <div class="filterzeile" id="berichtFilterZeile" hidden>
-    <fig-button id="fltAlle" variant="ghost" class="fltaktiv" data-t="flt.alle"></fig-button>
+    <fig-button id="fltAlle" variant="ghost" selected data-t="flt.alle"></fig-button>
     <fig-button id="fltOhneSet" variant="ghost" data-t="flt.ohneSet"></fig-button>
     <fig-button id="fltVeraltet" variant="ghost" data-t="flt.veraltet"></fig-button>
     <fig-button id="fltMass" variant="ghost" data-t="flt.mass"></fig-button>
@@ -908,7 +917,7 @@ dialog[is="fig-dialog"].buehne-dlg.welcome .bh-bild { height: 240px; padding: 0;
         </fig-segmented-control>
       </fig-tooltip>
       <fig-tooltip data-t-text="tip.sprite" delay="400">
-        <fig-switch id="chkSprite"><span data-t="chk.sprite"></span></fig-switch>
+        <fig-switch id="chkSprite"><label data-t="chk.sprite"></label></fig-switch>
       </fig-tooltip>
     </div>
     <fig-button id="btnExport" variant="secondary" data-t="btn.svgExport"></fig-button>
@@ -968,10 +977,10 @@ dialog[is="fig-dialog"].buehne-dlg.welcome .bh-bild { height: 240px; padding: 0;
   <div class="cfgblock">
     <div class="gruppenkopf" data-t="cfg.schreiben"></div>
     <fig-tooltip data-t-text="tip.frameUmwandeln" delay="400">
-      <fig-switch id="chkFrameUmwandeln" data-pfad="schreiben.frameUmwandeln"><span data-t="chk.frameUmwandeln"></span></fig-switch>
+      <fig-switch id="chkFrameUmwandeln" data-pfad="schreiben.frameUmwandeln"><label data-t="chk.frameUmwandeln"></label></fig-switch>
     </fig-tooltip>
     <fig-tooltip data-t-text="tip.strokeHeimAnlegen" delay="400">
-      <fig-switch id="chkStrokeHeim" data-pfad="schreiben.strokeHeimAnlegen"><span data-t="chk.strokeHeimAnlegen"></span></fig-switch>
+      <fig-switch id="chkStrokeHeim" data-pfad="schreiben.strokeHeimAnlegen"><label data-t="chk.strokeHeimAnlegen"></label></fig-switch>
     </fig-tooltip>
   </div>
 
@@ -1037,7 +1046,7 @@ dialog[is="fig-dialog"].buehne-dlg.welcome .bh-bild { height: 240px; padding: 0;
     </div>
     <div id="angleichenZeile" hidden>
       <fig-tooltip data-t-text="tip.angleichen" delay="400">
-        <fig-switch id="chkAngleichen" data-pfad="farbe.sourceAngleichen"><span data-t="farbe.angleichen"></span></fig-switch>
+        <fig-switch id="chkAngleichen" data-pfad="farbe.sourceAngleichen"><label data-t="farbe.angleichen"></label></fig-switch>
       </fig-tooltip>
     </div>
   </div>
@@ -1097,26 +1106,29 @@ dialog[is="fig-dialog"].buehne-dlg.welcome .bh-bild { height: 240px; padding: 0;
   <div class="plan-liste" id="planListe"></div>
   <div class="plan-summe" id="planSumme"></div>
   <div class="dlg-schalter" id="planSchalterZeile" hidden>
-    <fig-switch id="chkTrockenEinzel"><span data-t="chk.trockenlaufEinzel"></span></fig-switch>
+    <fig-switch id="chkTrockenEinzel"><label data-t="chk.trockenlaufEinzel"></label></fig-switch>
   </div>
-  <div class="dlg-aktionen">
+  <fig-footer>
     <fig-button id="planAbbruch" variant="secondary" data-t="btn.abbrechen"></fig-button>
     <fig-button id="planOk" variant="destructive" data-t="btn.planBauen"></fig-button>
-  </div>
+  </fig-footer>
 </dialog>
 
 <dialog is="fig-dialog" modal id="dlgReset">
   <fig-header dialog-header><h3 data-t="dlg.reset.titel"></h3></fig-header>
   <div class="dlg-text"><p data-t="dlg.reset.text"></p></div>
   <div class="profilliste" id="profilListe"></div>
-  <div class="dlg-aktionen">
+  <fig-footer>
     <fig-button id="resetAbbruch" variant="secondary" data-t="btn.abbrechen"></fig-button>
     <fig-button id="resetOk" variant="destructive" data-t="btn.resetOk"></fig-button>
-  </div>
+  </fig-footer>
 </dialog>
 
 <!-- Onboarding: Slideshow, Anatomie wie der Lizenz-Screen ------------------ -->
-<dialog is="fig-dialog" modal class="buehne-dlg" id="dlgOnboarding">
+<dialog is="fig-dialog" modal class="buehne-dlg" id="dlgOnboarding" aria-labelledby="obTitel">
+  <!-- fig-dialog ergänzt sonst selbst einen Kopf mit Titel und Schließkreuz
+       (ensureHeader); die Bühne bringt beides mit, darum ein leerer Kopf. -->
+  <fig-header dialog-header hidden></fig-header>
   <div class="bh-bild" id="obBild"></div>
   <fig-button id="obSkip" variant="ghost" class="bh-x"></fig-button>
   <div class="bh-text">
@@ -1133,9 +1145,10 @@ dialog[is="fig-dialog"].buehne-dlg.welcome .bh-bild { height: 240px; padding: 0;
 </dialog>
 
 <!-- Lizenz-/Paywall-Screen: überlagert das Panel vollflächig --------------- -->
-<dialog is="fig-dialog" modal class="buehne-dlg" id="dlgPaywall">
+<dialog is="fig-dialog" modal class="buehne-dlg" id="dlgPaywall" aria-labelledby="pwTitel">
+  <fig-header dialog-header hidden></fig-header>
   <div class="bh-bild" id="pwBild"></div>
-  <fig-button id="pwZu" variant="ghost" class="bh-x">✕</fig-button>
+  <fig-button id="pwZu" variant="ghost" class="bh-x" icon><fig-icon name="close"></fig-icon></fig-button>
   <div class="bh-text">
     <h2 class="bh-titel" id="pwTitel"></h2>
     <p class="bh-fliess" id="pwText"></p>
@@ -1412,6 +1425,13 @@ fig-icon[size="small"] {
     if (!el) return;
     el.toggleAttribute('checked', !!an);
     try { el.checked = !!an; } catch (e) {}
+  }
+  // figui3 meldet bei fig-checkbox/-radio/-switch über e.detail.checked;
+  // der Host-Getter dient nur als Rückfall.
+  function gehakt(e, id) {
+    if (e && e.detail && typeof e.detail.checked === 'boolean') return e.detail.checked;
+    const el = e && e.target ? e.target : $(id);
+    return !!(el && el.checked);
   }
   function esc(s) {
     return String(s == null ? '' : s)
@@ -1794,7 +1814,7 @@ fig-icon[size="small"] {
     l.hidden = undoRest <= 0;
     aus(l, beschaeftigt);
     if (p) p.hidden = undoRest <= 0;
-    if (s) { s.textContent = '↶ ' + text; aus(s, beschaeftigt); }
+    if (s) { $('btnUndoBuehneText').textContent = text; aus(s, beschaeftigt); }
   }
   function rueckgaengig() {
     if (undoRest <= 0 || beschaeftigt) return;
@@ -1947,7 +1967,7 @@ fig-icon[size="small"] {
     bauenSenden(planUmfang);
   });
   $('chkTrockenEinzel').addEventListener('change', e => {
-    trockenlaufEinzel = !!e.target.checked;
+    trockenlaufEinzel = gehakt(e, 'chkTrockenEinzel');
     einstellungMelden();
   });
 
@@ -2105,6 +2125,7 @@ fig-icon[size="small"] {
       grp.setAttribute('collapsible', '');
       grp.setAttribute('open', logZu[g.name] ? 'false' : 'true');
       const kopf = document.createElement('fig-header');
+      kopf.setAttribute('borderless', '');      // Trennlinie liefert der Gruppenrahmen
       const h3 = document.createElement('h3');
       h3.className = 'lgname';
       h3.textContent = g.name;
@@ -3392,7 +3413,7 @@ fig-icon[size="small"] {
     try { $('segBasis').setAttribute('value', vglBasis); } catch (e) {}
     $('basisZeile').hidden = !(diffHatOhne() && nachQuelle() === 'neu');
     $('btnRetina').hidden = darstellung !== 'pixel';
-    $('btnRetina').classList.toggle('an', retina);
+    $('btnRetina').toggleAttribute('selected', retina);   // figui3: fig-button[selected]
     anhaken($('chkPunkte'), punkteAn);
     anhaken($('chkFlaechen'), flaechenAn);
     reglerZeichnen();
@@ -3543,19 +3564,26 @@ fig-icon[size="small"] {
   $('zoomMinus').addEventListener('click', () => zoomMitte(stufeNehmen(-1), true));
   $('zoomPlus').addEventListener('click', () => zoomMitte(stufeNehmen(1), true));
   $('zoomFit').addEventListener('click', () => zoomFit(true));
-  $('zoomWertAnzeige').addEventListener('click', () => {
+  // Zoom-Stufen als fig-popup am Prozentknopf (wie die übrigen Menüs).
+  function zoomMenuSetzen(auf) {
     const m = $('zoomMenu');
-    m.hidden = !m.hidden;
+    try { m.open = auf; } catch (e) { if (auf) m.setAttribute('open', 'true'); else m.removeAttribute('open'); }
+  }
+  $('zoomWertAnzeige').addEventListener('click', e => {
+    e.stopPropagation();
+    zoomMenuSetzen(!$('zoomMenu').open);
   });
   $('zoomMenu').addEventListener('click', e => {
     const b = e.target.closest('[data-zoom]');
     if (!b) return;
-    $('zoomMenu').hidden = true;
+    zoomMenuSetzen(false);
     const v = b.getAttribute('data-zoom');
     if (v === 'fit') zoomFit(true); else zoomMitte(Number(v), true);
   });
   document.addEventListener('click', e => {
-    if (!$('zoomPille').contains(e.target)) $('zoomMenu').hidden = true;
+    if ($('zoomMenu').open && !$('zoomMenu').contains(e.target) && e.target !== $('zoomWertAnzeige')) {
+      zoomMenuSetzen(false);
+    }
   }, true);
 
   // „⋯“ öffnet die beiden Schalter als fig-popup an seinem Knopf.
@@ -3769,8 +3797,8 @@ fig-icon[size="small"] {
     if (!cfgLokal.schreiben) cfgLokal.schreiben = {};
     cfgLokal.schreiben[name] = !!an;
   }
-  $('chkFrameUmwandeln').addEventListener('change', e => schreibenFeld('frameUmwandeln', e.target.checked));
-  $('chkStrokeHeim').addEventListener('change', e => schreibenFeld('strokeHeimAnlegen', e.target.checked));
+  $('chkFrameUmwandeln').addEventListener('change', e => schreibenFeld('frameUmwandeln', gehakt(e, 'chkFrameUmwandeln')));
+  $('chkStrokeHeim').addEventListener('change', e => schreibenFeld('strokeHeimAnlegen', gehakt(e, 'chkStrokeHeim')));
 
   // ---- Profil-Chooser ------------------------------------------------------
   function profilListeZeichnen() {
@@ -3908,10 +3936,10 @@ fig-icon[size="small"] {
         + '<div class="rechts">'
         + '<fig-tooltip text="' + esc(t('tip.standard')) + '" delay="400">'
         + '<fig-radio name="std" class="rStd" value="' + i + '" data-pfad="' + pf + '.standard"'
-        + (g.standard ? ' checked' : '') + '><span>' + esc(t('cfg.standard')) + '</span></fig-radio>'
+        + (g.standard ? ' checked' : '') + '><label>' + esc(t('cfg.standard')) + '</label></fig-radio>'
         + '</fig-tooltip>'
-        + '<fig-button class="bWeg" variant="ghost" title="' + esc(t('cfg.entfernen')) + '"'
-        + (cfgLokal.groessen.length < 2 ? ' disabled' : '') + '>✕</fig-button>'
+        + '<fig-button class="bWeg" variant="ghost" icon title="' + esc(t('cfg.entfernen')) + '"'
+        + (cfgLokal.groessen.length < 2 ? ' disabled' : '') + '><fig-icon name="close"></fig-icon></fig-button>'
         + '</div></div>'
         + '<div class="gzeilen">'
         + gfeld(t('cfg.N'), 'tip.N', 'hilf.N',
@@ -4002,7 +4030,7 @@ fig-icon[size="small"] {
         radiusSicht(karte, g);          // live: Radius/Mindestradius ein- und ausblenden
       });
       karte.querySelector('.rStd').addEventListener('change', e => {
-        if (!e.target.checked) return;
+        if (!(e && e.detail ? e.detail.checked : e.target.checked)) return;
         cfgLokal.groessen.forEach(x => { x.standard = false; });
         g.standard = true;
         groessenZeichnen();
@@ -4301,7 +4329,7 @@ fig-icon[size="small"] {
     if (v && cfgLokal) cfgLokal.farbe.hex = String(v).slice(0, 7).toLowerCase();
   });
   $('chkAngleichen').addEventListener('change', e => {
-    if (cfgLokal) cfgLokal.farbe.sourceAngleichen = !!e.target.checked;
+    if (cfgLokal) cfgLokal.farbe.sourceAngleichen = gehakt(e, 'chkAngleichen');
   });
   $('varSuche').addEventListener('input', e => {
     farbSuche = String((e && e.detail != null) ? e.detail : $('varSuche').value || '');
@@ -4885,7 +4913,7 @@ fig-icon[size="small"] {
 
     BER_FILTER.forEach(f => {
       const b = $(f[1]);
-      b.classList.toggle('fltaktiv', berichtFilter === f[0]);
+      b.toggleAttribute('selected', berichtFilter === f[0]);   // figui3: fig-button[selected]
     });
 
     const sichtbar = berichtSichtbar();

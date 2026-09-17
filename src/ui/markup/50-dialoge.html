@@ -4,26 +4,29 @@
   <div class="plan-liste" id="planListe"></div>
   <div class="plan-summe" id="planSumme"></div>
   <div class="dlg-schalter" id="planSchalterZeile" hidden>
-    <fig-switch id="chkTrockenEinzel"><span data-t="chk.trockenlaufEinzel"></span></fig-switch>
+    <fig-switch id="chkTrockenEinzel"><label data-t="chk.trockenlaufEinzel"></label></fig-switch>
   </div>
-  <div class="dlg-aktionen">
+  <fig-footer>
     <fig-button id="planAbbruch" variant="secondary" data-t="btn.abbrechen"></fig-button>
     <fig-button id="planOk" variant="destructive" data-t="btn.planBauen"></fig-button>
-  </div>
+  </fig-footer>
 </dialog>
 
 <dialog is="fig-dialog" modal id="dlgReset">
   <fig-header dialog-header><h3 data-t="dlg.reset.titel"></h3></fig-header>
   <div class="dlg-text"><p data-t="dlg.reset.text"></p></div>
   <div class="profilliste" id="profilListe"></div>
-  <div class="dlg-aktionen">
+  <fig-footer>
     <fig-button id="resetAbbruch" variant="secondary" data-t="btn.abbrechen"></fig-button>
     <fig-button id="resetOk" variant="destructive" data-t="btn.resetOk"></fig-button>
-  </div>
+  </fig-footer>
 </dialog>
 
 <!-- Onboarding: Slideshow, Anatomie wie der Lizenz-Screen ------------------ -->
-<dialog is="fig-dialog" modal class="buehne-dlg" id="dlgOnboarding">
+<dialog is="fig-dialog" modal class="buehne-dlg" id="dlgOnboarding" aria-labelledby="obTitel">
+  <!-- fig-dialog ergänzt sonst selbst einen Kopf mit Titel und Schließkreuz
+       (ensureHeader); die Bühne bringt beides mit, darum ein leerer Kopf. -->
+  <fig-header dialog-header hidden></fig-header>
   <div class="bh-bild" id="obBild"></div>
   <fig-button id="obSkip" variant="ghost" class="bh-x"></fig-button>
   <div class="bh-text">
@@ -40,9 +43,10 @@
 </dialog>
 
 <!-- Lizenz-/Paywall-Screen: überlagert das Panel vollflächig --------------- -->
-<dialog is="fig-dialog" modal class="buehne-dlg" id="dlgPaywall">
+<dialog is="fig-dialog" modal class="buehne-dlg" id="dlgPaywall" aria-labelledby="pwTitel">
+  <fig-header dialog-header hidden></fig-header>
   <div class="bh-bild" id="pwBild"></div>
-  <fig-button id="pwZu" variant="ghost" class="bh-x">✕</fig-button>
+  <fig-button id="pwZu" variant="ghost" class="bh-x" icon><fig-icon name="close"></fig-icon></fig-button>
   <div class="bh-text">
     <h2 class="bh-titel" id="pwTitel"></h2>
     <p class="bh-fliess" id="pwText"></p>

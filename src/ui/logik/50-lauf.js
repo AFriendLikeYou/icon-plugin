@@ -35,7 +35,7 @@
     l.hidden = undoRest <= 0;
     aus(l, beschaeftigt);
     if (p) p.hidden = undoRest <= 0;
-    if (s) { s.textContent = '↶ ' + text; aus(s, beschaeftigt); }
+    if (s) { $('btnUndoBuehneText').textContent = text; aus(s, beschaeftigt); }
   }
   function rueckgaengig() {
     if (undoRest <= 0 || beschaeftigt) return;
@@ -188,7 +188,7 @@
     bauenSenden(planUmfang);
   });
   $('chkTrockenEinzel').addEventListener('change', e => {
-    trockenlaufEinzel = !!e.target.checked;
+    trockenlaufEinzel = gehakt(e, 'chkTrockenEinzel');
     einstellungMelden();
   });
 

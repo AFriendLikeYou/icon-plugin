@@ -11,9 +11,12 @@
 .chip.lizchip { display: none; }
 .chip.lizchip.an { display: inline-block; background: var(--figma-color-bg-secondary, #f0f0f3);
   color: var(--figma-color-text-secondary, #6e6e76); }
-.chip.lizchip.voll { background: rgba(18,167,106,.14); color: #0e8a57; }
-.chip.lizchip.test { background: rgba(201,138,18,.16); color: #8a6208; }
-.chip.lizchip.aus { background: rgba(194,64,42,.12); color: #c2402a; }
+.chip.lizchip.voll { background: var(--figma-color-bg-success-tertiary, rgba(18,167,106,.14));
+  color: var(--figma-color-text-success, #0e8a57); }
+.chip.lizchip.test { background: var(--figma-color-bg-warning-tertiary, rgba(201,138,18,.16));
+  color: var(--figma-color-text-warning, #8a6208); }
+.chip.lizchip.aus { background: var(--figma-color-bg-danger-tertiary, rgba(194,64,42,.12));
+  color: var(--figma-color-text-danger, #c2402a); }
 
 /* ---- Felder mit Hilfezeile ---------------------------------------------- */
 .feldgruppe { display: flex; flex-direction: column; gap: 3px; }
@@ -94,7 +97,9 @@ fig-group.kollektion .varzeile { padding-left: 8px; }
   border: 1px solid var(--figma-color-border, #cfcfd6); display: flex;
   align-items: center; justify-content: center; font-size: 8px; color: transparent; }
 .eszeile.fertig { color: var(--figma-color-text, #1c1c22); }
-.eszeile.fertig .haken { background: #12a76a; border-color: #12a76a; color: #fff; }
+.eszeile.fertig .haken { background: var(--figma-color-bg-success, #12a76a);
+  border-color: var(--figma-color-border-success-strong, #12a76a);
+  color: var(--figma-color-text-onsuccess, #fff); }
 
 /* ---- Bühne: Onboarding-Slideshow und Lizenz-Screen ---------------------- */
 dialog[is="fig-dialog"].buehne-dlg {
@@ -157,7 +162,7 @@ dialog[is="fig-dialog"].buehne-dlg.welcome .bh-bild { height: 240px; padding: 0;
   background: var(--figma-color-bg-secondary, #fafafc);
   font-size: 10px; line-height: 1.5; color: var(--figma-color-text-secondary, #6e6e76); }
 .bh-hinweis .punkt { width: 7px; height: 7px; border-radius: 50%; flex: none;
-  margin-top: 4px; background: #12a76a; }
+  margin-top: 4px; background: var(--figma-color-bg-success, #12a76a); }
 
 /* ---- Umfang-Umschalter, Fazit, Rückgängig (Runde 5, §34/§35) ------------ */
 .umfang { flex: none; width: 100%; height: 24px; }
