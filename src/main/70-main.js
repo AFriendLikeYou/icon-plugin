@@ -144,7 +144,12 @@ figma.ui.onmessage = async m => {
     }
 
     if (m.type === 'farbenListen') {
-      ui(Object.assign({ type: 'farben' }, await farbenListen()));
+      const fl = await farbenListen();
+      ui(Object.assign({ type: 'farben' }, fl));
+      const dg = fl.diagnose || {};
+      if (dg.bibFehler) melden('warn', 'BIBLIOTHEK_UNZUGAENGLICH', { grund: dg.bibFehler });
+      else if (!dg.kollektionen) melden('info', 'KEINE_BIBLIOTHEKEN', { lokal: fl.lokal.length });
+      (dg.kollektionsFehler || []).forEach(z => logZeile('warn', z));
       ui({ type: 'fertig' });
       return;
     }

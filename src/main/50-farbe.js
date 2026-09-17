@@ -52,21 +52,24 @@ async function farbenListen() {
   } catch (e) {}
 
   const bibliotheken = [];
+  const diagnose = { bibFehler: null, kollektionen: 0, kollektionsFehler: [] };
   try {
+    if (!figma.teamLibrary) throw new Error('figma.teamLibrary fehlt — Berechtigung "teamlibrary" im Manifest?');
     const kolls = await figma.teamLibrary.getAvailableLibraryVariableCollectionsAsync();
+    diagnose.kollektionen = kolls.length;
     for (const k of kolls) {
       let vars = [];
       try {
         const alle = await figma.teamLibrary.getVariablesInLibraryCollectionAsync(k.key);
         vars = alle.filter(v => v.resolvedType === 'COLOR').map(v => ({ key: v.key, name: v.name }));
-      } catch (e) {}
+      } catch (e) { diagnose.kollektionsFehler.push(k.name + ': ' + (e && e.message)); }
       if (vars.length) bibliotheken.push({
         kollektionKey: k.key, kollektion: k.name, bibliothek: k.libraryName, variablen: vars
       });
     }
-  } catch (e) {}
+  } catch (e) { diagnose.bibFehler = (e && e.message) || String(e); }
 
-  return { lokal: lokal, bibliotheken: bibliotheken };
+  return { lokal: lokal, bibliotheken: bibliotheken, diagnose: diagnose };
 }
 
 // key → id → Name. Ergebnis landet in CTX.farbVariable.

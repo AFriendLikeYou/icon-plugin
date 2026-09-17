@@ -349,7 +349,8 @@ const WOERTER = {
     'farbe.variable': 'Variable',
     'farbe.suche': 'Variable suchen …',
     'farbe.lokal': 'Lokale Variablen',
-    'farbe.leer': 'Keine Farbvariablen gefunden.',
+    'farbe.leer': 'Keine Farbvariablen gefunden. Library-Variablen erscheinen nur, wenn die Library in diesem File aktiviert ist (Assets → Libraries). Details im Protokoll.',
+    'farbe.aktualisieren': 'Aktualisieren',
     'farbe.laden': 'Variablen werden geladen …',
     'farbe.angleichen': 'Source-Farbe angleichen',
     'farbe.gewaehlt': 'Gewählt',
@@ -467,7 +468,8 @@ const WOERTER = {
     'farbe.variable': 'Variable',
     'farbe.suche': 'Search variable …',
     'farbe.lokal': 'Local variables',
-    'farbe.leer': 'No color variables found.',
+    'farbe.leer': 'No color variables found. Library variables only appear when the library is enabled in this file (Assets → Libraries). See the log for details.',
+    'farbe.aktualisieren': 'Refresh',
     'farbe.laden': 'Loading variables …',
     'farbe.angleichen': 'Match source color',
     'farbe.gewaehlt': 'Selected',
@@ -666,7 +668,10 @@ const markup = `
       <fig-input-color id="inpHex" alpha="false" data-pfad="farbe.hex"></fig-input-color>
     </div>
     <div id="farbeVariable" hidden>
-      <fig-input-text id="varSuche" type="search" class="varsuche" data-t-ph="farbe.suche"></fig-input-text>
+      <div class="reihe" style="align-items:center">
+        <fig-input-text id="varSuche" type="search" class="varsuche" data-t-ph="farbe.suche" style="flex:1"></fig-input-text>
+        <fig-button id="btnFarbenNeu" variant="ghost" data-t="farbe.aktualisieren" style="flex:none"></fig-button>
+      </div>
       <div class="varliste" id="varListe"></div>
       <div class="gewaehltzeile" id="varGewaehlt" hidden>
         <span class="ctlLabel" data-t="farbe.gewaehlt"></span>
@@ -1522,11 +1527,12 @@ const logik = `
   });
 
   // ---- Farbe ---------------------------------------------------------------
-  function farbenAnfordern() {
-    if (farbenAngefragt || farben) return;
-    farbenAngefragt = true;
+  function farbenAnfordern(erzwingen) {
+    if (!erzwingen && (farbenAngefragt || farben)) return;
+    farben = null; farbenAngefragt = true;
     send({ type: 'farbenListen' });
   }
+  $('btnFarbenNeu').addEventListener('click', () => { if (!beschaeftigt) { farbenAnfordern(true); varListeZeichnen(); } });
   function farbeZeichnen() {
     const f = cfgLokal.farbe;
     wert($('segFarbe'), f.modus);

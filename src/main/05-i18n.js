@@ -38,6 +38,10 @@ const SPRACHEN = {
     'fehler.FRAME_ZU_KOMPONENTE': '{name}: Frame wurde in eine Komponente umgewandelt.',
     'hinweis.FRAME_ZU_KOMPONENTE': 'Nur Komponenten lassen sich instanziieren und damit einpassen.',
     'fehler.KONFIG_UNGUELTIG': 'Die Konfiguration konnte nicht gespeichert werden: {grund}',
+    'fehler.BIBLIOTHEK_UNZUGAENGLICH': 'Team-Libraries nicht abfragbar: {grund}',
+    'hinweis.BIBLIOTHEK_UNZUGAENGLICH': 'Braucht die Manifest-Berechtigung „teamlibrary“ und ein Figma-Konto mit Zugriff auf die Library. Bei Development-Plugins nach Manifest-Änderungen das Plugin über „Import plugin from manifest“ neu importieren.',
+    'fehler.KEINE_BIBLIOTHEKEN': 'Keine Variablen-Kollektionen aus Libraries gefunden ({lokal} lokale Farbvariablen).',
+    'hinweis.KEINE_BIBLIOTHEKEN': 'Figma liefert nur Kollektionen aus Libraries, die in diesem File unter Assets → Libraries aktiviert sind. Library aktivieren, dann „Aktualisieren“.',
     'hinweis.KONFIG_UNGUELTIG': 'Prüfe die markierten Felder im Tab „Einstellungen“.',
 
     // --- Konfig-Prüfung ---
@@ -134,6 +138,10 @@ const SPRACHEN = {
     'fehler.FRAME_ZU_KOMPONENTE': '{name}: frame was converted into a component.',
     'hinweis.FRAME_ZU_KOMPONENTE': 'Only components can be instantiated and therefore fitted.',
     'fehler.KONFIG_UNGUELTIG': 'The configuration could not be saved: {grund}',
+    'fehler.BIBLIOTHEK_UNZUGAENGLICH': 'Team libraries cannot be queried: {grund}',
+    'hinweis.BIBLIOTHEK_UNZUGAENGLICH': 'Requires the manifest permission “teamlibrary” and a Figma account with access to the library. For development plugins, re-import the plugin via “Import plugin from manifest” after manifest changes.',
+    'fehler.KEINE_BIBLIOTHEKEN': 'No variable collections from libraries found ({lokal} local color variables).',
+    'hinweis.KEINE_BIBLIOTHEKEN': 'Figma only returns collections from libraries enabled in this file under Assets → Libraries. Enable the library, then “Refresh”.',
     'hinweis.KONFIG_UNGUELTIG': 'Check the highlighted fields in the “Settings” tab.',
 
     'konfig.adapter': 'Unknown adapter — reset to default.',

@@ -328,6 +328,10 @@ const SPRACHEN = {
     'fehler.FRAME_ZU_KOMPONENTE': '{name}: Frame wurde in eine Komponente umgewandelt.',
     'hinweis.FRAME_ZU_KOMPONENTE': 'Nur Komponenten lassen sich instanziieren und damit einpassen.',
     'fehler.KONFIG_UNGUELTIG': 'Die Konfiguration konnte nicht gespeichert werden: {grund}',
+    'fehler.BIBLIOTHEK_UNZUGAENGLICH': 'Team-Libraries nicht abfragbar: {grund}',
+    'hinweis.BIBLIOTHEK_UNZUGAENGLICH': 'Braucht die Manifest-Berechtigung „teamlibrary“ und ein Figma-Konto mit Zugriff auf die Library. Bei Development-Plugins nach Manifest-Änderungen das Plugin über „Import plugin from manifest“ neu importieren.',
+    'fehler.KEINE_BIBLIOTHEKEN': 'Keine Variablen-Kollektionen aus Libraries gefunden ({lokal} lokale Farbvariablen).',
+    'hinweis.KEINE_BIBLIOTHEKEN': 'Figma liefert nur Kollektionen aus Libraries, die in diesem File unter Assets → Libraries aktiviert sind. Library aktivieren, dann „Aktualisieren“.',
     'hinweis.KONFIG_UNGUELTIG': 'Prüfe die markierten Felder im Tab „Einstellungen“.',
 
     // --- Konfig-Prüfung ---
@@ -424,6 +428,10 @@ const SPRACHEN = {
     'fehler.FRAME_ZU_KOMPONENTE': '{name}: frame was converted into a component.',
     'hinweis.FRAME_ZU_KOMPONENTE': 'Only components can be instantiated and therefore fitted.',
     'fehler.KONFIG_UNGUELTIG': 'The configuration could not be saved: {grund}',
+    'fehler.BIBLIOTHEK_UNZUGAENGLICH': 'Team libraries cannot be queried: {grund}',
+    'hinweis.BIBLIOTHEK_UNZUGAENGLICH': 'Requires the manifest permission “teamlibrary” and a Figma account with access to the library. For development plugins, re-import the plugin via “Import plugin from manifest” after manifest changes.',
+    'fehler.KEINE_BIBLIOTHEKEN': 'No variable collections from libraries found ({lokal} local color variables).',
+    'hinweis.KEINE_BIBLIOTHEKEN': 'Figma only returns collections from libraries enabled in this file under Assets → Libraries. Enable the library, then “Refresh”.',
     'hinweis.KONFIG_UNGUELTIG': 'Check the highlighted fields in the “Settings” tab.',
 
     'konfig.adapter': 'Unknown adapter — reset to default.',
@@ -523,7 +531,8 @@ const FEHLER_CODES = [
   'KEIN_ZIEL', 'KEINE_SOURCE', 'SOURCE_LEER', 'SOURCE_MASS', 'FIT_FEHLT',
   'VARIANTE_FEHLT', 'FARBE_UNAUFLOESBAR', 'UNION_FALLBACK', 'KLASSE_GERATEN',
   'SEITEN_FEHLEN', 'KARTE_OHNE_SET', 'GROESSE_UNBEKANNT',
-  'SET_HAT_FREMDE_VARIANTE', 'FRAME_ZU_KOMPONENTE', 'KONFIG_UNGUELTIG'
+  'SET_HAT_FREMDE_VARIANTE', 'FRAME_ZU_KOMPONENTE', 'KONFIG_UNGUELTIG',
+  'BIBLIOTHEK_UNZUGAENGLICH', 'KEINE_BIBLIOTHEKEN'
 ];
 
 class PipelineFehler extends Error {
@@ -1620,21 +1629,24 @@ async function farbenListen() {
   } catch (e) {}
 
   const bibliotheken = [];
+  const diagnose = { bibFehler: null, kollektionen: 0, kollektionsFehler: [] };
   try {
+    if (!figma.teamLibrary) throw new Error('figma.teamLibrary fehlt — Berechtigung "teamlibrary" im Manifest?');
     const kolls = await figma.teamLibrary.getAvailableLibraryVariableCollectionsAsync();
+    diagnose.kollektionen = kolls.length;
     for (const k of kolls) {
       let vars = [];
       try {
         const alle = await figma.teamLibrary.getVariablesInLibraryCollectionAsync(k.key);
         vars = alle.filter(v => v.resolvedType === 'COLOR').map(v => ({ key: v.key, name: v.name }));
-      } catch (e) {}
+      } catch (e) { diagnose.kollektionsFehler.push(k.name + ': ' + (e && e.message)); }
       if (vars.length) bibliotheken.push({
         kollektionKey: k.key, kollektion: k.name, bibliothek: k.libraryName, variablen: vars
       });
     }
-  } catch (e) {}
+  } catch (e) { diagnose.bibFehler = (e && e.message) || String(e); }
 
-  return { lokal: lokal, bibliotheken: bibliotheken };
+  return { lokal: lokal, bibliotheken: bibliotheken, diagnose: diagnose };
 }
 
 // key → id → Name. Ergebnis landet in CTX.farbVariable.
@@ -2287,7 +2299,12 @@ figma.ui.onmessage = async m => {
     }
 
     if (m.type === 'farbenListen') {
-      ui(Object.assign({ type: 'farben' }, await farbenListen()));
+      const fl = await farbenListen();
+      ui(Object.assign({ type: 'farben' }, fl));
+      const dg = fl.diagnose || {};
+      if (dg.bibFehler) melden('warn', 'BIBLIOTHEK_UNZUGAENGLICH', { grund: dg.bibFehler });
+      else if (!dg.kollektionen) melden('info', 'KEINE_BIBLIOTHEKEN', { lokal: fl.lokal.length });
+      (dg.kollektionsFehler || []).forEach(z => logZeile('warn', z));
       ui({ type: 'fertig' });
       return;
     }
