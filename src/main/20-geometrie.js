@@ -79,32 +79,44 @@ async function radienRegel(root, f, regel) {
     const v = modus === 'fest' ? wert : r * f;
     return v < min ? 0 : v;
   };
+  // „fester Wert“ rundet auch bisher SCHARFE Ecken (r = 0) — sonst bliebe die
+  // Einstellung bei eckigen Vorlagen wirkungslos. proportional/keine nur bei r > 0.
+  const fest = modus === 'fest';
+  const anfassen = r => fest || r > 0;
 
   const knoten = [root, ...root.findAll(x => true)];
   for (const x of knoten) {
+    const istWurzel = x === root;   // der Detach-Rahmen selbst bekommt keinen Radius
     let uniform = false;
     try {
-      if (typeof x.cornerRadius === 'number' && x.cornerRadius > 0) {
+      if (!istWurzel && typeof x.cornerRadius === 'number' && anfassen(x.cornerRadius)) {
         x.cornerRadius = neu(x.cornerRadius); uniform = true;
       }
     } catch (e) {}
-    if (!uniform) {
+    if (!uniform && !istWurzel) {
       ['topLeftRadius', 'topRightRadius', 'bottomLeftRadius', 'bottomRightRadius'].forEach(pp => {
-        try { if (typeof x[pp] === 'number' && x[pp] > 0) x[pp] = neu(x[pp]); } catch (e) {}
+        try { if (typeof x[pp] === 'number' && anfassen(x[pp])) x[pp] = neu(x[pp]); } catch (e) {}
       });
-      try {
-        if (x.type === 'VECTOR' && x.vectorNetwork &&
-            x.vectorNetwork.vertices.some(v => (v.cornerRadius || 0) > 0)) {
-          const netz = x.vectorNetwork;
-          const V = netz.vertices.map(v => {
-            const n = Object.assign({}, v);
-            if ((n.cornerRadius || 0) > 0) n.cornerRadius = neu(n.cornerRadius);
-            return n;
-          });
-          await x.setVectorNetworkAsync({ vertices: V, segments: netz.segments, regions: netz.regions });
-        }
-      } catch (e) {}
     }
+    try {
+      if (x.type === 'VECTOR' && x.vectorNetwork) {
+        const netz = x.vectorNetwork;
+        // Grad je Vertex: nur echte Ecken (≥ 2 Segmente) runden — Linienenden bleiben, wie sie sind.
+        const grad = new Array(netz.vertices.length).fill(0);
+        netz.segments.forEach(sg => { grad[sg.start]++; grad[sg.end]++; });
+        let dirty = false;
+        const V = netz.vertices.map((v, i) => {
+          const n = Object.assign({}, v);
+          const r = n.cornerRadius || 0;
+          if (anfassen(r) && (r > 0 || grad[i] >= 2)) {
+            const z = neu(r);
+            if (z !== r) { n.cornerRadius = z; dirty = true; }
+          }
+          return n;
+        });
+        if (dirty) await x.setVectorNetworkAsync({ vertices: V, segments: netz.segments, regions: netz.regions });
+      }
+    } catch (e) {}
   }
 }
 
