@@ -216,3 +216,7 @@ Betroffene Stellen: `.chip.gruen/.rot/.geraten`, `.chip.lizchip.voll/.test/.aus`
 
 Nicht angefasst: `src/main/**`, `build.mjs`, `test/**`, `manifest.json`.
 Das Nachrichtenprotokoll zwischen UI und Hauptthread ist unverändert.
+
+## Vendored figui3
+
+`fig.js` / `fig.css` = `@rogieking/figui3@9.0.14` dist-Bundle (unpkg, 2026-09-17). Update: `curl -sL https://unpkg.com/@rogieking/figui3@<version>/dist/fig.js -o fig.js` (ebenso fig.css), dann `node build.mjs` — das dist-Bundle ist selbständig (keine Imports), die Quelle unter `main` ist es nicht.
